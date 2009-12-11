@@ -1,0 +1,10 @@
+
+Last public release: 1.2.
+
+December 11, 2009
+-jQuery: we should now fully support jQuery instead of prototype. 
+-routing: routing is now used and writing files to disk has been made a control panel option. 
+-control panel/web.config: The control panel has been cleaned up quite a bit and many configurations settings once made in the web.config now have a web UI.
+-vistadb: due to licensing contraints, we are unable to ship vistadb directly with the source. We will be working with them to make this a provider available for download from their site. 
+
+ 
