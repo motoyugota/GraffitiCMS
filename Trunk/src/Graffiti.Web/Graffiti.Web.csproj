@@ -735,7 +735,6 @@
     <None Include="files\themes\training\layout.view" />
     <None Include="files\themes\training\home.layout.view" />
     <Content Include="files\themes\training\theme.config" />
-    <Content Include="tagrss.ashx" />
     <None Include="__utility\emails\Comment.view" />
     <None Include="__utility\emails\Contact.view" />
     <None Include="__utility\emails\ForgotPassword.view" />
