@@ -19,20 +19,20 @@ namespace Graffiti.Core
                 if (post != null)
                     return post; 
             }
-
-            if (!String.IsNullOrEmpty(param2))
+            else if (!String.IsNullOrEmpty(param2))
             {
-                var category = GetCategory(param2);
+                // either a sub-category or post request
+                var category = GetCategory(string.Format("{0}/{1}", param1, param2));
                 if (category != null)
                     return category;
 
                 var post = GetPost(param2);
                 if (post != null)
-                    return post; 
+                    return post;
             }
-
-            if (!String.IsNullOrEmpty(param1))
+            else if (!String.IsNullOrEmpty(param1))
             {
+                // either a category or post request
                 var category = GetCategory(param1);
                 if (category != null)
                     return category;
