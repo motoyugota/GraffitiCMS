@@ -118,7 +118,6 @@
     <Compile Include="Data\RolePermissionManager.cs" />
     <Compile Include="Data\VersionStore.cs" />
     <Compile Include="Events\GraffitiEventArgs.cs" />
-    <Compile Include="GraffitiLicense.cs" />
     <Compile Include="Marketplace\CatalogInfo.cs" />
     <Compile Include="Marketplace\CategoryInfo.cs" />
     <Compile Include="Marketplace\CategoryInfoCollection.cs" />

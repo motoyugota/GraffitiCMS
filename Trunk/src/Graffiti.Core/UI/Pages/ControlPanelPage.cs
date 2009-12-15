@@ -9,16 +9,6 @@ namespace Graffiti.Core
         {
         }
 
-        protected void LicenseRequires(LicenseType type)
-        {
-            if (!GraffitiLicense.IsLicenseValid(type))
-            {
-                Response.Clear();
-                Response.Write("<h1>Invalid License Requirements for this feature</h1>");
-                Response.End();
-            }
-        }
-
         protected override void OnInit(EventArgs e)
         {
             Authenticate();

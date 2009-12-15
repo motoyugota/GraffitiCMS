@@ -266,7 +266,7 @@ namespace Graffiti.Core
 
 
 
-        public static readonly string Version = "1.2" ;
+        public static readonly string Version = "1.3 Alpha" ;
 
         public static readonly string BuildNumber = typeof (SiteSettings).Assembly.GetName().Version.ToString();
 
