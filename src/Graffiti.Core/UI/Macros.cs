@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Configuration;
 using System.Drawing;
 using System.IO;
 using System.Reflection;
@@ -1359,7 +1360,10 @@ namespace Graffiti.Core
         /// <returns></returns>
         public string Favicon()
         {
-            return Favicon("~/__utility/img/favicon.ico");
+            var icon = ConfigurationManager.AppSettings["Graffiti:Icon"];
+            if (string.IsNullOrEmpty(icon))
+                icon = "~/__utility/img/favicon.ico";
+            return Favicon(icon);
         }
 
         #endregion 
