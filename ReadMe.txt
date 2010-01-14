@@ -27,6 +27,8 @@ SQL Server 2005/2008:  DataBuddy.SQL2K5DataProvider, DataBuddy
 7. Build the solution. You may need to set the Graffiti.Web project as the start up Project.
 
 
-UPGRADE NOTES:
+IMPORTANT NOTES:
+* If you are using IIS 7 or above, and ASP.NET 3.5 SP1, the new url routing features will work great. If not, you'll need to enable the option to generate folders for posts and categories. This setting is found in the admin > Site Options > Configuration page.
+
 * If you are currently using a prior version of Graffiti CMS with VistaDB and do not wish to migrate to a different database then you should keep using the version you have for now.
 
