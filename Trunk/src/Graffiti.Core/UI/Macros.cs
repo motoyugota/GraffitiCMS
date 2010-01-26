@@ -184,6 +184,17 @@ namespace Graffiti.Core
             return sb.ToString();
         }
 
+        public string Widget(string title, string beforeTitle, string afterTitle, string beforeContent, string afterContent)
+        {
+            StringBuilder sb = new StringBuilder("");
+            Widget widget = Widgets.FetchByTitle(title);
+            if (widget != null)
+            {
+                sb.Append(widget.Render(beforeTitle, afterTitle, beforeContent, afterContent));
+            }
+            return sb.ToString();
+        }
+
         /// <summary>
         /// Renders the value of a variable.
         /// </summary>

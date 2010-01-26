@@ -159,6 +159,19 @@ namespace Graffiti.Core
             return null;
         }
 
+        public static Widget FetchByTitle(string title)
+        {
+            List<Widget> the_Widgets = FetchAll();
+            foreach (Widget widget in the_Widgets) {
+                if (widget.Title == title)
+                    return widget;
+            }
+
+            Log.Warn("Widget", "The widget with the title of {0} could not be found.", title);
+
+            return null;            
+        }
+
         /// <summary>
         /// Creates an empty Widget for the given type
         /// </summary>
