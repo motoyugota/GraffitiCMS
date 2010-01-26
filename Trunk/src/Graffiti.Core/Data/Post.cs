@@ -290,10 +290,14 @@ namespace Graffiti.Core
         {
             get
             {
-                if (_ImageUrl.StartsWith("~/"))
-                    return VirtualPathUtility.ToAbsolute(_ImageUrl);
+                if (_ImageUrl != null)
+                {
+                    if (_ImageUrl.StartsWith("~/"))
+                        return VirtualPathUtility.ToAbsolute(_ImageUrl);
 
-                return _ImageUrl;
+                    return _ImageUrl.Trim();
+                }
+                return string.Empty;
             }
         }
 

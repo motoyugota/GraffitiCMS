@@ -31,6 +31,7 @@ namespace Graffiti.Core
 
 
 			PageWriter.Write("tag.view", "~/tags/" + name + "/" + Util.DEFAULT_PAGE, templateContext);
+            PageWriter.Write("tagrss.view", "~/tags/" + name + "/feed/" + Util.DEFAULT_PAGE, templateContext);
             
         }
     }

@@ -2,6 +2,7 @@
 using System.Web;
 using System.Web.Compilation;
 using System.Web.Routing;
+using DataBuddy;
 
 namespace Graffiti.Core
 {
@@ -11,7 +12,10 @@ namespace Graffiti.Core
         {
             string categoryOneName = requestContext.RouteData.Values["categoryone"] != null ? requestContext.RouteData.Values["categoryone"].ToString() : null;
             string categoryTwoName = requestContext.RouteData.Values["categorytwo"] != null ? requestContext.RouteData.Values["categorytwo"].ToString() : null;
-            
+
+            string tagName = requestContext.RouteData.Values["tagname"] != null ? requestContext.RouteData.Values["tagname"].ToString() : null;
+
+
             if (!String.IsNullOrEmpty(categoryTwoName))
             {
                 return GetFeed(categoryTwoName);
@@ -22,7 +26,22 @@ namespace Graffiti.Core
                 return GetFeed(categoryOneName);
             }
 
+            if (!string.IsNullOrEmpty(tagName))
+            {
+                return GetTagFeed(tagName);
+            }
+
             return GetFeed(null);
+        }
+
+        public RSS GetTagFeed(string tagName)
+        {
+            var feed = new RSS();
+            if (!string.IsNullOrEmpty(tagName))
+            {
+                feed.TagName = tagName;
+            }
+            return feed;
         }
 
         public RSS GetFeed(string categoryName)
@@ -39,5 +58,6 @@ namespace Graffiti.Core
 
             return feed;
         }
+
     }
 }
