@@ -15,8 +15,7 @@ namespace Graffiti.Core
             routes.Add(new Route("{resource}.axd/{*pathInfo}", new StopRoutingHandler()));
             routes.Add(new Route("{resource}.ico/{*pathInfo}", new StopRoutingHandler()));
             routes.Add("TagPage", new Route("tags/{TagName}/", new TagHandler()));
-
-            
+            routes.Add("TagFeed", new Route("tags/{TagName}/feed/", new RssHandler()));            
 
             routes.Add("SiteFeed", new Route("feed/", new RssHandler()));
             routes.Add("Category1Feed", new Route("{CategoryOne}/feed/", new RssHandler()));

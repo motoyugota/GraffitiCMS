@@ -657,13 +657,12 @@ namespace Graffiti.Core
                     }
                 }
 
-                //NOT YET IMPLEMENTED
-                //if (ttp.TagName != null)
-                //{
-                //    sb.AppendFormat(pattern, ttp.TagName + " Rss Feed",
-                //                    FullUrl(VirtualPathUtility.ToAbsolute("~/tags/" + Util.CleanForUrl(ttp.TagName)) +
-                //                            "/feed/"));
-                //}
+                if (ttp.TagName != null)
+                {
+                    sb.AppendFormat(pattern, ttp.TagName + " Rss Feed",
+                                    FullUrl(VirtualPathUtility.ToAbsolute("~/tags/" + Util.CleanForUrl(ttp.TagName)) +
+                                            "/feed/"));
+                }
             }
 
             return sb.ToString();
