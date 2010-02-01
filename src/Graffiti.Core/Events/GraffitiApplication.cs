@@ -150,6 +150,7 @@ namespace Graffiti.Core
 		#region RSS
 
 		private static object RssNamespaceObject = new object();
+        private static object RssChannelObject = new object();
 		private static object RssItemObject = new object();
 
 
@@ -162,6 +163,14 @@ namespace Graffiti.Core
 			remove { Events.RemoveHandler(RssNamespaceObject, value); }
 		}
 
+        /// <summary>
+        /// Wires up an event to execute after the RSS channel has been added to the feed
+        /// </summary>
+        public event RssEventHandler RssChannel {
+            add { Events.AddHandler(RssChannelObject, value); }
+            remove { Events.RemoveHandler(RssChannelObject, value); }
+        }
+
 		/// <summary>
 		/// Wires up an event to execute when a new RSSItem is added to a feed
 		/// </summary>
@@ -172,7 +181,7 @@ namespace Graffiti.Core
 		}
 
 		/// <summary>
-		/// Executes the RssItem event
+		/// Executes the RssNamespace event
 		/// </summary>
 		/// <param name="item"></param>
 		internal void ExecuteRssNamespace(XmlTextWriter writer)
@@ -183,6 +192,17 @@ namespace Graffiti.Core
 				re(writer, EventArgs.Empty);
 			}
 		}
+
+        /// <summary>
+        /// Executes the RssChannel event
+        /// </summary>
+        /// <param name="item"></param>
+        internal void ExecuteRssChannel(XmlTextWriter writer) {
+            RssEventHandler re = Events[RssChannelObject] as RssEventHandler;
+            if (re != null) {
+                re(writer, EventArgs.Empty);
+            }
+        }
 
 		/// <summary>
 		/// Executes the RssItem event

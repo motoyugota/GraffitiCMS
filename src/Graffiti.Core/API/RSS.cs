@@ -103,6 +103,9 @@ namespace Graffiti.Core
                 writer.WriteStartElement("channel");
                 WriteChannel(writer, category, settings);
 
+                // Allow plugins to add additional xml to the <channel>
+                Core.Events.Instance().ExecuteRssChannel(writer);
+
                 foreach (Post p in pc)
                 {
                     writer.WriteStartElement("item");
@@ -141,6 +144,9 @@ namespace Graffiti.Core
 
                 writer.WriteStartElement("channel");
                 WriteChannel(writer, TagName, settings);
+
+                // Allow plugins to add additional xml to the <channel>
+                Core.Events.Instance().ExecuteRssChannel(writer);
 
                 foreach (Post p in pc) {
                     writer.WriteStartElement("item");
