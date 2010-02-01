@@ -457,6 +457,25 @@ namespace Graffiti.Core
                 throw new Exception("The category with link name " + linkName + " could not be found");
         }
 
+		  /// <summary>
+		  /// Returns a single category.
+		  /// </summary>
+		  /// <param name="name">The linkname of the category to find. This is not case sensitive</param>
+		  /// <param name="allowNull">determins if an exception is thrown if the category does not exist</param>
+		  /// <returns></returns>
+		  public Category GetCachedCategoryByLinkName(string linkName, int ParentId, bool allowNull)
+		  {
+			  CategoryCollection cc = GetAllCachedCategories();
+			  foreach (Category c in cc)
+				  if (c.ParentId == ParentId && Util.AreEqualIgnoreCase(c.LinkName, linkName))
+					  return c;
+
+			  if (allowNull)
+				  return null;
+			  else
+				  throw new Exception("The category with link name " + linkName + " could not be found");
+		  }
+
         /// <summary>
         /// Returns the special uncategorized category (which does exist in the db)
         /// </summary>

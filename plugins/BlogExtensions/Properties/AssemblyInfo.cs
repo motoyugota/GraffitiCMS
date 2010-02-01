@@ -5,10 +5,10 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("DataBuddy")]
-[assembly: AssemblyDescription("")]
+[assembly: AssemblyTitle("Graffiti.BlogExtensions")]
+[assembly: AssemblyDescription("Graffiti CMS Blog Extensions Plugin")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyProduct("DataBuddy")]
+[assembly: AssemblyProduct("Graffiti CMS")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
@@ -18,7 +18,7 @@ using System.Runtime.InteropServices;
 [assembly: ComVisible(false)]
 
 // The following GUID is for the ID of the typelib if this project is exposed to COM
-[assembly: Guid("d644079c-408f-4328-9b0a-59a4c1a4bd8a")]
+[assembly: Guid("85ac5f0a-b02e-4ed0-bc95-3c930994a48a")]
 
 // Version information for an assembly consists of the following four values:
 //

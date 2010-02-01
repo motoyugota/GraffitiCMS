@@ -1,89 +1,139 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Web;
 using System.Web.Compilation;
 using System.Web.Routing;
 
 namespace Graffiti.Core
 {
-    public class CategoryAndPostHandler : IRouteHandler
-    {
-        public IHttpHandler GetHttpHandler(RequestContext requestContext)
-        {
-            string param1 = requestContext.RouteData.Values["param1"] != null ? requestContext.RouteData.Values["param1"].ToString() : null;
-            string param2 = requestContext.RouteData.Values["param2"] != null ? requestContext.RouteData.Values["param2"].ToString() : null;
-            string param3 = requestContext.RouteData.Values["param3"] != null ? requestContext.RouteData.Values["param3"].ToString() : null;
-            
-            if(!String.IsNullOrEmpty(param3))
-            {
-                var post = GetPost(param3);
-                if (post != null)
-                    return post; 
-            }
-            else if (!String.IsNullOrEmpty(param2))
-            {
-                // either a sub-category or post request
-                var category = GetCategory(string.Format("{0}/{1}", param1, param2));
-                if (category != null)
-                    return category;
+	public class CategoryAndPostHandler : IRouteHandler
+	{
+		public IHttpHandler GetHttpHandler(RequestContext requestContext)
+		{
+			string path = requestContext.RouteData.Values["path"] != null ? requestContext.RouteData.Values["path"].ToString() : null;
+			string[] pathParts = GetPaths(path);
 
-                var post = GetPost(param2);
-                if (post != null)
-                    return post;
-            }
-            else if (!String.IsNullOrEmpty(param1))
-            {
-                // either a category or post request
-                var category = GetCategory(param1);
-                if (category != null)
-                    return category;
+			if (pathParts.Length > 2)
+			{
+				// Assume it is a post if more than 2 levels deep for now
+				// ToDo: Needs to be reworked to support n-level categories
+				var post = GetPost(pathParts[pathParts.Length - 1]);
+				if (post != null)
+					return post;
+			}
+			else if (pathParts.Length == 2)
+			{
+				// either a sub-category or post request
+				var category = GetCategory(string.Format("{0}/{1}", pathParts[0], pathParts[1]));
+				if (category != null)
+					return category;
 
-                var post = GetPost(param1);
-                if (post != null)
-                    return post;
-            }
+				var post = GetPost(pathParts[1]);
+				if (post != null)
+					return post;
+			}
+			else if (pathParts.Length == 1)
+			{
+				// either a category or post request
+				var category = GetCategory(pathParts[0]);
+				if (category != null)
+					return category;
 
-            throw new HttpException(404, "Page not found");
-        }
+				var post = GetPost(pathParts[0]);
+				if (post != null)
+					return post;
+			}
 
-        public CategoryPage GetCategory(string param)
-        {
-            var category = new CategoryController().GetCachedCategoryByLinkName(param, true);
+			throw new HttpException(404, "Page not found");
+		}
 
-            if (category != null)
-            {
-                var categoryPage = new CategoryPage();
+		public string[] GetPaths(string path)
+		{
+			string[] pathArray;
 
-                categoryPage.CategoryID = category.Id;
-                categoryPage.CategoryName = category.LinkName;
-                categoryPage.MetaDescription = category.MetaDescription;
-                categoryPage.MetaKeywords = category.MetaKeywords;
+			if (string.IsNullOrEmpty(path))
+				pathArray = new string[0];
+			else
+			{
+				pathArray = path.Split(new[] { '/' }, StringSplitOptions.RemoveEmptyEntries);
 
-                return categoryPage;
-            }
+				for (int i = 0; i < pathArray.Length; i++)
+				{
+					if (pathArray[i].IndexOfAny(new char[] { '<', '>', '"' }) > -1)
+						pathArray[i] = HttpUtility.HtmlEncode(pathArray[i]);
+				}
+			}
 
-            return null;
-        }
+			return pathArray;
+		}
 
-        public PostPage GetPost(string param)
-        {
-            var post = new Data().GetPost(param);
+		// Not used yet, will be needed to support n-level categories
+		public List<Category> GetCategories(string path)
+		{
+			CategoryController cc = new CategoryController();
+			var categoryStack = new List<Category>() { cc.GetUnCategorizedCategory() };
 
-            if(post != null)
-            {
-                var postPage = new PostPage();
+			string[] pathArray = GetPaths(path);
+			string lastCategoryPath = pathArray.LastOrDefault();
 
-                postPage.PostId = post.Id;
-                postPage.CategoryID = post.CategoryId;
-                postPage.CategoryName = new CategoryController().GetCachedCategory(post.CategoryId, false).LinkName;
-                postPage.PostName = post.Name;
-                postPage.Name = post.Name;
-                postPage.MetaDescription = post.MetaDescription;
-                postPage.MetaKeywords = post.MetaKeywords;
+			foreach (string linkName in pathArray)
+			{
+				if (string.IsNullOrEmpty(linkName))
+					continue;
 
-                return postPage;
-            }
+				Category parentCategory = categoryStack[categoryStack.Count - 1];
+				Category category = cc.GetCachedCategoryByLinkName(string.Format("{0}/{1}", parentCategory.LinkName, linkName), parentCategory.Id, true);
 
-            return null;
-        }
-    }
+				// If category cannot be found, we reached the end of the stack and remaining items must be content
+				if (category == null)
+					break;
+
+				categoryStack.Add(category);
+			}
+
+			return categoryStack;
+		}
+
+		public CategoryPage GetCategory(string param)
+		{
+			var category = new CategoryController().GetCachedCategoryByLinkName(param, true);
+
+			if (category != null)
+			{
+				var categoryPage = new CategoryPage();
+
+				categoryPage.CategoryID = category.Id;
+				categoryPage.CategoryName = category.LinkName;
+				categoryPage.MetaDescription = category.MetaDescription;
+				categoryPage.MetaKeywords = category.MetaKeywords;
+
+				return categoryPage;
+			}
+
+			return null;
+		}
+
+		public PostPage GetPost(string param)
+		{
+			var post = new Data().GetPost(param);
+
+			if (post != null)
+			{
+				var postPage = new PostPage();
+
+				postPage.PostId = post.Id;
+				postPage.CategoryID = post.CategoryId;
+				postPage.CategoryName = new CategoryController().GetCachedCategory(post.CategoryId, false).LinkName;
+				postPage.PostName = post.Name;
+				postPage.Name = post.Name;
+				postPage.MetaDescription = post.MetaDescription;
+				postPage.MetaKeywords = post.MetaKeywords;
+
+				return postPage;
+			}
+
+			return null;
+		}
+	}
 }
