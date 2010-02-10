@@ -22,6 +22,9 @@ namespace Graffiti.Core
 			// Ignore all of admin section
 			routes.Add("ignoreADMIN", new Route("graffiti-admin/{*pathInfo}", new StopRoutingHandler()));
 
+			// Added to solve a issue with http://(www.)domain.ext/ rendering 404
+			routes.Add("Home", new Route("", new StopRoutingHandler()));
+
 			routes.Add("TagPage", new Route("tags/{TagName}/", new TagHandler()));
 			routes.Add("TagFeed", new Route("tags/{TagName}/feed/", new RssHandler()));
 
