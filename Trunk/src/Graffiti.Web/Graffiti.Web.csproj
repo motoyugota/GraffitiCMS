@@ -587,6 +587,7 @@
     <Content Include="graffiti-admin\common\img\wrap-inner-bg.gif" />
     <Content Include="graffiti-admin\common\img\wrench.png" />
     <Content Include="graffiti-admin\Default.aspx" />
+    <Content Include="graffiti-admin\GraffitiInfo.aspx" />
     <Content Include="graffiti-admin\loading.htm" />
     <Content Include="graffiti-admin\logout\Default.aspx" />
     <Content Include="graffiti-admin\msg\cannot-write.aspx" />
