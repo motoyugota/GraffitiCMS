@@ -65,6 +65,33 @@ GraffitiHelpers.statusMessage = function(name, text, alertOnNull) {
 }
 
 
+function GraffitiHelpers.setupDialog(name, width, height) {
+	var divDialog = $("#gModal_" + name);
+	if (!divDialog)
+	{
+		$("body").append('<div id="gModal_' + name +'"><iframe id="gModalIframe" width="100%" height="100%" marginWidth="0" marginHeight="0" frameBorder="0" scrolling="auto" /></div>');
+		divDialog = $("#gModal_" + name);
+		divDialog.dialog({
+			autoOpen: false,
+			modal: true,
+			height: height,
+			width: width
+		});
+	}
+	return divDialog;
+}
+
+function GraffitiHelpers.showDialog(url) {
+	var divDialog = GraffitiHelpers.setupDialog('default', 500, 500);
+	divDialog.dialog("open");
+	$("#gModalIframe", divDialog).attr("src", url);
+	return false;
+}
+
+function GraffitiHelpers.closeDialog() {
+	$('#gModalDiv', window.parent.document).dialog('close');
+}
+
 
 /********************* COMMENTS ************************/
 
