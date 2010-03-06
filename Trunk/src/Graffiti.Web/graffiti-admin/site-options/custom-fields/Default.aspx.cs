@@ -1,19 +1,10 @@
 using System;
 using System.Collections.Generic;
-using System.Data;
-using System.Configuration;
-using System.Collections;
-using System.Web;
-using System.Web.Security;
-using System.Web.UI;
 using System.Web.UI.WebControls;
-using System.Web.UI.WebControls.WebParts;
-using System.Web.UI.HtmlControls;
 using Graffiti.Core;
 
 public partial class graffiti_admin_site_options_forms_Default : AdminControlPanelPage
 {
-
     private int _category = -1;
 
     protected void Page_Load(object sender, EventArgs e)
@@ -87,7 +78,7 @@ public partial class graffiti_admin_site_options_forms_Default : AdminControlPan
 
                 if (_category != -1)
                 {
-                    Category c = new Category(_category);
+                    Category c = _categoryService.FetchCategory(_category);
                     lblCategory.Text = c.Name;
                 }
                 else
@@ -131,7 +122,7 @@ public partial class graffiti_admin_site_options_forms_Default : AdminControlPan
 
     private void LoadCategories()
     {
-        CategoryCollection categories = new CategoryController().GetTopLevelCachedCategories();
+        CategoryCollection categories = new CategoryCollection(_categoryService.FetchTopLevelCachedCategories());
 
         rptCategories.DataSource = categories;
         rptCategories.DataBind();

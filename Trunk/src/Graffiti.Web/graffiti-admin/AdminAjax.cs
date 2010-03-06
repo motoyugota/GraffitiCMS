@@ -1,21 +1,23 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
-using System.Data;
-using System.Data.SqlClient;
-using System.IO;
+using System.Linq;
 using System.Web;
-using DataBuddy;
 using Graffiti.Core;
+using Graffiti.Core.Services;
 
 namespace Graffiti.Web
 {
 
 public class graffiti_admin_ajax : IHttpHandler
 {
+    private IRolePermissionService _rolePermissionService = ServiceLocator.Get<IRolePermissionService>();
+    private ICommentService _commentService = ServiceLocator.Get<ICommentService>();
+    private ICategoryService _categoryService = ServiceLocator.Get<ICategoryService>();
+    private IPostService _postService = ServiceLocator.Get<IPostService>();
+
     public void ProcessRequest(HttpContext context)
     {
-
         if (context.Request.RequestType != "POST" || !context.Request.IsAuthenticated)
             return;
 
@@ -23,7 +25,7 @@ public class graffiti_admin_ajax : IHttpHandler
         if (user == null)
             return;
 
-        if (!RolePermissionManager.CanViewControlPanel(user))
+        if (!_rolePermissionService.CanViewControlPanel(user))
             return;
 
         context.Response.ContentType = "text/plain";
@@ -33,11 +35,11 @@ public class graffiti_admin_ajax : IHttpHandler
         {
             case "deleteComment":
 
-                Comment c = new Comment(context.Request.Form["commentid"]);
+                Comment c = _commentService.FetchComment(context.Request.Form["commentid"]);
 
-                if (RolePermissionManager.GetPermissions(c.Post.CategoryId, GraffitiUsers.Current).Publish)
+                if (_rolePermissionService.GetPermissions(c.Post.CategoryId, GraffitiUsers.Current).Publish)
                 {
-                    Comment.Delete(context.Request.Form["commentid"]);
+                    _commentService.DeleteComment(int.Parse(context.Request.Form["commentid"]));
                     context.Response.Write("success");
                 }
 
@@ -45,36 +47,36 @@ public class graffiti_admin_ajax : IHttpHandler
 
             case "deleteCommentWithStatus":
 
-                Comment c1 = new Comment(context.Request.Form["commentid"]);
+                Comment c1 = _commentService.FetchComment(context.Request.Form["commentid"]);
 
-                if (RolePermissionManager.GetPermissions(c1.Post.CategoryId, GraffitiUsers.Current).Publish)
+                if (_rolePermissionService.GetPermissions(c1.Post.CategoryId, GraffitiUsers.Current).Publish)
                 {
-                    Comment.Delete(context.Request.Form["commentid"]);
+                    _commentService.DeleteComment(int.Parse(context.Request.Form["commentid"]));
                     context.Response.Write("The comment was deleted. <a href=\"javascript:void(0);\" onclick=\"Comments.unDelete('" + new Urls().AdminAjax + "'," + context.Request.Form["commentid"] + "); return false;\">Undo?</a>");
                 }
                 break;
 
             case "unDelete":
-                Comment c2 = new Comment(context.Request.Form["commentid"]);
+                Comment c2 = _commentService.FetchComment(context.Request.Form["commentid"]);
 
-                if (RolePermissionManager.GetPermissions(c2.Post.CategoryId, GraffitiUsers.Current).Publish)
+                if (_rolePermissionService.GetPermissions(c2.Post.CategoryId, GraffitiUsers.Current).Publish)
                 {
-                    Comment comment = new Comment(context.Request.Form["commentid"]);
+                    Comment comment = _commentService.FetchComment(context.Request.Form["commentid"]);
                     comment.IsDeleted = false;
-                    comment.Save();
+                    comment = _commentService.SaveComment(comment);
                     context.Response.Write("The comment was un-deleted. You may need to refresh the page to see it");
                 }
                 break;
 
             case "approve":
-                Comment c3 = new Comment(context.Request.Form["commentid"]);
+                Comment c3 = _commentService.FetchComment(context.Request.Form["commentid"]);
 
-                if (RolePermissionManager.GetPermissions(c3.Post.CategoryId, GraffitiUsers.Current).Publish)
+                if (_rolePermissionService.GetPermissions(c3.Post.CategoryId, GraffitiUsers.Current).Publish)
                 {
-                    Comment cmt = new Comment(context.Request.Form["commentid"]);
+                    Comment cmt = _commentService.FetchComment(context.Request.Form["commentid"]);
                     cmt.IsDeleted = false;
                     cmt.IsPublished = true;
-                    cmt.Save();
+                    cmt = _commentService.SaveComment(cmt);
                     context.Response.Write("The comment was un-deleted and/or approved. You may need to refresh the page to see it");
                 }
                 break;
@@ -82,14 +84,14 @@ public class graffiti_admin_ajax : IHttpHandler
             case "deletePost":
                 try
                 {
-                    Post postToDelete = new Post(context.Request.Form["postid"]);
+                    Post postToDelete = _postService.FetchPost(context.Request.Form["postid"]);
 
-                    Permission perm = RolePermissionManager.GetPermissions(postToDelete.CategoryId, user);
+                    Permission perm = _rolePermissionService.GetPermissions(postToDelete.CategoryId, user);
 
                     if (GraffitiUsers.IsAdmin(user) || perm.Publish)
                     {    
                         postToDelete.IsDeleted = true;
-                        postToDelete.Save(user.Name,DateTime.Now);
+                        postToDelete = _postService.SavePost(postToDelete, user.Name, DateTime.Now);
 
                         //Post.Delete(context.Request.Form["postid"]);
                         //ZCache.RemoveByPattern("Posts-");
@@ -104,17 +106,17 @@ public class graffiti_admin_ajax : IHttpHandler
                 break;
 
             case "unDeletePost":
-                Post p = new Post(context.Request.Form["postid"]);
+                Post p = _postService.FetchPost(context.Request.Form["postid"]);
                 p.IsDeleted = false;
-                p.Save();
+                p = _postService.SavePost(p);
                 //ZCache.RemoveByPattern("Posts-");
                 //ZCache.RemoveCache("Post-" + context.Request.Form["postid"]);                
                 //context.Response.Write("The post was un-deleted. You may need to fresh the page to see it");
                 break;
 
             case "permanentDeletePost":
-                Post tempPost = new Post(context.Request.Form["postid"]);
-                Post.DestroyDeletedPost(tempPost.Id);
+                Post tempPost = _postService.FetchPost(context.Request.Form["postid"]);
+                _postService.DestroyDeletedPost(tempPost);
 
                 string url = VirtualPathUtility.ToAbsolute("~/graffiti-admin/posts/") + "?status=-1&dstry=" +
                              context.Server.UrlEncode(tempPost.Title);
@@ -210,7 +212,7 @@ public class graffiti_admin_ajax : IHttpHandler
                 {
                     if (context.Request.Form["type"] == "Post")
                     {
-                        Post navPost = Post.FetchByColumn(Post.Columns.UniqueId, new Guid(context.Request.Form["id"]));
+                        Post navPost = _postService.FetchPostByUniqueId(new Guid(context.Request.Form["id"]));
                         DynamicNavigationItem item = new DynamicNavigationItem();
                         item.PostId = navPost.Id;
                         item.Id = navPost.UniqueId;
@@ -220,7 +222,7 @@ public class graffiti_admin_ajax : IHttpHandler
                     }
                     else if (context.Request.Form["type"] == "Category")
                     {
-                        Category navCategory = Category.FetchByColumn(Category.Columns.UniqueId, new Guid(context.Request.Form["id"]));
+                        Category navCategory = _categoryService.FetchCategoryByUniqueId(new Guid(context.Request.Form["id"]));
                         DynamicNavigationItem item = new DynamicNavigationItem();
                         item.CategoryId = navCategory.Id;
                         item.Id = navCategory.UniqueId;
@@ -241,9 +243,7 @@ public class graffiti_admin_ajax : IHttpHandler
                 try
                 {
                     Dictionary<int, Post> posts = new Dictionary<int, Post>();
-                    DataBuddy.Query query = Post.CreateQuery();
-                    query.AndWhere(Post.Columns.CategoryId, int.Parse(context.Request.QueryString["id"]));
-                    foreach (Post post in PostCollection.FetchByQuery(query))
+                    foreach (Post post in _postService.FetchPostsByCategory(int.Parse(context.Request.QueryString["id"])))
                     {
                         posts[post.Id] = post;
                     }
@@ -257,7 +257,7 @@ public class graffiti_admin_ajax : IHttpHandler
                         if (post != null && post.SortOrder != orderNumber)
                         {
                             post.SortOrder = orderNumber;
-                            post.Save();
+                            post = _postService.SavePost(post);
                         }
 
                         orderNumber++;
@@ -275,9 +275,7 @@ public class graffiti_admin_ajax : IHttpHandler
                 try
                 {
                     Dictionary<int, Post> posts = new Dictionary<int, Post>();
-                    DataBuddy.Query query = Post.CreateQuery();
-                    query.AndWhere(Post.Columns.IsHome, true);
-                    foreach (Post post in PostCollection.FetchByQuery(query))
+                    foreach (Post post in _postService.FetchPosts().Where(x => x.IsHome))
                     {
                         posts[post.Id] = post;
                     }
@@ -291,7 +289,7 @@ public class graffiti_admin_ajax : IHttpHandler
                         if (post != null && post.HomeSortOrder != orderNumber)
                         {
                             post.HomeSortOrder = orderNumber;
-                            post.Save();
+                            post = _postService.SavePost(post);
                         }
 
                         orderNumber++;
@@ -311,7 +309,7 @@ public class graffiti_admin_ajax : IHttpHandler
                 int postId = int.Parse(context.Request.QueryString["post"] ?? "-1");
                 NameValueCollection nvcCustomFields;
                 if (postId > 0)
-                    nvcCustomFields = new Post(postId).CustomFields();
+                    nvcCustomFields = _postService.FetchPost(postId).CustomFields();
                 else
                     nvcCustomFields = new NameValueCollection();
 
@@ -358,10 +356,8 @@ public class graffiti_admin_ajax : IHttpHandler
 
                 try
                 {
-                    CategoryCollection cc = new CategoryController().GetCachedCategories();
-                    foreach (Category cat in cc)
-                        cat.WritePages();
-
+                    foreach (Category cat in _categoryService.FetchCachedCategories())
+                        _categoryService.WriteCategoryPages(cat);
 
                     context.Response.Write("Success");
                 }
@@ -371,27 +367,26 @@ public class graffiti_admin_ajax : IHttpHandler
                     return;
                 }
 
-
-
                 break;
 
             case "buildPages":
 
                 try
                 {
+                    int pageIndex = Int32.Parse(context.Request.Form["p"]);
+                    int pageSize = 20;
 
-                    Query q = Post.CreateQuery();
-                    q.PageIndex = Int32.Parse(context.Request.Form["p"]);
-                    q.PageSize = 20;
-                    q.OrderByDesc(Post.Columns.Id);
+                    PostCollection pc = new PostCollection(_postService.FetchPosts().OrderByDescending(x => x.Id).ToList());
+                    
+                    if (pageIndex > 0 && pageSize > 0 && pc.Count > pageSize)
+                        pc = new PostCollection(pc.Skip(pageSize * (pageIndex - 1)).Take(pageSize).ToList());
 
-                    PostCollection pc = PostCollection.FetchByQuery(q);
                     if (pc.Count > 0)
                     {
 
                         foreach (Post postToWrite in pc)
                         {
-                            postToWrite.WritePages();
+                            _postService.WritePostPages(postToWrite);
                             foreach (string tagName in Util.ConvertStringToList(postToWrite.TagList))
                             {
                                 if (!string.IsNullOrEmpty(tagName))
@@ -431,9 +426,7 @@ public class graffiti_admin_ajax : IHttpHandler
 
                     if (!String.IsNullOrEmpty(postName))
                     {
-                        Query q = Post.CreateQuery();
-                        q.AndWhere(Post.Columns.Name, Util.CleanForUrl(postName));
-                        pc.LoadAndCloseReader(q.ExecuteReader());
+                        pc = new PostCollection(_postService.FetchPosts().Where(x => x.Name == Util.CleanForUrl(postName)).ToList());
                     }
 
                     if (pc.Count > 0)
@@ -478,7 +471,7 @@ public class graffiti_admin_ajax : IHttpHandler
                     //        newPost.Status = (int)PostStatus.Draft;
                     //}
 
-                    newPost.Save(GraffitiUsers.Current.Name);
+                    newPost = _postService.SavePost(newPost, GraffitiUsers.Current.Name);
 
                     int postid = Convert.ToInt32(context.Request.Form["postid"]);
 
@@ -537,13 +530,13 @@ public class graffiti_admin_ajax : IHttpHandler
                         ct.DontSendEmail = true;
                         ct.DontChangeUser = true;
 
-                        ct.Save();
+                        ct = _commentService.SaveComment(ct);
 
-                        Comment ctemp = new Comment(ct.Id);
+                        Comment ctemp = _commentService.FetchComment(ct.Id);
                         ctemp.DontSendEmail = true;
                         ctemp.DontChangeUser = true;
                         ctemp.Body = HttpContext.Current.Server.HtmlDecode(ctemp.Body);
-                        ctemp.Save();
+                        ctemp = _commentService.SaveComment(ctemp);
                     }
 
                     if(newPost.Status == (int)PostStatus.Publish)
@@ -574,7 +567,7 @@ public class graffiti_admin_ajax : IHttpHandler
                 {
                     int catID = Int32.Parse(context.Request.QueryString["category"]);
                     string permissionName = context.Request.QueryString["permission"];
-                    Permission perm = RolePermissionManager.GetPermissions(catID, user);
+                    Permission perm = _rolePermissionService.GetPermissions(catID, user);
 
                     bool permissionResult = false;
                     switch (permissionName)

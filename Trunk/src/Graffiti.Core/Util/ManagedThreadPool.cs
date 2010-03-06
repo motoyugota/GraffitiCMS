@@ -1,13 +1,6 @@
-//------------------------------------------------------------------------------
-// <copyright company="Telligent Systems">
-//     Copyright (c) Telligent Systems Corporation.  All rights reserved.
-// </copyright> 
-//------------------------------------------------------------------------------
-
 using System;
 using System.Threading;
 using System.Collections;
-using System.Configuration;
 
 #region Credits
 // Stephen Toub

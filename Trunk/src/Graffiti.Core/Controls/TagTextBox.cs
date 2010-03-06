@@ -5,6 +5,7 @@ using System.Web.UI.WebControls;
 using System.Web.UI.HtmlControls;
 using System.Web.UI;
 using System.Web;
+using Graffiti.Core.Services;
 
 [assembly: WebResource("Graffiti.Core.Controls.TagTextBox.js", "text/javascript")]
 namespace Graffiti.Core
@@ -12,6 +13,7 @@ namespace Graffiti.Core
     public class TagTextBox : TextBox
     {
         HtmlInputHidden _tagsList = null;
+        private ITagService _tagService = ServiceLocator.Get<ITagService>();
 
         protected override void CreateChildControls()
         {
@@ -23,7 +25,7 @@ namespace Graffiti.Core
 
             StringBuilder tagList = new StringBuilder();
             Dictionary<string, bool> renderedTags = new Dictionary<string, bool>();
-            foreach (Tag tag in TagCollection.FetchAll())
+            foreach (Tag tag in _tagService.FetchAllTags())
             {
                 if (!renderedTags.ContainsKey(tag.Name))
                 {

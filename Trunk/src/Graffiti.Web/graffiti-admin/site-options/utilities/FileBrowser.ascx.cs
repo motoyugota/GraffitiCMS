@@ -1,26 +1,21 @@
 using System;
 using System.Collections.Generic;
-using System.Data;
-using System.Configuration;
-using System.Collections;
 using System.IO;
 using System.Reflection;
 using System.Text;
-using System.Text.RegularExpressions;
-using System.Web;
-using System.Web.Security;
-using System.Web.Services.Description;
-using System.Web.UI;
 using System.Web.UI.WebControls;
-using System.Web.UI.WebControls.WebParts;
 using System.Web.UI.HtmlControls;
 using Graffiti.Core;
+using Graffiti.Core.Services;
 using Telligent.Glow;
 
 namespace Graffiti.Web
 {
     public class FileBrowserControl : System.Web.UI.UserControl
     {
+
+        private IVersionStoreService _versionStoreService = ServiceLocator.Get<IVersionStoreService>();
+
 		#region private variables
 
 		private string platformFilesMediaPath = Path.Combine("files", "media");
@@ -193,9 +188,9 @@ namespace Graffiti.Web
                 {
                     bool isversioned = FileFilters.IsVersionable(fi.Name);
 
-                    if (isversioned && VersionStore.CurrentVersion(fi) == 0)
+                    if (isversioned && _versionStoreService.CurrentVersion(fi) == 0)
                     {
-                        VersionStore.VersionFile(fi);
+                       _versionStoreService.VersionFile(fi, GraffitiUsers.Current.Name, SiteSettings.CurrentUserTime);
                     }
 
                     using (StreamWriter sw = new StreamWriter(fi.FullName, false))
@@ -207,9 +202,9 @@ namespace Graffiti.Web
                     if (isversioned)
                     {
                         fi = GetFile();
-                        VersionStore.VersionFile(fi);
+                        _versionStoreService.VersionFile(fi, GraffitiUsers.Current.Name, SiteSettings.CurrentUserTime);
 
-                        version = VersionStore.CurrentVersion(fi).ToString();
+                        version = _versionStoreService.CurrentVersion(fi).ToString();
 
                         SetVersioning(fi.FullName);
                     }
@@ -267,7 +262,7 @@ namespace Graffiti.Web
         private void SetVersioning(string fileName)
         {
             // set up versioning
-            VersionStoreCollection vsc = VersionStore.GetVersionHistory(fileName);
+            VersionStoreCollection vsc = new VersionStoreCollection(_versionStoreService.FetchVersionHistory(fileName, false));
 
             if (vsc.Count > 1)
             {
@@ -371,7 +366,7 @@ namespace Graffiti.Web
 
             if (FileFilters.IsVersionable(fi.Name))
             {
-                FileDetailsRevision.Text = (VersionStore.CurrentVersion(fi) == 0 ? 1 : VersionStore.CurrentVersion(fi)).ToString();
+                FileDetailsRevision.Text = (_versionStoreService.CurrentVersion(fi) == 0 ? 1 : _versionStoreService.CurrentVersion(fi)).ToString();
             }
             else
             {

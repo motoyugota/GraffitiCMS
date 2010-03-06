@@ -1,3 +1,4 @@
+
 namespace Graffiti.Core
 {
     /// <summary>
@@ -5,7 +6,6 @@ namespace Graffiti.Core
     /// </summary>
     public class TagPage : TemplatedThemePage
     {
-
         protected override string ViewLookUp(string baseName, string defaultViewName)
         {
             if (ViewExists("tag" + baseName))
@@ -35,7 +35,7 @@ namespace Graffiti.Core
             PostCollection pc = ZCache.Get<PostCollection>("Tags-" + TagName);
             if (pc == null)
             {
-                pc = Post.FetchPostsByTag(TagName);
+                pc = new PostCollection(_postService.FetchPostsByTag(TagName));
                 ZCache.InsertCache("Tags-" + TagName, pc, 60);
             }
 

@@ -1,4 +1,5 @@
 <%@ Page Language="C#" MasterPageFile="~/graffiti-admin/common/AdminMasterPage.master" Title="Graffiti Reports" Inherits="Graffiti.Core.ControlPanelPage" %>
+<%@ Import Namespace="System.Linq"%>
 <%@ Register TagPrefix="reports" TagName="daterangefilter" Src="~/graffiti-admin/reporting/daterangefilter_id.ascx" %>
 <%@ Import Namespace="DataBuddy" %>
 <%@ Import Namespace="System.Collections.Generic" %>
@@ -19,11 +20,11 @@
 		int postId;
 		int.TryParse(Request.QueryString["id"], out postId);
 
-		Post post = new Post(postId);
+		Post post = _postService.FetchPost(postId);
 		PostLink.Text = post.Title;
 		PostLink.NavigateUrl = post.Url;
 
-        if (!RolePermissionManager.GetPermissions(post.CategoryId, GraffitiUsers.Current).Read)
+        if (!_rolePermissionService.GetPermissions(post.CategoryId, GraffitiUsers.Current).Read)
         {
             Response.Redirect("~/graffiti-admin/");
             return;
@@ -63,14 +64,7 @@
                 lblAverageViewsDay.Text = "n/a";
             }
 
-            Query q = Comment.CreateQuery();
-            q.AndWhere(Comment.Columns.IsPublished, false);
-            q.AndWhere(Comment.Columns.IsDeleted, false);
-            q.AndWhere(Comment.Columns.PostId, postId);
-            q.AndWhere(Comment.Columns.Published, dateRange.Begin, Comparison.GreaterThan);
-            q.AndWhere(Comment.Columns.Published, dateRange.End, Comparison.LessOrEquals);
-
-            CommentCollection cc = CommentCollection.FetchByQuery(q);
+            CommentCollection cc = new CommentCollection(_commentService.FetchComments().Where(x => ((!x.IsPublished) && (!x.IsDeleted) && (x.PostId == postId) && (DateTime.Compare(x.Published, dateRange.Begin)>0) && (DateTime.Compare(x.Published, dateRange.End)<0))).ToList());
 
             PendingCommentList.DataSource = cc;
             PendingCommentList.DataBind();

@@ -1,7 +1,6 @@
 using System;
 using System.Configuration;
 using System.Web;
-using System.Web.UI;
 using Graffiti.Core;
 using Glow = Telligent.Glow;
 

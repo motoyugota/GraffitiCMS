@@ -2,12 +2,14 @@ using System;
 using System.Web;
 using Graffiti.Core;
 using System.Text.RegularExpressions;
+using Graffiti.Core.Services;
 
 namespace Graffiti.Web
 {
 
 public class ajax : IHttpHandler
 {
+    private ICommentService _commentService = ServiceLocator.Get<ICommentService>();
 
     public void ProcessRequest(HttpContext context)
     {
@@ -52,7 +54,7 @@ public class ajax : IHttpHandler
 
                 comment.Published = DateTime.Now.AddHours(SiteSettings.Get().TimeZoneOffSet);
 
-                comment.Save();
+                comment = _commentService.SaveComment(comment);
                 context.Response.Write("Your comment has been received and will be published shortly. Thanks!");
 
                 break;

@@ -4,8 +4,8 @@ using System.Text.RegularExpressions;
 using System.Web;
 using System.Collections;
 using CookComputing.XmlRpc;
-using DataBuddy;
 using System.Collections.Generic;
+using Graffiti.Core.Services;
 
 namespace Graffiti.Core
 {
@@ -148,6 +148,11 @@ namespace Graffiti.Core
 
 		#endregion
 
+	    private static IPostService _postService = ServiceLocator.Get<IPostService>();
+	    private static ICategoryService _categoryService = ServiceLocator.Get<ICategoryService>();
+	    private static ITagService _tagService = ServiceLocator.Get<ITagService>();
+	    private static IVersionStoreService _versionStoreService = ServiceLocator.Get<IVersionStoreService>();
+
 		#region MetaWeblog API Members
 
         private static Graffiti.Core.Category AddOrFetchCategory(string name, IGraffitiUser user)
@@ -158,7 +163,7 @@ namespace Graffiti.Core
                 string parentName = name.Substring(0, index).Trim();
                 string childName = name.Substring(index+1).Trim();
 
-                Graffiti.Core.Category parent = new CategoryController().GetCachedCategory(parentName, true);
+                Graffiti.Core.Category parent = _categoryService.FetchCachedCategory(parentName, true);
 
                 if (parent != null)
                 {
@@ -173,7 +178,7 @@ namespace Graffiti.Core
                         Core.Category child = new Core.Category();
                         child.Name = HttpUtility.HtmlEncode(childName);
                         child.ParentId = parent.Id;
-                        child.Save();
+                        _categoryService.SaveCategory(child);
 
                         return child;
                     }
@@ -184,12 +189,12 @@ namespace Graffiti.Core
                     {
                         parent = new Core.Category();
                         parent.Name = HttpUtility.HtmlEncode(parentName);
-                        parent.Save();
+                        parent = _categoryService.SaveCategory(parent);
 
                         Core.Category child = new Core.Category();
                         child.Name = HttpUtility.HtmlEncode(childName);
                         child.ParentId = parent.Id;
-                        child.Save();
+                        child = _categoryService.SaveCategory(child);
 
                         return child;
                     }
@@ -198,14 +203,14 @@ namespace Graffiti.Core
             else
             {
 
-                Core.Category category = new CategoryController().GetCachedCategory(name, true);
+                Core.Category category = _categoryService.FetchCachedCategory(name, true);
                 if (category == null)
                 {
                     if (GraffitiUsers.IsAdmin(user))
                     {
                         category = new Core.Category();
                         category.Name = name;
-                        category.Save();
+                        category = _categoryService.SaveCategory(category);
                     }
                 }
 
@@ -238,7 +243,7 @@ namespace Graffiti.Core
                 }
                 else
                 {
-                    postToAdd.CategoryId = CategoryController.UnCategorizedId;
+                    postToAdd.CategoryId = _categoryService.UnCategorizedId();
                 }
 
 			    postToAdd.Name = post.GetSlug();
@@ -293,7 +298,7 @@ namespace Graffiti.Core
 		{
 			if(ValidateUser(username,password))
 			{
-                Graffiti.Core.Post wp = new Graffiti.Core.Post(postid);
+                Graffiti.Core.Post wp = _postService.FetchPost(postid);
 			    IGraffitiUser user = GraffitiUsers.Current;
 
                 if(post.categories != null && post.categories.Length > 0)
@@ -359,7 +364,7 @@ namespace Graffiti.Core
 		{
 			if(ValidateUser(username,password))
 			{
-                VersionStoreCollection vsc = VersionStore.GetVersionHistory(Convert.ToInt32(postid));
+                VersionStoreCollection vsc = new VersionStoreCollection(_versionStoreService.FetchVersionHistory(Convert.ToInt32(postid)));
 
                 Graffiti.Core.Post p = new Graffiti.Core.Post();
 
@@ -376,7 +381,7 @@ namespace Graffiti.Core
                 }
                 else
                 {
-                    p = new Graffiti.Core.Post(postid);
+                    p = _postService.FetchPost(postid);
                 }
 
                 return ConvertToPost(p);
@@ -394,10 +399,9 @@ namespace Graffiti.Core
 		{
 			if(ValidateUser(username,password))
 			{
-			    CategoryCollection cc = new CategoryController().GetAllTopLevelCachedCategories();
                 ArrayList al = new ArrayList();
 				Macros m = new Macros();
-				foreach(Graffiti.Core.Category c in cc)
+				foreach(Graffiti.Core.Category c in _categoryService.FetchAllTopLevelCachedCategories())
 				{
 					CategoryInfo ci = new CategoryInfo();
 				    ci.categoryid = c.Id.ToString();
@@ -432,7 +436,7 @@ namespace Graffiti.Core
             if (ValidateUser(username, password))
             {
                 var wpGetTagsList = new List<Tag>();
-                var tags = TagWeightCollection.FetchAll();
+                var tags = new TagWeightCollection(_tagService.FetchAllTagWeights());
                 foreach (var tag in tags)
                 {
                     var metablogTag = new Tag();
@@ -456,12 +460,7 @@ namespace Graffiti.Core
 		{
 			if(ValidateUser(username,password))
 			{
-			    Query q = Graffiti.Core.Post.CreateQuery();
-                q.AndWhere(Core.Post.Columns.IsDeleted, false);
-			    q.Top = numberOfPosts.ToString();
-                q.OrderByDesc(Graffiti.Core.Post.Columns.Published);
-                PostCollection pc = new PostCollection();
-                pc.LoadAndCloseReader(q.ExecuteReader());
+			    PostCollection pc = new PostCollection(_postService.FetchRecentPosts(numberOfPosts));
 				
 				ArrayList al = new ArrayList(pc.Count);
 				foreach(Graffiti.Core.Post p in pc)
@@ -554,7 +553,7 @@ namespace Graffiti.Core
 		{
 			if(ValidateUser(username,password))
 			{
-			    Graffiti.Core.Post.Delete(postid);
+			    _postService.DeletePost(postid);
 				return true;
 			}
 
@@ -609,7 +608,7 @@ namespace Graffiti.Core
 			MetaWeblog.Post p = new Post();
 
             if(wp.Category.ParentId > 0)
-                p.categories = new string[] {new CategoryController().GetCachedCategory(wp.Category.ParentId,false).Name + " > " +  wp.Category.Name };
+                p.categories = new string[] {_categoryService.FetchCachedCategory(wp.Category.ParentId,false).Name + " > " +  wp.Category.Name };
             else
 		        p.categories = new string[] {wp.Category.Name};
 		    p.dateCreated = wp.Published;//.ToUniversalTime();

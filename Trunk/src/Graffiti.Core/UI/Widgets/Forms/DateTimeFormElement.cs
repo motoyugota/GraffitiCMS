@@ -1,9 +1,7 @@
 using System.Collections.Specialized;
-using System.Configuration;
 using System.Text;
 using System.Web;
 using System.Web.UI;
-using System.IO;
 
 namespace Graffiti.Core
 {

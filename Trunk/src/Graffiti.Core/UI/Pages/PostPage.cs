@@ -1,6 +1,4 @@
-using System;
 using System.Web;
-using DataBuddy;
 
 namespace Graffiti.Core
 {
@@ -16,7 +14,7 @@ namespace Graffiti.Core
 
         protected override string ViewLookUp(string baseName, string defaultViewName)
         {
-            Category category = new CategoryController().GetCachedCategory(CategoryID, false);
+            Category category = _categoryService.FetchCachedCategory(CategoryID, false);
 
             if (ViewExists(CategoryName + "." + PostName + baseName))
                 return CategoryName + "." + PostName + baseName;
@@ -53,7 +51,7 @@ namespace Graffiti.Core
             else if (ViewExists(CategoryName + baseName))
                 return CategoryName + baseName;
 
-            else if (CategoryID == CategoryController.UnCategorizedId && ViewExists("page" + baseName))
+            else if (CategoryID == _categoryService.UnCategorizedId() && ViewExists("page" + baseName))
                 return "page" + baseName;
 
             else if (ViewExists("post" + baseName))
@@ -70,7 +68,7 @@ namespace Graffiti.Core
 
             graffitiContext["where"] = "post";
 
-            Post post = Post.GetCachedPost(PostId);
+            Post post = _postService.FetchCachedPost(PostId);
 
             if (post.IsDeleted || (!post.IsPublished && GraffitiUsers.Current != null))
             {
@@ -82,7 +80,7 @@ namespace Graffiti.Core
             }
             else if (Context.Request.Cookies["Graffiti-Post-" + PostId] == null)
             {
-                Post.UpdateViewCount(PostId);
+                _postService.UpdateViewCount(PostId);
                 //SPs.UpdatePostView(PostId).Execute();
                 HttpCookie cookie = new HttpCookie("Graffiti-Post-" + PostId, PostId.ToString());
                 Context.Response.Cookies.Add(cookie);

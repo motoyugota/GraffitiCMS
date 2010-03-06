@@ -1,6 +1,4 @@
 using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Web;
 using System.Xml;
 
@@ -17,25 +15,24 @@ namespace Graffiti.Core.API
             {
                 case "GET":
 
-                    CategoryController controller = new CategoryController();
                     CategoryCollection cc = null;
                     int count = 1;
                     if(Request.QueryString["id"] != null)
                     {
-                        Category category = controller.GetCachedCategory(Int32.Parse(Request.QueryString["id"]), false);
+                        Category category = _categoryService.FetchCachedCategory(Int32.Parse(Request.QueryString["id"]), false);
                         cc = new CategoryCollection();
                         cc.Add(category);
                     }
                     else if (Request.QueryString["name"] != null)
                     {
-                        Category category = controller.GetCachedCategory(Request.QueryString["name"], false);
+                        Category category = _categoryService.FetchCachedCategory(Request.QueryString["name"], false);
                         cc = new CategoryCollection();
                         cc.Add(category);
                     }
                     else
                     {
-                        cc = controller.GetAllTopLevelCachedCategories();
-                        count = controller.GetAllCachedCategories().Count;
+                        cc = new CategoryCollection(_categoryService.FetchAllTopLevelCachedCategories());
+                        count = new CategoryCollection(_categoryService.FetchAllCachedCategories()).Count;
                     }
                     writer.WriteStartElement("categories");
                         writer.WriteAttributeString("pageIndex", "1");
@@ -72,13 +69,13 @@ namespace Graffiti.Core.API
                     {
                         XmlAttribute categoryIdAttribute = doc.SelectSingleNode("/category").Attributes["id"];
 
-                        foreach (Post p in PostCollection.FetchAll())
+                        foreach (Post p in _postService.FetchPosts())
                         {
                             if (p.CategoryId == Int32.Parse(categoryIdAttribute.Value))
                             {
                                 if (p.IsDeleted)
                                 {
-                                    Post.DestroyDeletedPost(p.Id);
+                                    _postService.DestroyDeletedPost(p);
                                 }
                                 else
                                 {
@@ -89,8 +86,8 @@ namespace Graffiti.Core.API
                             }
                         }
 
-                        Category.Destroy(Int32.Parse(categoryIdAttribute.Value));
-                        CategoryController.Reset();
+                        _categoryService.DestroyCategory(Int32.Parse(categoryIdAttribute.Value));
+                        _categoryService.Reset();
 
                         writer.WriteRaw("<result id=\"" + Int32.Parse(categoryIdAttribute.Value) + "\">deleted</result>");
                     }
@@ -114,7 +111,7 @@ namespace Graffiti.Core.API
             {
                 int pid = Int32.Parse(categoryIdAttribute.Value);
                 if (pid > 0)
-                    category = new Category(pid);
+                    category = _categoryService.FetchCategory(pid);
                 else
                     category = new Category();
             }
@@ -127,7 +124,7 @@ namespace Graffiti.Core.API
 
                 if(category.ParentId > 0)
                 {
-                    Category parentCategory = new CategoryController().GetCachedCategory(category.ParentId, true);
+                    Category parentCategory = _categoryService.FetchCachedCategory(category.ParentId, true);
                     if (parentCategory == null)
                         throw new RESTConflict("The parent category " + category.ParentId + " does not exist");
 
@@ -160,7 +157,7 @@ namespace Graffiti.Core.API
 
             try
             {
-                category.Save(GraffitiUsers.Current.Name);
+                category = _categoryService.SaveCategory(category, GraffitiUsers.Current.Name);
                 return "<result id = \"" + category.Id + "\">true</result>";
             }
             catch(Exception ex)

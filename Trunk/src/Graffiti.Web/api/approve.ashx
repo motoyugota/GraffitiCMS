@@ -11,6 +11,8 @@ namespace Graffiti.Web
 {
     public class Approve : IHttpHandler 
 	{
+        
+        private IRolePermissionService _rolePermissionService = ServiceLocator.Get<IRolePermissionService>():
 	    
 		public void ProcessRequest (HttpContext context) 
 		{
@@ -24,7 +26,7 @@ namespace Graffiti.Web
                 IGraffitiUser user = GraffitiUsers.GetUser(u);
                 Post the_Post = new Post(p);
 
-                Permission perm = RolePermissionManager.GetPermissions(the_Post.CategoryId, user);
+                Permission perm = _rolePermissionService.GetPermissions(the_Post.CategoryId, user);
                 if (user != null && (GraffitiUsers.IsAdmin(user) || perm.Publish))
                 {
                     if (user.UniqueId == new Guid(key))

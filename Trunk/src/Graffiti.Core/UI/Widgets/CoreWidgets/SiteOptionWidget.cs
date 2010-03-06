@@ -1,4 +1,3 @@
-using System.Collections.Specialized;
 using System.Text;
 using System.Web;
 
@@ -19,15 +18,15 @@ namespace Graffiti.Core
                 TemplatedThemePage ttp = context.Handler as TemplatedThemePage;
                 if(ttp != null && ttp.PostId > 0)
                 {
-                    Post p = new Post(ttp.PostId);
-                    if (RolePermissionManager.GetPermissions(p.CategoryId, GraffitiUsers.Current).Edit)
+                    Post p = _postService.FetchPost(ttp.PostId);
+                    if (_rolePermissionService.GetPermissions(p.CategoryId, GraffitiUsers.Current).Edit)
                     {
                         sb.AppendFormat("<li><a href=\"{0}\">{1}</a></li>\n", urls.Edit(ttp.PostId), "Edit this Post");
                     }
                 }
             }
 
-            if (RolePermissionManager.CanViewControlPanel(GraffitiUsers.Current))
+            if (_rolePermissionService.CanViewControlPanel(GraffitiUsers.Current))
             {
                 sb.AppendFormat("<li><a href=\"{0}\">{1}</a></li>\n", urls.Write, "Write a new Post");
                 sb.AppendFormat("<li><a href=\"{0}\">{1}</a></li>\n", urls.Admin, "Control Panel");

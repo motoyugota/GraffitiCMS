@@ -1,13 +1,24 @@
 ﻿using System;
 using System.Web;
-using System.Web.Compilation;
 using System.Web.Routing;
-using DataBuddy;
+using Graffiti.Core.Services;
 
 namespace Graffiti.Core
 {
 	public class RssHandler : IRouteHandler
 	{
+        private ICategoryService _categoryService;
+
+        public RssHandler(ICategoryService categoryService) 
+        {
+            _categoryService = categoryService;
+        }
+
+        public RssHandler()
+        {
+            _categoryService = ServiceLocator.Get<ICategoryService>();
+        }
+
 		public IHttpHandler GetHttpHandler(RequestContext requestContext)
 		{
 			string categoryOneName = requestContext.RouteData.Values["categoryone"] != null ? requestContext.RouteData.Values["categoryone"].ToString() : null;
@@ -49,7 +60,7 @@ namespace Graffiti.Core
 
 			if (!String.IsNullOrEmpty(categoryName))
 			{
-				var category = new CategoryController().GetCachedCategoryByLinkName(categoryName, false);
+				var category = _categoryService.FetchCachedCategoryByLinkName(categoryName, false);
 
 				feed.CategoryID = category.Id;
 				feed.CategoryName = category.LinkName;

@@ -1,7 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
-using DataBuddy;
+using System.Linq;
+using Graffiti.Core.Services;
 
 namespace Graffiti.Core.API
 {
@@ -10,6 +11,9 @@ namespace Graffiti.Core.API
     /// </summary>
     public class CommentFilter
     {
+
+        private ICommentService _commentService;
+
         private string _author = string.Empty;
         private int _categoryId = 0;
         private bool _isDeleted = false;
@@ -23,6 +27,7 @@ namespace Graffiti.Core.API
         
         private CommentFilter()
         {
+            _commentService = ServiceLocator.Get<ICommentService>();
         }
 
 
@@ -86,47 +91,51 @@ namespace Graffiti.Core.API
         }
 
 
-        // generate query object from filter
-        public Query ToQuery()
+        public IList<Comment> ToQuery()
         {
-            Query query = Comment.CreateQuery();
+            return ToQuery(true);
+        }
+
+        // generate query object from filter
+        public IList<Comment> ToQuery(bool paged)
+        {
+            IList<Comment> comments = _commentService.FetchComments();
 
             if (Id <= 0)
             {
                 if (!string.IsNullOrEmpty(Author))
-                    query.AndWhere(Post.Columns.UserName, Author);
+                    comments = comments.Where(x => x.UserName == Author).ToList();
 
                 if (PostId > 0)
                 {
-                        query.AndWhere(Comment.Columns.PostId, PostId);
+                    comments = comments.Where(x => x.PostId == PostId).ToList();
                 }
 
                 if (SpamScore > 0)
-                    query.AndWhere(Comment.Columns.SpamScore, SpamScore, Comparison.GreaterOrEquals);
+                    comments = comments.Where(x => x.SpamScore >= SpamScore).ToList();
 
                 if (!string.IsNullOrEmpty(IPAddress))
-                    query.AndWhere(Comment.Columns.IPAddress, IPAddress);
+                    comments = comments.Where(x => x.IPAddress == IPAddress).ToList();
 
                 if (!string.IsNullOrEmpty(Name))
-                    query.AndWhere(Comment.Columns.Name, Name);
+                    comments = comments.Where(x => x.Name == Name).ToList();
 
-
-                query.AndWhere(Comment.Columns.IsDeleted, IsDeleted);
+                comments = comments.Where(x => x.IsDeleted == IsDeleted).ToList();
 
                 if (IsPublished != TrueFalseIgnore.Ignore)
-                    query.AndWhere(Comment.Columns.IsPublished, IsPublished == TrueFalseIgnore.True ? true : false);
+                    comments = comments.Where(x => x.IsPublished == (IsPublished == TrueFalseIgnore.True ? true : false)).ToList();
 
-                query.PageIndex = PageIndex;
-                query.PageSize = PageSize;
+                comments = comments.OrderByDescending(x => x.Published).ToList();
 
-                query.OrderByDesc(Comment.Columns.Published);
+                if (PageIndex > 0 && PageSize > 0 && comments.Count > PageSize && paged)
+                    comments = comments.Skip((PageIndex - 1) * PageSize).Take(PageSize).ToList();
             }
             else
             {
-                query.AndWhere(Comment.Columns.Id, Id);
+                comments = comments.Where(x => x.Id == Id).ToList();
             }
 
-            return query;
+            return comments;
         }
 
         #region Properties...

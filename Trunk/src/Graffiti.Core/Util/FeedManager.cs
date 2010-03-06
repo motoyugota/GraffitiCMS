@@ -1,12 +1,14 @@
 using System;
 using System.Collections.Generic;
 using System.Security;
-using DataBuddy;
+using Graffiti.Core.Services;
 
 namespace Graffiti.Core
 {
     public static class FeedManager
     {
+        private static IObjectStoreService _objectStoreService = ServiceLocator.Get<IObjectStoreService>();
+
         public static Feed AddFeed(Feed feed)
         {
             if (feed.Name == null)
@@ -27,7 +29,7 @@ namespace Graffiti.Core
             os.Data = ObjectManager.ConvertToString(feed);
             os.ContentType = "feed/xml";
             os.Type = typeof (Feed).FullName;
-            os.Save();
+            os = _objectStoreService.SaveObjectStore(os);
 
             ZCache.RemoveCache("Feed-Objects");
 
@@ -41,10 +43,10 @@ namespace Graffiti.Core
 
         private static void UpdateFeed(Feed feed, bool resetCache)
         {
-            ObjectStore os = ObjectStore.FetchByColumn(ObjectStore.Columns.UniqueId,feed.Id);
+            ObjectStore os = _objectStoreService.FetchByUniqueId(feed.Id);
             os.Data = ObjectManager.ConvertToString(feed);
             os.Version++;
-            os.Save();
+            os = _objectStoreService.SaveObjectStore(os);
 
             if(resetCache)
                 ZCache.RemoveCache("Feed-Objects");
@@ -71,12 +73,8 @@ namespace Graffiti.Core
             if(feeds == null)
             {
                 feeds = new Dictionary<Guid, Feed>();
-                ObjectStoreCollection osc = new ObjectStoreCollection();
-                Query q = ObjectStore.CreateQuery();
-                q.AndWhere(ObjectStore.Columns.ContentType, "feed/xml");
-                osc.LoadAndCloseReader(q.ExecuteReader());
 
-                foreach(ObjectStore os in osc)
+                foreach (ObjectStore os in _objectStoreService.FetchByContentType("feed/xml"))
                 {
                     Feed feed = ObjectManager.ConvertToObject<Feed>(os.Data);
                     feeds.Add(feed.Id,feed);

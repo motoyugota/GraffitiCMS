@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Text;
+using Graffiti.Core.Services;
 
 namespace Graffiti.Core
 {
@@ -11,6 +12,8 @@ namespace Graffiti.Core
     [Serializable]
     public class CustomFormSettings
     {
+        private static ICategoryService _categoryService = ServiceLocator.Get<ICategoryService>();
+
         public static readonly string DefaultCustomFormName = "Default::Custom::Form";
         public string Name;
         public int CategoryId;
@@ -46,7 +49,7 @@ namespace Graffiti.Core
         public static CustomFormSettings Get(int categoryId, bool processFormInheritance)
         {
             if (categoryId > 0)
-                return Get(new CategoryController().GetCachedCategory(categoryId,false), processFormInheritance);
+                return Get(_categoryService.FetchCachedCategory(categoryId,false), processFormInheritance);
             else
                 return Get();
         }

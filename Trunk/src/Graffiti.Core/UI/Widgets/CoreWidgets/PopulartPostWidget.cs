@@ -56,7 +56,7 @@ namespace Graffiti.Core
 
             ListFormElement lfeCats = new ListFormElement("categoryId", "Filter by Category", "Do you want to filter by a category?");
             lfeCats.Add(new ListItemFormElement("All Categories", "-1", CategoryId == -1));
-            foreach (Category c in new CategoryController().GetTopLevelCachedCategories())
+            foreach (Category c in _categoryService.FetchTopLevelCachedCategories())
             {
                 lfeCats.Add(new ListItemFormElement(c.Name, c.Id.ToString(), c.Id == CategoryId));
                 if (c.HasChildren)

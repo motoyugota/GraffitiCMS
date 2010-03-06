@@ -1,6 +1,4 @@
-using System.Collections;
 using System.Text;
-using DataBuddy;
 
 namespace Graffiti.Core
 {
@@ -10,7 +8,6 @@ namespace Graffiti.Core
     [WidgetInfo("bf6171d0-e9d5-46ba-bce3-be104a5e6fbd", "Uncategorized Posts Widget", "Represents a box")]
     public class PageWidget : Widget
     {
-
         public override string Name
         {
             get
@@ -47,7 +44,7 @@ namespace Graffiti.Core
                 pc = new PostCollection();
                 foreach(int i in PostIds)
                 {
-                    Post p = new Post(i);
+                    Post p = _postService.FetchPost(i);
                     if(!p.IsNew && !p.IsDeleted && p.IsPublished )
                         pc.Add(p);
                 }

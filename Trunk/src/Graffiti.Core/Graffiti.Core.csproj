@@ -64,6 +64,10 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\Lib\Lucene.Net.dll</HintPath>
     </Reference>
+    <Reference Include="Ninject, Version=2.0.0.0, Culture=neutral, PublicKeyToken=c7192dc5380945e7, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\Lib\Ninject.dll</HintPath>
+    </Reference>
     <Reference Include="NVelocity, Version=1.1.0.0, Culture=neutral, PublicKeyToken=407dd0808d44fbdc, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\Lib\NVelocity.dll</HintPath>
@@ -110,11 +114,34 @@
     <Compile Include="Controls\RepeaterPlusNone.cs" />
     <Compile Include="Controls\StatusMessage.cs" />
     <Compile Include="Controls\TagTextBox.cs" />
-    <Compile Include="Data\databuddy.cs" />
-    <Compile Include="Data\DataBuddyBase.cs" />
-    <Compile Include="Data\IMenuItem.cs" />
-    <Compile Include="Data\RolePermissionManager.cs" />
-    <Compile Include="Data\VersionStore.cs" />
+    <Compile Include="Entities\Enums\PostStatus.cs" />
+    <Compile Include="Entities\Enums\SortOrderType.cs" />
+    <Compile Include="Entities\Permission.cs" />
+    <Compile Include="Entities\PostCollection.cs" />
+    <Compile Include="Entities\ReportData.cs" />
+    <Compile Include="Entities\UserCollection.cs" />
+    <Compile Include="Entities\RoleCategoryPermissions.cs" />
+    <Compile Include="Entities\RoleCategoryPermissionsCollection.cs" />
+    <Compile Include="Entities\RolePermissions.cs" />
+    <Compile Include="Entities\RolePermissionsCollection.cs" />
+    <Compile Include="Entities\UserRole.cs" />
+    <Compile Include="Entities\UserRoleCollection.cs" />
+    <Compile Include="Entities\VersionStoreCollection.cs" />
+    <Compile Include="Entities\TagWeightCollection.cs" />
+    <Compile Include="Entities\CategoryCollection.cs" />
+    <Compile Include="Entities\CommentCollection.cs" />
+    <Compile Include="Entities\Interfaces\IMenuItem.cs" />
+    <Compile Include="Entities\LogCollection.cs" />
+    <Compile Include="Entities\ObjectStoreCollection.cs" />
+    <Compile Include="Entities\PostStatistic.cs" />
+    <Compile Include="Entities\PostStatisticCollection.cs" />
+    <Compile Include="Services\Interfaces\IReportService.cs" />
+    <Compile Include="Services\Interfaces\IVersionStoreService.cs" />
+    <Compile Include="Services\Interfaces\ILogService.cs" />
+    <Compile Include="Services\Interfaces\IRolePermissionService.cs" />
+    <Compile Include="Services\Interfaces\IObjectStoreService.cs" />
+    <Compile Include="Entities\TagCollection.cs" />
+    <Compile Include="Entities\VersionStore.cs" />
     <Compile Include="Events\GraffitiEventArgs.cs" />
     <Compile Include="Marketplace\CatalogInfo.cs" />
     <Compile Include="Marketplace\CategoryInfo.cs" />
@@ -136,6 +163,13 @@
     <Compile Include="Routing\RssHandler.cs" />
     <Compile Include="Routing\TagHandler.cs" />
     <Compile Include="Routing\UrlRouting.cs" />
+    <Compile Include="Services\Interfaces\ICommentService.cs" />
+    <Compile Include="Services\Interfaces\ITagService.cs" />
+    <Compile Include="Services\Interfaces\ICategoryService.cs" />
+    <Compile Include="Services\Interfaces\IPostService.cs" />
+    <Compile Include="Services\ServiceLocator.cs">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="UI\DisplayEntities\CategoryCount.cs" />
     <Compile Include="UI\DisplayEntities\AuthorCount.cs" />
     <Compile Include="UI\DisplayEntities\PostCount.cs" />
@@ -161,27 +195,24 @@
     <Compile Include="Util\Merger.cs" />
     <Compile Include="Util\Migrator.cs" />
     <Compile Include="Util\PostRevisionManager.cs" />
-    <Compile Include="Data\Users\AnonymousUser.cs" />
-    <Compile Include="Data\Users\ASPNetGraffitiUserController.cs" />
-    <Compile Include="Data\Users\ASPNetMembershipGraffitiUser.cs" />
-    <Compile Include="Data\Category.cs" />
-    <Compile Include="Data\Comments.cs" />
-    <Compile Include="Data\Data.cs" />
-    <Compile Include="Data\Users\GraffitiCoreUserController.cs" />
-    <Compile Include="Data\Users\GraffitiUser.cs" />
-    <Compile Include="Data\Users\GraffitiUsers.cs" />
-    <Compile Include="Data\Users\IGraffitiUser.cs" />
-    <Compile Include="Data\Users\IGraffitiUserController.cs" />
-    <Compile Include="Data\Log.cs" />
-    <Compile Include="Data\ObjectStore.cs" />
-    <Compile Include="Data\Post.cs" />
-    <Compile Include="Data\Reports.cs" />
-    <Compile Include="Data\SearchIndex.cs" />
-    <Compile Include="Data\Tag.cs" />
-    <Compile Include="Data\TagWeight.cs" />
-    <Compile Include="Data\TagWeightCloud.cs" />
-    <Compile Include="Data\Users\IUser.cs" />
-    <Compile Include="Data\Users\User.cs" />
+    <Compile Include="Entities\AnonymousUser.cs" />
+    <Compile Include="Entities\ASPNetMembershipGraffitiUser.cs" />
+    <Compile Include="Entities\Category.cs" />
+    <Compile Include="Entities\Comment.cs" />
+    <Compile Include="UI\Data.cs" />
+    <Compile Include="Entities\GraffitiUsers.cs" />
+    <Compile Include="Entities\Interfaces\IGraffitiUser.cs" />
+    <Compile Include="Services\Interfaces\IGraffitiUserService.cs" />
+    <Compile Include="Entities\Log.cs" />
+    <Compile Include="Entities\ObjectStore.cs" />
+    <Compile Include="Entities\Post.cs" />
+    <Compile Include="Entities\Reports.cs" />
+    <Compile Include="Entities\SearchIndex.cs" />
+    <Compile Include="Entities\Tag.cs" />
+    <Compile Include="Entities\TagWeight.cs" />
+    <Compile Include="Entities\TagWeightCloud.cs" />
+    <Compile Include="Entities\Interfaces\IUser.cs" />
+    <Compile Include="Entities\User.cs" />
     <Compile Include="Events\EventDetails.cs" />
     <Compile Include="Events\GraffitiApplication.cs" />
     <Compile Include="Events\GraffitiEvent.cs">
@@ -259,15 +290,6 @@
   </ItemGroup>
   <ItemGroup>
     <Service Include="{B4F97281-0DBD-4835-9ED8-7DFB966E87FF}" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\DataBuddy\DataBuddy.csproj">
-      <Project>{D1137CEB-9B3D-4774-B4F0-9BC0C272B8B8}</Project>
-      <Name>DataBuddy</Name>
-    </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Data\SubSonic\" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

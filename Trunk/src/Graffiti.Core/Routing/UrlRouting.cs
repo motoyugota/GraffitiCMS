@@ -1,5 +1,5 @@
-﻿using System;
-using System.Web.Routing;
+﻿using System.Web.Routing;
+using Graffiti.Core.Services;
 
 namespace Graffiti.Core
 {
@@ -39,7 +39,7 @@ namespace Graffiti.Core
 			// Allow plugins to add Routes before the default CategoryAndPost one
 			Events.Instance().ExecuteUrlRoutingAdd(routes);
 
-			routes.Add("CategoryAndPost", new Route("{*path}", new CategoryAndPostHandler()));
+			routes.Add("CategoryAndPost", new Route("{*path}", ServiceLocator.Get<CategoryAndPostHandler>()));
 		}
 
 		public static void AddRoute(Route route)

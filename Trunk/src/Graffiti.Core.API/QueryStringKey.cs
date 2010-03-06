@@ -1,3 +1,4 @@
+
 namespace Graffiti.Core.API
 {
     public class QueryStringKey

@@ -1,6 +1,6 @@
 using System;
+using System.Linq;
 using System.Xml;
-using DataBuddy;
 
 namespace Graffiti.Core.API
 {
@@ -49,14 +49,14 @@ namespace Graffiti.Core.API
         private static string DeleteComment(XmlDocument doc, IGraffitiUser user)
         {
             int id = Int32.Parse(doc.SelectSingleNode("/comment").Attributes["id"].Value);
-            Comment comment = new Comment(id);
+            Comment comment = _commentService.FetchComment(id);
             if (comment.IsNew)
                 throw new Exception("Comment with id " + id + " does not exist");
 
-            if (!RolePermissionManager.GetPermissions(comment.Post.CategoryId, user).Publish)
+            if (_rolePermissionService.GetPermissions(comment.Post.CategoryId, user).Publish)
                 throw new Exception("You do not have sufficient privileges to delete this comment.");
     
-            Comment.Delete(id);
+            _commentService.DeleteComment(id);
 
             return "<result id=\"" + id + "\">deleted</result>";
         }
@@ -66,7 +66,7 @@ namespace Graffiti.Core.API
         {
             int id = Int32.Parse(doc.SelectSingleNode("/comment").Attributes["id"].Value);
 
-            Comment comment = new Comment(id);
+            Comment comment = _commentService.FetchComment(id);
             if(comment.IsNew)
                 throw new Exception("Comment with id " + id + " does not exist. The REST API only supports updating existing comments at this time.");
 
@@ -80,10 +80,10 @@ namespace Graffiti.Core.API
             comment.Email = GetNodeValue(node.SelectSingleNode("email"), comment.Email);
             comment.WebSite = GetNodeValue(node.SelectSingleNode("webSite"), comment.WebSite);
 
-            if (!RolePermissionManager.GetPermissions(comment.Post.CategoryId, user).Edit)
+            if (_rolePermissionService.GetPermissions(comment.Post.CategoryId, user).Edit)
                 throw new Exception("You do not have sufficient privileges to update this comment.");
 
-            comment.Save(GraffitiUsers.Current.Name);
+            comment = _commentService.SaveComment(comment, GraffitiUsers.Current.Name);
 
             return "<result id=\"" + id + "\">true</result>"; 
         
@@ -92,16 +92,16 @@ namespace Graffiti.Core.API
         private void GetComments(XmlTextWriter writer)
         {
             CommentFilter filter = CommentFilter.FromQueryString(Request.QueryString);
-            Query q = filter.ToQuery();
-            q.AndWhere(Comment.Columns.IsDeleted, false);
-            CommentCollection comments = new CommentCollection();
-            comments.LoadAndCloseReader(q.ExecuteReader());
+            CommentCollection comments = new CommentCollection(filter.ToQuery().Where(x => !x.IsDeleted));
 
+            CommentFilter allFilter = CommentFilter.FromQueryString(Request.QueryString);
+            CommentCollection allComments = new CommentCollection(allFilter.ToQuery(false).Where(x => !x.IsDeleted));
 
             writer.WriteStartElement("comments");
-            writer.WriteAttributeString("pageIndex", q.PageIndex.ToString());
-            writer.WriteAttributeString("pageSize", q.PageSize.ToString());
-            writer.WriteAttributeString("totalComments", q.GetRecordCount().ToString());
+            writer.WriteAttributeString("pageIndex", filter.PageIndex.ToString());
+            writer.WriteAttributeString("pageSize", filter.PageSize.ToString());
+            writer.WriteAttributeString("totalComments", allComments.Count.ToString());
+            
             foreach (Comment coment in comments)
             {
                 ConvertComentToXML(coment, writer);

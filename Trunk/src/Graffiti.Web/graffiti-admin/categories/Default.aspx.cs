@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Web.UI.WebControls;
 using Graffiti.Core;
+using Graffiti.Core.Services;
 using Repeater=Graffiti.Core.Repeater;
 using System.Collections;
 
@@ -21,7 +22,7 @@ public partial class graffiti_admin_categories_Default : ManagerControlPanelPage
             {
                 if (!IsPostBack)
                 {
-                    Category c = new Category(Request.QueryString["id"]);
+                    Category c = _categoryService.FetchCategory(Request.QueryString["id"]);
 
                     if (!c.IsLoaded || c.IsNew)
                         throw new Exception("This category id does not exist");
@@ -42,7 +43,7 @@ public partial class graffiti_admin_categories_Default : ManagerControlPanelPage
                     txtExistingLinkName.Text =  Util.CleanForUrl(c.FormattedName).Replace("-", " ");
                     if (c.ParentId > 0)
                     {
-                        Category parent = new CategoryController().GetCachedCategory(c.ParentId, false);
+                        Category parent = _categoryService.FetchCachedCategory(c.ParentId, false);
                         existingParentLinkName.Text = parent.LinkName + "/ ";
                     }
                 }
@@ -56,7 +57,7 @@ public partial class graffiti_admin_categories_Default : ManagerControlPanelPage
             {
                 if (!IsPostBack)
                 {
-                    CategoryCollection parents = new CategoryController().GetTopLevelCachedCategories();
+                    CategoryCollection parents = new CategoryCollection(_categoryService.FetchTopLevelCachedCategories());
 
                     foreach(Category parent in parents)
                     {
@@ -85,7 +86,7 @@ public partial class graffiti_admin_categories_Default : ManagerControlPanelPage
         {
             try
             {
-                Category c = new Category(Request.QueryString["id"]);
+                Category c = _categoryService.FetchCategory(Request.QueryString["id"]);
                 c.Name = Server.HtmlEncode(txtExistingCategory.Text.Trim());
                 c.FormattedName = txtExistingLinkName.Text.Trim();
                 c.Body = Editor.Text;
@@ -93,7 +94,7 @@ public partial class graffiti_admin_categories_Default : ManagerControlPanelPage
                 c.MetaDescription = Server.HtmlEncode(txtMetaScription.Text.Trim());
                 c.MetaKeywords = Server.HtmlEncode(txtKeywords.Text.Trim());
                 c.SortOrder = (SortOrderType)Enum.Parse(typeof(SortOrderType), SortOrder.SelectedValue, true);
-                c.Save();
+                c = _categoryService.SaveCategory(c);
 
                 Response.Redirect("~/graffiti-admin/categories/?upd=" + c.Name);
             }
@@ -117,7 +118,7 @@ public partial class graffiti_admin_categories_Default : ManagerControlPanelPage
                 c.Name = Server.HtmlEncode(txtCategory.Text.Trim());
                 c.ParentId = Int32.Parse(Parent_Categories.SelectedValue);
 
-                c.Save();
+                c = _categoryService.SaveCategory(c);
                 Response.Redirect("~/graffiti-admin/categories/?id=" + c.Id + "&new=true");
 
             }
@@ -135,7 +136,7 @@ public partial class graffiti_admin_categories_Default : ManagerControlPanelPage
 
         private void GetCategories()
         {
-            cats = new CategoryController().GetCachedCategories();
+            cats = new CategoryCollection(_categoryService.FetchCachedCategories());
 
             List<Category> parents = (List<Category>)cats.FindAll(
                                                         delegate(Category c)
@@ -148,7 +149,7 @@ public partial class graffiti_admin_categories_Default : ManagerControlPanelPage
                 Category_List.Visible = true;
 
                 
-                CategoryCollection source = new CategoryController().GetTopLevelCachedCategories();
+                CategoryCollection source = new CategoryCollection(_categoryService.FetchTopLevelCachedCategories());
                 source.Sort(
                     delegate(Category c, Category c1)
                     {
@@ -220,7 +221,7 @@ public partial class graffiti_admin_categories_Default : ManagerControlPanelPage
         protected void lbDelete_Command(object sender, CommandEventArgs args)
         {
             int id = Convert.ToInt32(args.CommandArgument);
-            Category c = new Category(id);
+            Category c = _categoryService.FetchCategory(id);
 
             if (c.HasChildren)
             {
@@ -229,7 +230,8 @@ public partial class graffiti_admin_categories_Default : ManagerControlPanelPage
                 return;
             }
 
-            List<PostCount> postCounts = Post.GetPostCounts(id, null);
+            CategoryPermissionCheck callback = (_rolePermissionService.GetPermissions);
+            List<PostCount> postCounts = _postService.GetPostCounts(GraffitiUsers.Current, id, null, callback);
 
             if (postCounts != null && postCounts.Count > 0)
             {
@@ -255,9 +257,9 @@ public partial class graffiti_admin_categories_Default : ManagerControlPanelPage
             try
             {
                 // destroy any deleted posts in this category
-                Post.DestroyDeletedPostCascadingForCategory(id);
+                _postService.DestroyDeletedPostCascadingForCategory(id);
 
-                Category.Destroy(Category.Columns.Id, id);
+                _categoryService.DestroyCategory(id);
 
                 NavigationSettings navSettings = NavigationSettings.Get();
                 DynamicNavigationItem item = navSettings.Items == null ? null : navSettings.Items.Find(
@@ -269,7 +271,7 @@ public partial class graffiti_admin_categories_Default : ManagerControlPanelPage
                 if (item != null)
                     NavigationSettings.Remove(item.Id);
 
-                CategoryController.Reset();
+                _categoryService.Reset();
                 GetCategories();
 
                 Message.Text = "The category " + c.Name + " was deleted.";

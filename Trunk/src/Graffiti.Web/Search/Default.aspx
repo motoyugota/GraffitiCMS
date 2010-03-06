@@ -43,7 +43,7 @@
 
                 SearchQuery sq = new SearchQuery();
                 sq.PageSize = 25;
-                sq.PageIndex = PageIndex - 1;
+                sq.PageIndex = PageIndex;
                 sq.QueryText = new Macros().SearchQuery;
 
                 SearchResultSet<Post> posts = si.Search(sq);
@@ -51,7 +51,7 @@
 
                 foreach (Post p in posts)
                 {
-                    if (RolePermissionManager.GetPermissions(p.CategoryId, GraffitiUsers.Current).Read)
+                    if (_rolePermissionService.GetPermissions(p.CategoryId, GraffitiUsers.Current).Read)
                         filteredPosts.Add(p);
                 }
 

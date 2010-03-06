@@ -1,18 +1,8 @@
 using System;
-using System.Collections.Generic;
-using System.Data;
-using System.Configuration;
-using System.Collections;
-using System.IO;
+using System.Linq;
 using System.Web;
-using System.Web.Security;
-using System.Web.UI;
 using System.Web.UI.WebControls;
-using System.Web.UI.WebControls.WebParts;
-using System.Web.UI.HtmlControls;
-using System.Xml.Serialization;
 using Graffiti.Core;
-using DataBuddy;
 
 public partial class graffiti_admin_presentation_navigation_Default : AdminControlPanelPage
 {
@@ -26,7 +16,7 @@ public partial class graffiti_admin_presentation_navigation_Default : AdminContr
         LiHyperLink.SetNameToCompare(Context, "presentation");
 
         NavigationSettings settings = NavigationSettings.Get();
-        CategoryCollection cc = new CategoryController().GetTopLevelCachedCategories();
+        CategoryCollection cc = new CategoryCollection(_categoryService.FetchTopLevelCachedCategories());
 
         foreach(Category c in cc)
         {
@@ -44,16 +34,7 @@ public partial class graffiti_admin_presentation_navigation_Default : AdminContr
                 the_Categories.Items.Add(new ListItem(c.Name,"Category-" + c.UniqueId));
         }
                 
-
-        Query q = Post.CreateQuery();
-        q.AndWhere(Post.Columns.CategoryId, CategoryController.UnCategorizedId);
-        q.AndWhere(Post.Columns.IsDeleted, false);
-        q.AndWhere(Post.Columns.Status, 1);
-
-        PostCollection pc = new PostCollection();
-        pc.LoadAndCloseReader(q.ExecuteReader());
-
-        foreach (Post p in pc)
+        foreach (Post p in _postService.FetchPostsByCategory(_categoryService.UnCategorizedId()).Where(x => x.IsDeleted && x.Status == 1))
         {
             bool found = false;
             foreach (DynamicNavigationItem di in settings.SafeItems())

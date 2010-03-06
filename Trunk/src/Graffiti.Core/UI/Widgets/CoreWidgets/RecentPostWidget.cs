@@ -57,7 +57,7 @@ namespace Graffiti.Core
 
             ListFormElement lfeCats = new ListFormElement("categoryId", "Filter by Category", "Do you want to filter by a category?");
             lfeCats.Add(new ListItemFormElement("All Categories", "-1", CategoryId == -1));
-            foreach(Category c in new CategoryController().GetTopLevelCachedCategories())
+            foreach(Category c in _categoryService.FetchTopLevelCachedCategories())
             {
                 lfeCats.Add(new ListItemFormElement(c.Name, c.Id.ToString(), c.Id == CategoryId));
                 if(c.HasChildren)
@@ -82,12 +82,12 @@ namespace Graffiti.Core
             Data data = new Data();
             PostCollection pc = CategoryId > 0
                                     ? data.PostsByCategory(
-                                          new CategoryController().GetCachedCategory(CategoryId, true), NumberOfPosts)
+                                          _categoryService.FetchCachedCategory(CategoryId, true), NumberOfPosts)
                                     : data.RecentPosts(NumberOfPosts);
 
             foreach (Post p in pc)
             {
-                if(RolePermissionManager.GetPermissions(p.CategoryId, GraffitiUsers.Current).Read)
+                if(_rolePermissionService.GetPermissions(p.CategoryId, GraffitiUsers.Current).Read)
                     sb.AppendFormat("<li><a href=\"{0}\">{1}</a>{2}</li>\n", p.Url, p.Title, ShowExcerpt ? "<br />" + p.CustomExcerpt(100) : null);
             }
 

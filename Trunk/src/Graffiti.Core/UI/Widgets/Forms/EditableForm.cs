@@ -2,12 +2,17 @@ using System;
 using System.Collections.Specialized;
 using System.Text;
 using System.Web;
+using Graffiti.Core.Services;
 
 namespace Graffiti.Core
 {
     [Serializable]
     public abstract class EditableForm
     {
+        protected ICategoryService _categoryService = ServiceLocator.Get<ICategoryService>();
+        protected IPostService _postService = ServiceLocator.Get<IPostService>();
+        protected IRolePermissionService _rolePermissionService = ServiceLocator.Get<IRolePermissionService>();
+
         public virtual string EditUrl
         {
             get { return "edit.aspx"; }

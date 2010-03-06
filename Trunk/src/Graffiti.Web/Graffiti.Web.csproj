@@ -60,6 +60,14 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\Lib\Lucene.Net.dll</HintPath>
     </Reference>
+    <Reference Include="Ninject, Version=2.0.0.0, Culture=neutral, PublicKeyToken=c7192dc5380945e7, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\Lib\Ninject.dll</HintPath>
+    </Reference>
+    <Reference Include="Ninject.Extensions.Xml, Version=2.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\Lib\Ninject.Extensions.Xml.dll</HintPath>
+    </Reference>
     <Reference Include="NVelocity, Version=1.1.0.0, Culture=neutral, PublicKeyToken=407dd0808d44fbdc, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\Lib\NVelocity.dll</HintPath>
@@ -327,6 +335,7 @@
     <Compile Include="graffiti-admin\user-management\users\Default.aspx.designer.cs">
       <DependentUpon>Default.aspx</DependentUpon>
     </Compile>
+    <Compile Include="KernelFactory.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -694,6 +703,7 @@
     <Content Include="graffiti-admin\user-management\users\RenameUser.aspx" />
     <Content Include="login\Default.aspx" />
     <Content Include="login\reset-password\Default.aspx" />
+    <Content Include="resources\resources.xml" />
     <Content Include="robots.txt" />
     <Content Include="Search\Default.aspx" />
     <Content Include="Tags\Default.aspx" />
@@ -905,6 +915,7 @@
     <None Include="files\themes\training\layout.view" />
     <None Include="files\themes\training\home.layout.view" />
     <Content Include="files\themes\training\theme.config" />
+    <Content Include="Modules\ServicesModule.config" />
     <None Include="__utility\emails\Comment.view" />
     <None Include="__utility\emails\Contact.view" />
     <None Include="__utility\emails\ForgotPassword.view" />
@@ -923,10 +934,6 @@
     <None Include="__utility\pages\tag.view" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\DataBuddy\DataBuddy.csproj">
-      <Project>{D1137CEB-9B3D-4774-B4F0-9BC0C272B8B8}</Project>
-      <Name>DataBuddy</Name>
-    </ProjectReference>
     <ProjectReference Include="..\Graffiti.Core.API\Graffiti.Core.API.csproj">
       <Project>{523002D7-5FFF-4734-8345-7A759A677C92}</Project>
       <Name>Graffiti.Core.API</Name>

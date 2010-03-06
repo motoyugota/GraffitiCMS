@@ -2,11 +2,14 @@ using System;
 using System.IO;
 using System.Text;
 using System.Xml;
+using Graffiti.Core.Services;
 
 namespace Graffiti.Core
 {
     public static class ThemeConverter
     {
+        private static IVersionStoreService _versionStoreService = ServiceLocator.Get<IVersionStoreService>();
+
         public static void ToDisk(string xml, string basePath, bool overwrite)
         {
             ToDisk(xml, basePath, overwrite, null);
@@ -69,7 +72,7 @@ namespace Graffiti.Core
                     }
                 }
 
-                VersionStore.VersionFile(new FileInfo((fileToCreateName)));
+                _versionStoreService.VersionFile(new FileInfo((fileToCreateName)), GraffitiUsers.Current.Name, SiteSettings.CurrentUserTime);
             }
 
             foreach(XmlNode folderNode in node.SelectNodes("folders/folder"))

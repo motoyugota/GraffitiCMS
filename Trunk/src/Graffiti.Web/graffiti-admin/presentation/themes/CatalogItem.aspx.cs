@@ -1,14 +1,9 @@
 using System;
-using System.Configuration;
 using System.IO;
 using System.Net;
 using System.Text;
-using System.Web;
-using System.Web.UI;
-using System.Web.UI.WebControls;
 using Graffiti.Core;
 using Graffiti.Core.Marketplace;
-using Glow = Telligent.Glow;
 
 public partial class graffiti_admin_presentation_themes_CatalogItem : AdminControlPanelPage
 {

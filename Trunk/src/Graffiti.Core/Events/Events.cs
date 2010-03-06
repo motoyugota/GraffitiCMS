@@ -1,19 +1,20 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Web;
 using System.Web.Routing;
 using System.Xml;
-using DataBuddy;
+using Graffiti.Core.Services;
 
 namespace Graffiti.Core
 {
 
 
 	#region Event Handler Subscriptions
-	public delegate void DataObjectEventHandler(DataBuddyBase dataObject, EventArgs e);
+	public delegate void DataObjectEventHandler(object dataObject, EventArgs e);
 	public delegate void UserEventHandler(IGraffitiUser user, EventArgs e);
 	public delegate void RssEventHandler(XmlTextWriter writer, EventArgs e);
 	public delegate void RssPostEventHandler(XmlTextWriter writer, PostEventArgs e);
@@ -29,6 +30,8 @@ namespace Graffiti.Core
 	/// </summary>
 	public static class Events
 	{
+	    private static IObjectStoreService _objectStoreService = ServiceLocator.Get<IObjectStoreService>();
+
 		/// <summary>
 		/// Gets an event from the ObjectStore or creates a new one if it doesn't exist
 		/// </summary>
@@ -59,7 +62,7 @@ namespace Graffiti.Core
 			os.ContentType = "eventdetails/xml";
 			os.Data = ObjectManager.ConvertToString(ed);
 			os.Type = ed.GetType().ToString();
-			os.Save(GraffitiUsers.Current.Name);
+			_objectStoreService.SaveObjectStore(os, GraffitiUsers.Current.Name);
 
 			ResetCache();
 		}
@@ -118,9 +121,7 @@ namespace Graffiti.Core
 			{
 				details = new List<EventDetails>();
 
-				ObjectStoreCollection osc =
-					 ObjectStoreCollection.FetchByColumn(ObjectStore.Columns.ContentType, "eventdetails/xml");
-
+				ObjectStoreCollection osc = new ObjectStoreCollection(_objectStoreService.FetchByContentType("eventdetails/xml"));
 
 				string[] assemblies =
 					 Directory.GetFileSystemEntries(HttpRuntime.BinDirectory, "*.dll");
@@ -189,10 +190,7 @@ namespace Graffiti.Core
 		/// </summary>
 		private static ObjectStore GetEventFromStore(string typeName)
 		{
-			Query q = ObjectStore.CreateQuery();
-			q.AndWhere(ObjectStore.Columns.Name, typeName);
-			q.AndWhere(ObjectStore.Columns.ContentType, "eventdetails/xml");
-			return ObjectStore.FetchByQuery(q);
+            return _objectStoreService.FetchByNameAndContentType(typeName, "eventdetails/xml").FirstOrDefault();
 		}
 
 		/// <summary>

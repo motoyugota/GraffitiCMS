@@ -1,3 +1,4 @@
+
 namespace Graffiti.Core
 {
     public enum WidgetLocation

@@ -1,10 +1,7 @@
 using System;
 using System.Collections.Generic;
-using System.Security;
-using System.Web.UI;
 using System.Web.UI.WebControls;
 using Graffiti.Core;
-using System.Web.UI.HtmlControls;
 using System.Web;
 
 public partial class graffiti_admin_roles_Default : AdminControlPanelPage
@@ -27,7 +24,7 @@ public partial class graffiti_admin_roles_Default : AdminControlPanelPage
 
             if (!String.IsNullOrEmpty(role))
             {
-                RolePermissionsCollection rpc = RolePermissionManager.GetRolePermissions();
+                RolePermissionsCollection rpc = _rolePermissionService.GetRolePermissions();
 
                 RolePermissions rp = rpc.Find(
                                             delegate(RolePermissions rper)
@@ -57,7 +54,7 @@ public partial class graffiti_admin_roles_Default : AdminControlPanelPage
                 litExistingRoleName.Text = role;
                 PageText.Text = "Update " + role;
 
-                CategoryList.DataSource = new CategoryController().GetAllCachedCategories();
+                CategoryList.DataSource = _categoryService.FetchAllCachedCategories();
                 CategoryList.DataBind();
             }
 
@@ -69,7 +66,7 @@ public partial class graffiti_admin_roles_Default : AdminControlPanelPage
         {
             if (!Page.IsPostBack)
             {
-                RolePermissionsCollection rps = RolePermissionManager.GetRolePermissions();
+                RolePermissionsCollection rps = _rolePermissionService.GetRolePermissions();
 
                 rps.Sort(delegate(RolePermissions rp1, RolePermissions rp2) 
                 {
@@ -133,7 +130,7 @@ public partial class graffiti_admin_roles_Default : AdminControlPanelPage
             SetupTogglePermissionsScript(read, edit, publish, edit, "edit");
             SetupTogglePermissionsScript(read, edit, publish, publish, "publish");
 
-            RoleCategoryPermissionsCollection rpc = RolePermissionManager.GetRoleCategoryPermissions();
+            RoleCategoryPermissionsCollection rpc = _rolePermissionService.GetRoleCategoryPermissions();
 
             RoleCategoryPermissions rp = rpc.Find(
                                         delegate(RoleCategoryPermissions rcper)
@@ -154,7 +151,7 @@ public partial class graffiti_admin_roles_Default : AdminControlPanelPage
     protected void CreateRole_Click(object sender, EventArgs e)
     {
 
-        if (RolePermissionManager.IsDuplicate(txtRoleName.Text))
+        if (_rolePermissionService.IsDuplicate(txtRoleName.Text))
         {
             Message.Text = "The role <strong>" + txtRoleName.Text + "</strong> already exists.";
             Message.Type = StatusType.Error;
@@ -177,7 +174,7 @@ public partial class graffiti_admin_roles_Default : AdminControlPanelPage
     {
         string roleName = Server.UrlDecode(Request.QueryString["role"]);
 
-        RolePermissionManager.ClearPermissionsForRole(roleName);
+        _rolePermissionService.ClearPermissionsForRole(roleName);
 
         bool isCategoryPermissions = false;
 

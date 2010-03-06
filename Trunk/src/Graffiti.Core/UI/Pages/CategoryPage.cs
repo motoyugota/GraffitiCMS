@@ -1,6 +1,5 @@
-using System;
 using System.Collections.Generic;
-using DataBuddy;
+using System.Linq;
 
 namespace Graffiti.Core
 {
@@ -9,7 +8,7 @@ namespace Graffiti.Core
 
         protected override string ViewLookUp(string baseName, string defaultViewName)
         {
-            Category category = new CategoryController().GetCachedCategory(CategoryID, false);
+            Category category = _categoryService.FetchCachedCategory(CategoryID, false);
 
             // category-name.view
             if (category.ParentId <= 0 && ViewExists(CategoryName + baseName))
@@ -50,7 +49,7 @@ namespace Graffiti.Core
 
             graffitiContext["where"] = "category";
 
-            Category category = new CategoryController().GetCachedCategory(CategoryID, false);
+            Category category = _categoryService.FetchCachedCategory(CategoryID, false);
 
             if(CategoryName != null && !Util.AreEqualIgnoreCase(CategoryName,category.LinkName))
             {
@@ -68,18 +67,17 @@ namespace Graffiti.Core
 
         protected virtual object GetCategoryPosts(string key, GraffitiContext graffitiContext)
         {
-            Category category = new CategoryController().GetCachedCategory(CategoryID, false);
+            Category category = _categoryService.FetchCachedCategory(CategoryID, false);
             int pageSize = SiteSettings.Get().PageSize;
             PostCollection pc = ZCache.Get<PostCollection>(string.Format(CacheKey, PageIndex, CategoryID, category.SortOrder, pageSize));
             if (pc == null)
             {
-                pc = new PostCollection();
-                Query q = PostCollection.DefaultQuery(PageIndex, pageSize, category.SortOrder);
+                pc = new PostCollection(_postService.FetchPosts(pageSize, category.SortOrder));
 
                 if (Category.IncludeChildPosts)
                 {
                     if (category.ParentId > 0)
-                        q.AndWhere(Post.Columns.CategoryId, CategoryID);
+                        pc = new PostCollection(pc.Where(x => x.CategoryId == CategoryID).ToList());
                     else
                     {
                         List<int> ids = new List<int>(category.Children.Count + 1);
@@ -88,14 +86,13 @@ namespace Graffiti.Core
 
                         ids.Add(category.Id);
 
-                        q.AndInWhere(Post.Columns.CategoryId, ids.ToArray());
+                        pc = new PostCollection(pc.Where(x => ids.Contains(x.CategoryId)).ToList());
                     }
                 }
                 else
                 {
-                    q.AndWhere(Post.Columns.CategoryId, CategoryID);
+                    pc = new PostCollection(pc.Where(x => x.CategoryId == CategoryID).ToList());
                 }
-                pc.LoadAndCloseReader(q.ExecuteReader());
                 ZCache.InsertCache(string.Format(CacheKey, PageIndex, CategoryID, category.SortOrder, pageSize), pc, 60);
             }
 

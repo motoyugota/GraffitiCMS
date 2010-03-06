@@ -1,6 +1,6 @@
 using System;
-using System.Web.UI;
-using DataBuddy;
+using System.Collections.Generic;
+using System.Linq;
 using Graffiti.Core;
 using System.Web.UI.WebControls;
 using System.Text;
@@ -9,7 +9,7 @@ public partial class graffiti_admin_comments_Default : ControlPanelPage
 {
     protected void CommentSave_Click(object sender, EventArgs e)
     {
-        Comment comment = new Comment(Request.QueryString["id"]);
+        Comment comment = _commentService.FetchComment(Request.QueryString["id"]);
         if (comment.IsNew)
             throw new Exception("Invalid Comment Id");
 
@@ -17,7 +17,7 @@ public partial class graffiti_admin_comments_Default : ControlPanelPage
         comment.Name = Server.HtmlEncode(txtName.Text);
         comment.WebSite = txtSite.Text;
         comment.Email = txtEmail.Text;
-        comment.Save();
+        comment = _commentService.SaveComment(comment);
 
         Response.Redirect("~/graffiti-admin/comments/");
     }
@@ -35,51 +35,55 @@ public partial class graffiti_admin_comments_Default : ControlPanelPage
         if (Request.QueryString["id"] == null)
         {
             //CommentCollection cc = new CommentCollection();
-            Query q = Comment.CreateQuery();
+            IList<Comment> comments = _commentService.FetchComments();
 
             if (!(Request.QueryString["a"] == "d"))
-                q.AndWhere(Comment.Columns.IsPublished, !(Request.QueryString["a"] == "f"));
+                comments = comments.Where(x => x.IsPublished == !(Request.QueryString["a"] == "f")).ToList();
 
-            q.AndWhere(Comment.Columns.IsDeleted, (Request.QueryString["a"] == "d"));
+            comments = comments.Where(x => x.IsDeleted == (Request.QueryString["a"] == "d")).ToList();
 
             if (!String.IsNullOrEmpty(Request.QueryString["pid"]))
             {
-                q.AndWhere(Comment.Columns.PostId, Request.QueryString["pid"]);
+                comments = comments.Where(x => x.PostId == int.Parse(Request.QueryString["pid"])).ToList();
             }
 
-            q.OrderByDesc(Comment.Columns.Id);
+            comments = comments.OrderByDescending(x => x.Id).ToList();
 
-            CommentCollection tempCC = CommentCollection.FetchByQuery(q);
+            CommentCollection tempCC = new CommentCollection(comments);
 
             CommentCollection permissionsFilteredCount = new CommentCollection();
             permissionsFilteredCount.AddRange(tempCC);
 
             foreach (Comment c in tempCC)
             {
-                if (!RolePermissionManager.GetPermissions(c.Post.CategoryId, GraffitiUsers.Current).Read)
+                if (!_rolePermissionService.GetPermissions(c.Post.CategoryId, GraffitiUsers.Current).Read)
                     permissionsFilteredCount.Remove(c);
             }
 
-            q.PageIndex = Int32.Parse(Request.QueryString["p"] ?? "1");
-            q.PageSize = 25;
+            int pageIndex = Int32.Parse(Request.QueryString["p"] ?? "1");
+            int pageSize = 25;
 
-            CommentCollection cc = CommentCollection.FetchByQuery(q);
+            CommentCollection cc = new CommentCollection(comments);
 
             CommentCollection permissionsFiltered = new CommentCollection();
             permissionsFiltered.AddRange(cc);
 
             foreach (Comment c in cc)
             {
-                if (!RolePermissionManager.GetPermissions(c.Post.CategoryId, GraffitiUsers.Current).Read)
+                if (!_rolePermissionService.GetPermissions(c.Post.CategoryId, GraffitiUsers.Current).Read)
                     permissionsFiltered.Remove(c);
             }
+
+            int commentCount = permissionsFiltered.Count;
+            if (pageIndex > 0 && pageSize > 0 && commentCount > pageSize)
+                permissionsFiltered = new CommentCollection(permissionsFiltered.Skip(pageIndex - 1 * pageSize).Take(pageSize));
 
             CommentList.DataSource = permissionsFiltered;
             CommentList.DataBind();
 
             string qs = Request.QueryString["a"] != null ? "?a=" + Request.QueryString["a"] : "?a=t";
 
-            Pager.Text = Util.Pager(q.PageIndex, q.PageSize, permissionsFilteredCount.Count, "navigation", qs);
+            Pager.Text = Util.Pager(pageIndex, pageSize, commentCount, "navigation", qs);
 
             if (Request.QueryString["a"] == "f")
                 CommentLinks.SetActiveView(PendingComments);
@@ -89,7 +93,7 @@ public partial class graffiti_admin_comments_Default : ControlPanelPage
         else
         {
             the_Views.SetActiveView(Comment_Form);
-            Comment comment = new Comment(Request.QueryString["id"]);
+            Comment comment = _commentService.FetchComment(Request.QueryString["id"]);
             if (comment.IsNew)
                 throw new Exception("Invalid Comment Id");
 
@@ -126,7 +130,7 @@ public partial class graffiti_admin_comments_Default : ControlPanelPage
 
         if (!String.IsNullOrEmpty(post))
         {
-            Post p = new Post(Convert.ToInt32(post));
+            Post p = _postService.FetchPost(Convert.ToInt32(post));
 
             lblPageTitle.Text += " for \"" + p.Name + "\"";
         }
@@ -148,7 +152,7 @@ public partial class graffiti_admin_comments_Default : ControlPanelPage
 
                     if (((CheckBox)item.FindControl("CommentCheckbox")).Checked)
                     {
-                        Comment.Delete(id);
+                        _commentService.DeleteComment(id);
                         count++;
                     }
                 }
@@ -165,10 +169,10 @@ public partial class graffiti_admin_comments_Default : ControlPanelPage
 
                     if (((CheckBox)item.FindControl("CommentCheckbox")).Checked)
                     {
-                        Comment cmt = new Comment(id);
+                        Comment cmt = _commentService.FetchComment(id);
                         cmt.IsDeleted = false;
                         cmt.IsPublished = true;
-                        cmt.Save();
+                        cmt = _commentService.SaveComment(cmt);
 
                         count++;
                     }
@@ -186,9 +190,9 @@ public partial class graffiti_admin_comments_Default : ControlPanelPage
 
                     if (((CheckBox)item.FindControl("CommentCheckbox")).Checked)
                     {
-                        Comment comment = new Comment(id);
+                        Comment comment = _commentService.FetchComment(id);
                         comment.IsDeleted = false;
-                        comment.Save();
+                        comment = _commentService.SaveComment(comment);
 
                         count++;
                     }
@@ -293,10 +297,10 @@ public partial class graffiti_admin_comments_Default : ControlPanelPage
                 switch (page)
                 {
                     case "t": // published
-                        if(RolePermissionManager.GetPermissions(c.Post.CategoryId, GraffitiUsers.Current).Edit)
+                        if(_rolePermissionService.GetPermissions(c.Post.CategoryId, GraffitiUsers.Current).Edit)
                             edit.Visible = true;
                         
-                        if (RolePermissionManager.GetPermissions(c.Post.CategoryId, GraffitiUsers.Current).Publish)
+                        if (_rolePermissionService.GetPermissions(c.Post.CategoryId, GraffitiUsers.Current).Publish)
                         {
                             //EditBold.Visible = true;
                             pipe1.Visible = true;
@@ -304,10 +308,10 @@ public partial class graffiti_admin_comments_Default : ControlPanelPage
                         }
                         break;
                     case "f": // pending
-                        if(RolePermissionManager.GetPermissions(c.Post.CategoryId, GraffitiUsers.Current).Edit)
+                        if(_rolePermissionService.GetPermissions(c.Post.CategoryId, GraffitiUsers.Current).Edit)
                         edit.Visible = true;
 
-                        if (RolePermissionManager.GetPermissions(c.Post.CategoryId, GraffitiUsers.Current).Publish)
+                        if (_rolePermissionService.GetPermissions(c.Post.CategoryId, GraffitiUsers.Current).Publish)
                         {
                             pipe1.Visible = true;
                             approve.Visible = true;
@@ -317,7 +321,7 @@ public partial class graffiti_admin_comments_Default : ControlPanelPage
                         }
                         break;
                     case "d": // deleted
-                        if(RolePermissionManager.GetPermissions(c.Post.CategoryId, GraffitiUsers.Current).Publish)
+                        if(_rolePermissionService.GetPermissions(c.Post.CategoryId, GraffitiUsers.Current).Publish)
                             undelete.Visible = true;
                         break;
                 }
@@ -325,10 +329,10 @@ public partial class graffiti_admin_comments_Default : ControlPanelPage
             else
             {
                 // published is default tab
-                if(RolePermissionManager.GetPermissions(c.Post.CategoryId, GraffitiUsers.Current).Edit)
+                if(_rolePermissionService.GetPermissions(c.Post.CategoryId, GraffitiUsers.Current).Edit)
                     edit.Visible = true;
 
-                if (RolePermissionManager.GetPermissions(c.Post.CategoryId, GraffitiUsers.Current).Publish)
+                if (_rolePermissionService.GetPermissions(c.Post.CategoryId, GraffitiUsers.Current).Publish)
                 {
                     pipe1.Visible = true;
                     delete.Visible = true;
@@ -336,7 +340,7 @@ public partial class graffiti_admin_comments_Default : ControlPanelPage
             }
             
             
-            if(!RolePermissionManager.GetPermissions(c.Post.CategoryId, GraffitiUsers.Current).Publish)
+            if(!_rolePermissionService.GetPermissions(c.Post.CategoryId, GraffitiUsers.Current).Publish)
             {
                 CheckBox commentCheckbox = (CheckBox)e.Item.FindControl("CommentCheckbox");
                 commentCheckbox.Visible = false;

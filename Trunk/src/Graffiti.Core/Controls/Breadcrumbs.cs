@@ -4,6 +4,7 @@ using System.Text;
 using System.Web.UI.WebControls;
 using System.Web;
 using Graffiti.Core.Marketplace;
+using Graffiti.Core.Services;
 
 namespace Graffiti.Core
 {
@@ -31,6 +32,9 @@ namespace Graffiti.Core
 
     public class Breadcrumbs : WebControl
     {
+        private ICategoryService _categoryService = ServiceLocator.Get<ICategoryService>();
+        private ICommentService _commentService = ServiceLocator.Get<ICommentService>();
+
         private Section _sectionName;
 
         public Section SectionName
@@ -250,7 +254,7 @@ namespace Graffiti.Core
 
                         List<Category> categories = new List<Category>();
 
-                        Category c = new Category(id);
+                        Category c = _categoryService.FetchCategory(id);
                         categories.Add(c);
 
                         Category parent;
@@ -263,7 +267,7 @@ namespace Graffiti.Core
 
                             while (!noMoreParents)
                             {
-                                parent = new Category(parent.ParentId);
+                                parent = _categoryService.FetchCategory(parent.ParentId);
                                 if (parent.Id != 0)
                                 {
                                     categories.Insert(0, parent);
@@ -300,7 +304,7 @@ namespace Graffiti.Core
 
                         List<Category> categories = new List<Category>();
 
-                        Category c = new Category(id);
+                        Category c = _categoryService.FetchCategory(id);
                         categories.Add(c);
 
                         Category parent;
@@ -313,7 +317,7 @@ namespace Graffiti.Core
 
                             while (!noMoreParents)
                             {
-                                parent = new Category(parent.ParentId);
+                                parent = _categoryService.FetchCategory(parent.ParentId);
                                 if (parent.Id != 0)
                                 {
                                     categories.Insert(0, parent);
@@ -343,7 +347,7 @@ namespace Graffiti.Core
                     if (String.IsNullOrEmpty(commentId))
                         return string.Empty;
 
-                    Comment comment = new Comment(commentId);
+                    Comment comment = _commentService.FetchComment(commentId);
 
                     crumbs.Append(GetHyperLink("Comments", ResolveUrl("~/graffiti-admin/comments/"), true));
                     crumbs.Append(GetHyperLink(comment.Name + " @ " + comment.Published, ResolveUrl("~/graffiti-admin/comments/?id=" + comment.Id), false));

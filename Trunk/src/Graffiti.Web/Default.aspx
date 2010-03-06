@@ -1,4 +1,5 @@
 <%@ Page Language="C#" AutoEventWireup="true"  Inherits="Graffiti.Core.TemplatedThemePage" ClassName="GraffitiHomePage" %>
+<%@ Import Namespace="System.Linq"%>
 <%@ Import namespace="DataBuddy"%>
 <script runat="Server">
 
@@ -50,19 +51,14 @@
         PostCollection pc = ZCache.Get<PostCollection>(CacheKey + ":customhome:" + PageIndex);
         if (pc == null)
         {
-            pc = new PostCollection();
-
-            Query q = PostCollection.HomeQueryOverride(PageIndex, SiteSettings.Get().PageSize);
-            
-            pc.LoadAndCloseReader(q.ExecuteReader());
+            pc = new PostCollection(_postService.HomeQueryOverride(PageIndex-1, SiteSettings.Get().PageSize));
             ZCache.InsertCache(CacheKey + ":customhome:" + PageIndex, pc, 30);
-
         }
 
         object postCount = ZCache.Get<object>(CacheKey + ":customhome:" +"Count");
         if (postCount == null)
         {
-            postCount = PostCollection.HomeQueryOverride(-1, -1).GetRecordCount();
+            postCount = new PostCollection(_postService.HomeQueryOverride(-1, -1)).Count;
             ZCache.InsertCache(CacheKey + ":customhome:" + "Count", postCount, 60);
         }
 
@@ -75,7 +71,7 @@
 
         foreach (Post p in pc)
         {
-            if (!RolePermissionManager.GetPermissions(p.CategoryId, GraffitiUsers.Current).Read)
+            if (!_rolePermissionService.GetPermissions(p.CategoryId, GraffitiUsers.Current).Read)
                 permissionsFiltered.Remove(p);
         }
         
@@ -87,19 +83,14 @@
         PostCollection pc = ZCache.Get<PostCollection>(CacheKey + PageIndex);
         if (pc == null)
         {
-            pc = new PostCollection();
-            Query q = PostCollection.DefaultQuery();
-            q.PageSize = SiteSettings.Get().PageSize;
-            q.PageIndex = PageIndex;
-            pc.LoadAndCloseReader(q.ExecuteReader());
+            pc = new PostCollection(_postService.DefaultQuery(PageIndex, SiteSettings.Get().PageSize, SortOrderType.Descending));
             ZCache.InsertCache(CacheKey + PageIndex, pc, 30);
-
         }
 
         object postCount = ZCache.Get<object>(CacheKey + "Count");
         if (postCount == null)
         {
-            postCount = PostCollection.DefaultQuery().GetRecordCount();
+            postCount = new PostCollection(_postService.DefaultQuery()).Count;
             ZCache.InsertCache(CacheKey + "Count", postCount, 60);
         }
 
@@ -113,7 +104,7 @@
 
         foreach (Post p in pc)
         {
-            if (!RolePermissionManager.GetPermissions(p.CategoryId, GraffitiUsers.Current).Read)
+            if (!_rolePermissionService.GetPermissions(p.CategoryId, GraffitiUsers.Current).Read)
                 permissionsFiltered.Remove(p);
         }
 

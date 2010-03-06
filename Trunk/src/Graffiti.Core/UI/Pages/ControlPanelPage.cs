@@ -1,10 +1,18 @@
 using System;
+using System.Linq;
 using System.Web.UI;
+using Graffiti.Core.Services;
 
 namespace Graffiti.Core
 {
     public class GraffitiPage : Page
     {
+        protected IRolePermissionService _rolePermissionService = ServiceLocator.Get<IRolePermissionService>();
+        protected IPostService _postService = ServiceLocator.Get<IPostService>();
+        protected ICommentService _commentService = ServiceLocator.Get<ICommentService>();
+        protected ICategoryService _categoryService = ServiceLocator.Get<ICategoryService>();
+        protected IVersionStoreService _versionStoreService = ServiceLocator.Get<IVersionStoreService>();
+
         protected virtual void Authenticate()
         {
         }
@@ -18,13 +26,13 @@ namespace Graffiti.Core
 
     public class ControlPanelPage : GraffitiPage
     {
-
+ 
         protected override void Authenticate()
         {
             if (GraffitiUsers.Current == null)
                 Response.Redirect("~/login/");
 
-            if (!RolePermissionManager.CanViewControlPanel(GraffitiUsers.Current) && !GraffitiUsers.IsAdmin(GraffitiUsers.Current))
+            if (!_rolePermissionService.CanViewControlPanel(GraffitiUsers.Current) && !GraffitiUsers.IsAdmin(GraffitiUsers.Current))
                 Response.Redirect("~/");
         }
 
@@ -37,7 +45,7 @@ namespace Graffiti.Core
             if (GraffitiUsers.Current == null)
                 Response.Redirect("~/login/");
 
-            if (!RolePermissionManager.CanViewControlPanel(GraffitiUsers.Current) && !GraffitiUsers.IsAdmin(GraffitiUsers.Current))
+            if (!_rolePermissionService.CanViewControlPanel(GraffitiUsers.Current) && !GraffitiUsers.IsAdmin(GraffitiUsers.Current))
                 Response.Redirect("~/");   
         }
     }

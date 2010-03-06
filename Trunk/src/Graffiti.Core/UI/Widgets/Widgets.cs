@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using System.Web;
-using DataBuddy;
+using Graffiti.Core.Services;
 
 namespace Graffiti.Core
 {
@@ -13,6 +13,7 @@ namespace Graffiti.Core
     /// </summary>
     public static class Widgets
     {
+        private static IObjectStoreService _objectStoreService = ServiceLocator.Get<IObjectStoreService>();
         private static readonly string cacheKey = "Graffit.Core.Widgets.Cache";
 
         public static void Reset()
@@ -26,15 +27,11 @@ namespace Graffiti.Core
         /// <param name="id"></param>
         public static void Delete(string id)
         {
-            Query q = ObjectStore.CreateQuery();
-            q.AndWhere(ObjectStore.Columns.Name, id);
-            q.AndWhere(ObjectStore.Columns.ContentType, "xml/widget");
-            ObjectStoreCollection osc = new ObjectStoreCollection();
-            osc.LoadAndCloseReader(q.ExecuteReader());
+            ObjectStoreCollection osc = new ObjectStoreCollection(_objectStoreService.FetchByNameAndContentType(id, "xml/widget"));
             if (osc.Count > 1)
                 throw new Exception("More than one item matched id/name ");
             else if (osc.Count > 0)
-                ObjectStore.Destroy(osc[0].Id);
+                _objectStoreService.DestroyObjectStore(osc[0].Id);
 
             
             Reset();
@@ -50,10 +47,7 @@ namespace Graffiti.Core
             List<Widget> the_Widgets = ZCache.Get<List<Widget>>(cacheKey);
             if (the_Widgets == null)
             {
-                ObjectStoreCollection osc = new ObjectStoreCollection();
-                Query oquery = ObjectStore.CreateQuery();
-                oquery.AndWhere(ObjectStore.Columns.ContentType, "xml/widget");
-                osc.LoadAndCloseReader(oquery.ExecuteReader());
+                ObjectStoreCollection osc = new ObjectStoreCollection(_objectStoreService.FetchByContentType("xml/widget"));
 
                 the_Widgets = new List<Widget>(osc.Count);
                 foreach (ObjectStore os in osc)
@@ -190,7 +184,7 @@ namespace Graffiti.Core
             os.Data = ObjectManager.ConvertToString(widget);
             os.Name = widget.Id.ToString();
             os.UniqueId = widget.Id;
-            os.Save();
+            os = _objectStoreService.SaveObjectStore(os);
 
             Reset();
 
@@ -199,9 +193,9 @@ namespace Graffiti.Core
 
         private static void Save(Widget widget, bool resetCache)
         {
-            ObjectStore os = ObjectStore.FetchByColumn(ObjectStore.Columns.Name, widget.Id.ToString());
+            ObjectStore os = _objectStoreService.FetchByName(widget.Id.ToString());
             os.Data = ObjectManager.ConvertToString(widget);
-            os.Save();
+            os = _objectStoreService.SaveObjectStore(os);
 
             if(resetCache)
                 Reset();

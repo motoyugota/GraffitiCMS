@@ -1,8 +1,8 @@
 using System;
-using System.Collections.Generic;
 using System.Text;
 using System.Web.UI;
 using System.Xml;
+using Graffiti.Core.Services;
 
 namespace Graffiti.Core.API
 {
@@ -11,6 +11,12 @@ namespace Graffiti.Core.API
     /// </summary>
     public abstract class BaseServiceResource : Page
     {
+        protected static ICategoryService _categoryService = ServiceLocator.Get<ICategoryService>();
+        protected static IPostService _postService = ServiceLocator.Get<IPostService>();
+        protected static ICommentService _commentService = ServiceLocator.Get<ICommentService>();
+        protected static IRolePermissionService _rolePermissionService = ServiceLocator.Get<IRolePermissionService>();
+        protected static IVersionStoreService _versionStoreService = ServiceLocator.Get<IVersionStoreService>();
+
         protected virtual bool IsValidAccess(IGraffitiUser user)
         {
             return GraffitiUsers.IsAdmin(user);

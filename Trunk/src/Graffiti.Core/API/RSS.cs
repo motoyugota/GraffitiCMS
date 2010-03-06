@@ -1,11 +1,10 @@
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using System.Web;
 using System.Web.UI;
 using System.Xml;
-using DataBuddy;
+using Graffiti.Core.Services;
 
 namespace Graffiti.Core
 {
@@ -16,6 +15,25 @@ namespace Graffiti.Core
         public string TagName = null;
         protected DateTime lastModified = DateTime.Now;
         protected Macros macros = new Macros();
+
+
+        private IPostService _postService;
+        private ICategoryService _categoryService;
+        private IRolePermissionService _rolePermissionService;
+
+        public RSS(IPostService postService, ICategoryService categoryService, IRolePermissionService rolePermissionService)
+        {
+            _postService = postService;
+            _categoryService = categoryService;
+            _rolePermissionService = rolePermissionService;
+        }
+
+        public RSS()
+        {
+            _postService = ServiceLocator.Get<IPostService>();
+            _categoryService = ServiceLocator.Get<ICategoryService>();
+            _rolePermissionService = ServiceLocator.Get<IRolePermissionService>();
+        }
 
         protected override void OnLoad(EventArgs e)
         {
@@ -29,7 +47,7 @@ namespace Graffiti.Core
             {
                 Category category = null;
                 if (CategoryID > -1)
-                    category = new CategoryController().GetCachedCategory(CategoryID, false);
+                    category = _categoryService.FetchCachedCategory(CategoryID, false);
 
                 if (category == null)
                 {
@@ -64,13 +82,7 @@ namespace Graffiti.Core
 
                 if (pc == null)
                 {
-                    Query q = PostCollection.DefaultQuery();
-                    q.Top = Util.PageSize.ToString();
-                    if (CategoryID > 0)
-                        q.AndWhere(Post.Columns.CategoryId, CategoryID);
-
-                    pc = new PostCollection();
-                    pc.LoadAndCloseReader(q.ExecuteReader());
+                    pc = new PostCollection(_postService.FetchPostsByCategory(CategoryID));
 
                     PostCollection permissionsFiltered = new PostCollection();
 
@@ -78,7 +90,7 @@ namespace Graffiti.Core
 
                     foreach (Post p in pc)
                     {
-                        if (!RolePermissionManager.GetPermissions(p.CategoryId, GraffitiUsers.Current).Read)
+                        if (!_rolePermissionService.GetPermissions(p.CategoryId, GraffitiUsers.Current).Read)
                             permissionsFiltered.Remove(p);
                     }
 
@@ -170,7 +182,7 @@ namespace Graffiti.Core
             PostCollection pc = ZCache.Get<PostCollection>("Tags-ForRSS-" + tagName);
             if (pc == null) 
             {
-                pc = Post.FetchPostsByTag(TagName);
+                pc = new PostCollection(_postService.FetchPostsByTag(TagName));
 
                 PostCollection permissionsFiltered = new PostCollection();
                 foreach (Post post in pc)
@@ -179,7 +191,7 @@ namespace Graffiti.Core
                 }
                 permissionsFiltered.AddRange(pc);
                 foreach (Post p in pc) {
-                    if (!RolePermissionManager.GetPermissions(p.Category.Id, GraffitiUsers.Current).Read)
+                    if (!_rolePermissionService.GetPermissions(p.Category.Id, GraffitiUsers.Current).Read)
                         permissionsFiltered.Remove(p);
                 }            
                 pc.Clear();

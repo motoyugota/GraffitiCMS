@@ -1,8 +1,5 @@
 using System;
-using System.Web;
-using System.Web.UI;
 using Graffiti.Core;
-using DataBuddy;
 using System.Collections.Generic;
 
 public partial class graffiti_admin_presentation_category_widget : AdminControlPanelPage
@@ -26,7 +23,7 @@ public partial class graffiti_admin_presentation_category_widget : AdminControlP
     {
         txtTitle.Text = widget.Title;
 
-        CategoryCollection cc = new CategoryController().GetTopLevelCachedCategories();
+        CategoryCollection cc = new CategoryCollection(_categoryService.FetchTopLevelCachedCategories());
 
         CategoryCollection InUse = new CategoryCollection();
         CategoryCollection NotInUse = new CategoryCollection();

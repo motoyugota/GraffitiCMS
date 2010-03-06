@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Specialized;
-using System.Text;
 using System.Web;
 
 namespace Graffiti.Core
@@ -9,6 +8,8 @@ namespace Graffiti.Core
     public abstract class Widget : EditableForm
     {
         private Guid _id;
+
+
 
         /// <summary>
         /// Id of the current Widget instance

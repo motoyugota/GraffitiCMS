@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
+using Graffiti.Core.Services;
 
 namespace Graffiti.Core
 {
@@ -10,6 +11,18 @@ namespace Graffiti.Core
     [Serializable]
     public class NavigationSettings
     {
+        private ICategoryService _categoryService;
+
+        public NavigationSettings(ICategoryService categoryService)
+        {
+            _categoryService = categoryService;
+        }
+
+        public NavigationSettings()
+        {
+            _categoryService = ServiceLocator.Get<ICategoryService>();
+        }
+
         private List<DynamicNavigationItem> _items = null;
         private object lockedObject = new object();
 
@@ -23,8 +36,7 @@ namespace Graffiti.Core
                     {
                         Items = new List<DynamicNavigationItem>();
 
-                        CategoryCollection cc = new CategoryController().GetTopLevelCachedCategories();
-                        foreach (Category c in cc)
+                        foreach (Category c in _categoryService.FetchTopLevelCachedCategories())
                         {
                             DynamicNavigationItem item = new DynamicNavigationItem();
                             item.CategoryId = c.Id;
@@ -137,6 +149,21 @@ namespace Graffiti.Core
     [Serializable]
     public class DynamicNavigationItem
     {
+        private IPostService _postService;
+        private ICategoryService _categoryService;
+
+        public DynamicNavigationItem(IPostService postService, ICategoryService categoryService)
+        {
+            _postService = postService;
+            _categoryService = categoryService;
+        }
+
+        public DynamicNavigationItem() 
+        {
+            _postService = ServiceLocator.Get<IPostService>();
+            _categoryService = ServiceLocator.Get<ICategoryService>();
+        }
+
         private Guid _id;
 
         public Guid Id
@@ -202,9 +229,9 @@ namespace Graffiti.Core
                 switch(NavigationType)
                 {
                     case DynamicNavigationType.Category:
-                        return new CategoryController().GetCachedCategory(CategoryId, false).Name;
+                        return _categoryService.FetchCachedCategory(CategoryId, false).Name;
                     case DynamicNavigationType.Post:
-                        return new Post(PostId).Title;
+                        return _postService.FetchPost(PostId).Title;
                     default:
                         return Text;
                 }

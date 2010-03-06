@@ -1,14 +1,14 @@
 using System;
-using System.Web.UI;
+using System.Linq;
 using System.Web.UI.WebControls;
-using DataBuddy;
 using Graffiti.Core;
 using System.Collections.Generic;
 using System.Text;
+using Graffiti.Core.Services;
 using Repeater = Graffiti.Core.Repeater;
 
 public partial class graffiti_admin_posts_Default : ControlPanelPage
-{
+{   
     private List<CategoryCount> cats = null;
     private int currentChildIndex = 0; // this will hold what child we are on so we know which img to display in the hierarchical view
 
@@ -25,7 +25,7 @@ public partial class graffiti_admin_posts_Default : ControlPanelPage
     {
         if(Request.QueryString["id"] != null)
         {
-            Post the_Post = new Post(Request.QueryString["id"]);
+            Post the_Post = _postService.FetchPost(Request.QueryString["id"]);
             switch(the_Post.PostStatus)
             {
                 case PostStatus.Publish:
@@ -80,29 +80,29 @@ public partial class graffiti_admin_posts_Default : ControlPanelPage
 
             List<AuthorCount> auts = null;
 
- 
+            CategoryPermissionCheck callback = (_rolePermissionService.GetPermissions);
 
             switch (page)
             {
                 case "1": // published
                     PostsLinks.SetActiveView(Published);
-                    cats = Post.GetCategoryCountForStatus(PostStatus.Publish, author);
-                    auts = Post.GetAuthorCountForStatus(PostStatus.Publish, category);
+                    cats = _postService.GetCategoryCountForStatus(GraffitiUsers.Current, PostStatus.Publish, author, callback);
+                    auts = _postService.GetAuthorCountForStatus(GraffitiUsers.Current, PostStatus.Publish, category, callback);
                     break;
                 case "2": // draft
                     PostsLinks.SetActiveView(Draft);
-                    cats = Post.GetCategoryCountForStatus(PostStatus.Draft, author);
-                    auts = Post.GetAuthorCountForStatus(PostStatus.Draft, category);
+                    cats = _postService.GetCategoryCountForStatus(GraffitiUsers.Current, PostStatus.Draft, author, callback);
+                    auts = _postService.GetAuthorCountForStatus(GraffitiUsers.Current, PostStatus.Draft, category, callback);
                     break;
                 case "3": // pending review
                     PostsLinks.SetActiveView(PendingReview);
-                    cats = Post.GetCategoryCountForStatus(PostStatus.PendingApproval, author);
-                    auts = Post.GetAuthorCountForStatus(PostStatus.PendingApproval, category);
+                    cats = _postService.GetCategoryCountForStatus(GraffitiUsers.Current, PostStatus.PendingApproval, author, callback);
+                    auts = _postService.GetAuthorCountForStatus(GraffitiUsers.Current, PostStatus.PendingApproval, category, callback);
                     break;
                 case "4": // requires changes
                     PostsLinks.SetActiveView(RequiresChanges);
-                    cats = Post.GetCategoryCountForStatus(PostStatus.RequiresChanges, author);
-                    auts = Post.GetAuthorCountForStatus(PostStatus.RequiresChanges, category);
+                    cats = _postService.GetCategoryCountForStatus(GraffitiUsers.Current, PostStatus.RequiresChanges, author, callback);
+                    auts = _postService.GetAuthorCountForStatus(GraffitiUsers.Current, PostStatus.RequiresChanges, category, callback);
                     break;
                 case "-1": // deleted
                     PostsLinks.SetActiveView(Deleted);
@@ -138,7 +138,7 @@ public partial class graffiti_admin_posts_Default : ControlPanelPage
 
                 foreach(CategoryCount cc in temp)
                 {
-                    if (!RolePermissionManager.GetPermissions(cc.ID, GraffitiUsers.Current).Read)
+                    if (!_rolePermissionService.GetPermissions(cc.ID, GraffitiUsers.Current).Read)
                         toRemove.Add(cc);
                 }
 
@@ -150,50 +150,49 @@ public partial class graffiti_admin_posts_Default : ControlPanelPage
                 rptCategories.DataBind();
             }
 
-            User user = null;
+            IGraffitiUser user = null;
 
             if (!String.IsNullOrEmpty(author))
             {
-                user = new User(Convert.ToInt32(author));
+                user = GraffitiUsers.GetUser(Convert.ToInt32(author));
                 author = user.Name;
             }
 
-            Query q = Post.CreateQuery();
-
+            IList<Post> posts = _postService.FetchPosts();
 
             if (Request.QueryString["category"] != null && Request.QueryString["category"] != "-1")
-                q.AndWhere(Post.Columns.CategoryId, Request.QueryString["category"]);
+                posts = posts.Where(x => x.CategoryId == int.Parse(Request.QueryString["category"])).ToList();
 
             if (!String.IsNullOrEmpty(author))
-                q.AndWhere(Post.Columns.CreatedBy, author);
+                posts = posts.Where(x => x.CreatedBy == author).ToList();
 
             if (Request.QueryString["status"] == "-1")
-                q.AndWhere(Post.Columns.IsDeleted, true);
-            else
             {
-                q.AndWhere(Post.Columns.IsDeleted, false);
-                q.AndWhere(Post.Columns.Status, Request.QueryString["status"] ?? "1");
+                posts = posts.Where(x => x.IsDeleted).ToList();
+            }
+            else {
+                posts = posts.Where(x => !x.IsDeleted).ToList();
+                posts = posts.Where(x => x.Status == int.Parse(Request.QueryString["status"] ?? "1")).ToList();
             }
 
-            q.OrderByDesc(Post.Columns.Published);
-
-            PostCollection tempPC = new PostCollection();
-            tempPC.LoadAndCloseReader(q.ExecuteReader());
+            posts = posts.OrderByDescending(x => x.Published).ToList();
+            PostCollection tempPC = new PostCollection(posts);
 
             PostCollection permissionsFilteredCount = new PostCollection();
             permissionsFilteredCount.AddRange(tempPC);
 
             foreach (Post p in tempPC)
             {
-                if (!RolePermissionManager.GetPermissions(p.CategoryId, GraffitiUsers.Current).Read)
+                if (!_rolePermissionService.GetPermissions(p.CategoryId, GraffitiUsers.Current).Read)
                     permissionsFilteredCount.Remove(p);
             }
            
-            q.PageSize = 15;
-            q.PageIndex = Int32.Parse(Request.QueryString["p"] ?? "1");
+            int pageSize = 15;
+            int pageIndex = Int32.Parse(Request.QueryString["p"] ?? "1");
 
-            PostCollection pc = new PostCollection();
-            pc.LoadAndCloseReader(q.ExecuteReader());
+            PostCollection pc = new PostCollection(posts);
+            if (pageIndex > 0 && pageSize > 0 && posts.Count > pageSize)
+                pc = new PostCollection(posts.Skip((pageIndex-1) * pageSize).Take(pageSize).ToList());
 
             PostList.NoneItemsDataBound += new RepeaterItemEventHandler(PostList_NoneItemsDataBound);
 
@@ -202,7 +201,7 @@ public partial class graffiti_admin_posts_Default : ControlPanelPage
 
             foreach (Post p in pc)
             {
-                if (!RolePermissionManager.GetPermissions(p.CategoryId, GraffitiUsers.Current).Read)
+                if (!_rolePermissionService.GetPermissions(p.CategoryId, GraffitiUsers.Current).Read)
                     permissionsFiltered.Remove(p);
             }
 
@@ -220,7 +219,7 @@ public partial class graffiti_admin_posts_Default : ControlPanelPage
                 if (autID != "0")
                     qs += "&author=" + autID;
 
-                Pager.Text = Util.Pager(q.PageIndex, q.PageSize, permissionsFilteredCount.Count, null, qs);
+                Pager.Text = Util.Pager(pageIndex, pageSize, permissionsFilteredCount.Count, null, qs);
             }
 
             SetCounts(Int32.Parse(catID));
@@ -254,7 +253,7 @@ public partial class graffiti_admin_posts_Default : ControlPanelPage
 
             if (Request.QueryString["category"] != null)
             {
-                CategoryCollection categories = new CategoryController().GetAllCachedCategories();
+                CategoryCollection categories = new CategoryCollection(_categoryService.FetchAllCachedCategories());
 
                 Category temp = categories.Find(
                         delegate(Category c)
@@ -333,7 +332,7 @@ public partial class graffiti_admin_posts_Default : ControlPanelPage
 
             if (p != null)
             {
-                if (RolePermissionManager.GetPermissions(p.CategoryId, GraffitiUsers.Current).Publish)
+                if (_rolePermissionService.GetPermissions(p.CategoryId, GraffitiUsers.Current).Publish)
                     pnlDelete.Visible = true;
                 else
                     pnlDelete.Visible = false;
@@ -411,7 +410,8 @@ public partial class graffiti_admin_posts_Default : ControlPanelPage
 
     private void SetCounts(int catID)
     {
-        List<PostCount> postCounts = Post.GetPostCounts(catID, null);
+        CategoryPermissionCheck callback = (_rolePermissionService.GetPermissions);
+        List<PostCount> postCounts = _postService.GetPostCounts(GraffitiUsers.Current, catID, null, callback);
 
         foreach (PostCount pc in postCounts)
         {

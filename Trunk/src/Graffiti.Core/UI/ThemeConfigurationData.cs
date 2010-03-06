@@ -1,7 +1,4 @@
 using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Text.RegularExpressions;
 using Telligent.DynamicConfiguration.Components;
 using System.Collections.Specialized;
 using System.Xml.Serialization;

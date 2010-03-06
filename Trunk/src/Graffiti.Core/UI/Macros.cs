@@ -4,11 +4,11 @@ using System.Collections.Generic;
 using System.Configuration;
 using System.Drawing;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Web;
-using DataBuddy;
-using System.Web.UI;
+using Graffiti.Core.Services;
 
 namespace Graffiti.Core
 {
@@ -18,6 +18,25 @@ namespace Graffiti.Core
 	[Chalk("macros")]
 	public class Macros
 	{
+	    private ICategoryService _categoryService;
+        private IPostService _postService;
+        private IRolePermissionService _rolePermissionService;
+
+        public Macros(IPostService postService, ICategoryService categoryService, IRolePermissionService rolePermissionService) 
+        {
+            _postService = postService;
+            _categoryService = categoryService;
+            _rolePermissionService = rolePermissionService;
+        }
+
+        public Macros() 
+        {
+            _postService = ServiceLocator.Get<IPostService>();
+            _categoryService = ServiceLocator.Get<ICategoryService>();
+            _rolePermissionService = ServiceLocator.Get<IRolePermissionService>();
+        }
+
+
 		#region const
 		private const string lihrefWithClassFormat = "<li {3}><a href=\"{0}\" {2}>{1}</a></li>\n";
 		private const string liHrefFormat = "<li><a href=\"{0}\">{1}</a></li>\n";
@@ -243,7 +262,7 @@ namespace Graffiti.Core
 		/// <returns></returns>
 		public bool CanViewControlPanel(IGraffitiUser user)
 		{
-			return RolePermissionManager.CanViewControlPanel(user);
+			return _rolePermissionService.CanViewControlPanel(user);
 		}
 
 		/// <summary>
@@ -252,7 +271,7 @@ namespace Graffiti.Core
 		public string EditLink(Post post)
 		{
 			IGraffitiUser user = GraffitiUsers.Current;
-			Permission p = RolePermissionManager.GetPermissions(post.CategoryId, user);
+			Permission p = _rolePermissionService.GetPermissions(post.CategoryId, user);
 
 			if (user != null && p.Edit)
 			{
@@ -305,7 +324,7 @@ namespace Graffiti.Core
 					//This could be a subcategory. Since we do not expose
 					//subcategories via NavBar(), we should mark the parent ( if it exists) as selected tiem
 					current_CategoryID = ttp.CategoryID;
-					Category the_Category = new CategoryController().GetCachedCategory(current_CategoryID, true);
+					Category the_Category = _categoryService.FetchCachedCategory(current_CategoryID, true);
 					if (the_Category != null)
 					{
 						current_Parent_CategoryID = the_Category.ParentId;
@@ -388,7 +407,7 @@ namespace Graffiti.Core
 				{
 					case DynamicNavigationType.Post:
 
-						Post p = Post.GetCachedPost(item.PostId);
+						Post p = _postService.FetchCachedPost(item.PostId);
 
 						if (!p.IsNew && p.IsLoaded)
 						{
@@ -399,7 +418,7 @@ namespace Graffiti.Core
 
 					case DynamicNavigationType.Category:
 
-						Category category = new CategoryController().GetCachedCategory(item.CategoryId, true);
+						Category category = _categoryService.FetchCachedCategory(item.CategoryId, true);
 						if (category != null)
 						{
 							the_Link.Url = category.Url;
@@ -427,7 +446,7 @@ namespace Graffiti.Core
 
 			foreach (Link link in links)
 			{
-				if (!RolePermissionManager.GetPermissions(link.CategoryId, GraffitiUsers.Current).Read && link.CategoryId != 0)
+				if (!_rolePermissionService.GetPermissions(link.CategoryId, GraffitiUsers.Current).Read && link.CategoryId != 0)
 					permissionsFiltered.Remove(link);
 			}
 
@@ -511,7 +530,7 @@ namespace Graffiti.Core
 					//This could be a subcategory. Since we do not expose
 					//subcategories via NavBar(), we should mark the parent ( if it exists) as selected tiem
 					current_CategoryID = ttp.CategoryID;
-					Category the_Category = new CategoryController().GetCachedCategory(current_CategoryID, true);
+					Category the_Category = _categoryService.FetchCachedCategory(current_CategoryID, true);
 					if (the_Category != null)
 					{
 						current_Parent_CategoryID = the_Category.ParentId;
@@ -524,8 +543,7 @@ namespace Graffiti.Core
 				// out all the children of the parent.
 				if (current_Parent_CategoryID != -1)
 				{
-					Category parentCategory =
-						 new CategoryController().GetCachedCategory(current_Parent_CategoryID, true);
+					Category parentCategory = _categoryService.FetchCachedCategory(current_Parent_CategoryID, true);
 
 					categories = parentCategory.Children;
 				}
@@ -556,7 +574,7 @@ namespace Graffiti.Core
 				return string.Format("<a href=\"{0}\">{1}</a>", category.Url, category.Name);
 			else
 			{
-				Category parent = new CategoryController().GetCachedCategory(category.ParentId, false);
+				Category parent = _categoryService.FetchCachedCategory(category.ParentId, false);
 				return string.Format("<a href=\"{0}\">{1}</a>", parent.Url, parent.Name) + " / " + string.Format("<a href=\"{0}\">{1}</a>", category.Url, category.Name);
 			}
 		}
@@ -655,12 +673,12 @@ namespace Graffiti.Core
 			{
 				if (ttp.CategoryID > -1)
 				{
-					Category category = new CategoryController().GetCachedCategory(ttp.CategoryID, false);
-					if (category.Name != CategoryController.UncategorizedName)
+					Category category = _categoryService.FetchCachedCategory(ttp.CategoryID, false);
+					if (category.Name != _categoryService.UncategorizedName())
 					{
 						if (category.ParentId > 0)
 						{
-							Category parent = new CategoryController().GetCachedCategory(category.ParentId, false);
+							Category parent = _categoryService.FetchCachedCategory(category.ParentId, false);
 							sb.AppendFormat(pattern, parent.Name + " Rss Feed", FullUrl(parent.Url + "feed/"));
 						}
 
@@ -710,7 +728,7 @@ namespace Graffiti.Core
 		/// <returns></returns>
 		public string ULCategories()
 		{
-			CategoryCollection cc = new CategoryController().GetTopLevelCachedCategories();
+			CategoryCollection cc = new CategoryCollection(_categoryService.FetchTopLevelCachedCategories());
 			StringBuilder sb = new StringBuilder();
 			if (cc.Count > 0)
 			{
@@ -764,14 +782,7 @@ namespace Graffiti.Core
 		/// <returns></returns>
 		public string ULPostsInCategory(int categoryId)
 		{
-			PostCollection pc = new PostCollection();
-			Query q = Post.CreateQuery();
-			q.PageIndex = 0;
-			q.AndWhere(Post.Columns.CategoryId, categoryId);
-			q.AndWhere(Post.Columns.IsDeleted, 0);
-			q.AndWhere(Post.Columns.IsPublished, 1);
-
-			pc.LoadAndCloseReader(q.ExecuteReader());
+            PostCollection pc = new PostCollection(_postService.FetchPostsByCategory(categoryId).Where(x => !x.IsDeleted && x.IsPublished).ToList());
 
 			StringBuilder sb = new StringBuilder();
 			if (pc.Count > 0)
@@ -792,21 +803,11 @@ namespace Graffiti.Core
 		/// <returns></returns>
 		public string ULRecentPosts(int numberOfPosts)
 		{
-			PostCollection pc = new PostCollection();
-			Query q = PostCollection.DefaultQuery();
-			q.PageIndex = 1;
-			q.PageSize = numberOfPosts;
-			pc.LoadAndCloseReader(q.ExecuteReader());
-
 			StringBuilder sb = new StringBuilder();
-			if (pc.Count > 0)
+    		foreach (Post p in _postService.FetchRecentPosts(numberOfPosts))
 			{
-				foreach (Post p in pc)
-				{
-					sb.AppendFormat(liHrefFormat, p.Url, p.Title);
-				}
+				sb.AppendFormat(liHrefFormat, p.Url, p.Title);
 			}
-
 			return sb.ToString();
 		}
 
@@ -1474,6 +1475,15 @@ namespace Graffiti.Core
 	/// </summary>
 	public class Link
 	{
+        private IPostService _postService;
+	    private ICategoryService _categoryService;
+
+        //public Link(IPostService postService)
+        //{
+        //    _postService = postService;            
+        //}
+
+
 		private string _url;
 
 		public string Url
@@ -1525,12 +1535,12 @@ namespace Graffiti.Core
 
 		public Category Category
 		{
-			get { return CategoryId > 0 ? new CategoryController().GetCachedCategory(CategoryId, true) : null; }
+			get { return CategoryId > 0 ? _categoryService.FetchCachedCategory(CategoryId, true) : null; }
 		}
 
 		public Post Post
 		{
-			get { return PostId > 0 ? Post.GetCachedPost(PostId) : null; }
+			get { return PostId > 0 ? _postService.FetchCachedPost(PostId) : null; }
 		}
 
 	}

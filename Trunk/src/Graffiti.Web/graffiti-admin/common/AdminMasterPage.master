@@ -1,3 +1,4 @@
+<%@ Import Namespace="Graffiti.Core.Services"%>
 <%@ Master Language="C#" %>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <%@ Import Namespace="System.Reflection" %>
@@ -77,6 +78,8 @@
 </html>
 <script runat="Server">
 
+    protected IRolePermissionService _rolePermissionService = ServiceLocator.Get<IRolePermissionService>();
+    
     void Page_Load(object sender, EventArgs e)
     {
         GetGraffitiVersion();
@@ -94,7 +97,7 @@
             UserManagementLink.NavigateUrl = "~/graffiti-admin/user-management/users/";
         }
 
-        if(!isEditor && !RolePermissionManager.CanViewControlPanel(user))
+        if(!isEditor && !_rolePermissionService.CanViewControlPanel(user))
             Response.Redirect("~/login/");
         
     }

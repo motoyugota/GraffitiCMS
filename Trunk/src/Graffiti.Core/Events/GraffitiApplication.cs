@@ -380,184 +380,162 @@ namespace Graffiti.Core
 		private static object BeforeDestroyObject = new object();
 		private static object AfterDestroyObject = new object();
 
-		/// <summary>
-		/// Wires up an event for the DataBuddy BeforeValidate Event
-		/// </summary>
-		public event DataObjectEventHandler BeforeValidate
-		{
-			add { Events.AddHandler(BeforeValidateObject, value); }
-			remove { Events.RemoveHandler(BeforeValidateObject, value); }
-		}
+        /// <summary>
+        /// Wires up an event for the DataObject BeforeValidate Event
+        /// </summary>
+        public event DataObjectEventHandler BeforeValidate {
+            add { Events.AddHandler(BeforeValidateObject, value); }
+            remove { Events.RemoveHandler(BeforeValidateObject, value); }
+        }
 
-		/// <summary>
-		/// Wires up an event for the DataBuddy BeforeInsert Event
-		/// </summary>
-		public event DataObjectEventHandler BeforeInsert
-		{
-			add { Events.AddHandler(BeforeInsertObject, value); }
-			remove { Events.RemoveHandler(BeforeInsertObject, value); }
-		}
+        /// <summary>
+        /// Wires up an event for the DataObject BeforeInsert Event
+        /// </summary>
+        public event DataObjectEventHandler BeforeInsert {
+            add { Events.AddHandler(BeforeInsertObject, value); }
+            remove { Events.RemoveHandler(BeforeInsertObject, value); }
+        }
 
-		/// <summary>
-		/// Wires up an event for the DataBuddy BeforeUpdate Event
-		/// </summary>
-		public event DataObjectEventHandler BeforeUpdate
-		{
-			add { Events.AddHandler(BeforeUpdateOjbect, value); }
-			remove { Events.RemoveHandler(BeforeUpdateOjbect, value); }
-		}
+        /// <summary>
+        /// Wires up an event for the DataObject BeforeUpdate Event
+        /// </summary>
+        public event DataObjectEventHandler BeforeUpdate {
+            add { Events.AddHandler(BeforeUpdateOjbect, value); }
+            remove { Events.RemoveHandler(BeforeUpdateOjbect, value); }
+        }
 
-		/// <summary>
-		/// Wires up an event for the DataBuddy AfterCommit Event
-		/// </summary>
-		public event DataObjectEventHandler AfterCommit
-		{
-			add { Events.AddHandler(AfterCommitObject, value); }
-			remove { Events.RemoveHandler(AfterCommitObject, value); }
-		}
+        /// <summary>
+        /// Wires up an event for the DataObject AfterCommit Event
+        /// </summary>
+        public event DataObjectEventHandler AfterCommit {
+            add { Events.AddHandler(AfterCommitObject, value); }
+            remove { Events.RemoveHandler(AfterCommitObject, value); }
+        }
 
-		/// <summary>
-		/// Wires up an event for the DataBuddy AfterInsert Event
-		/// </summary>
-		public event DataObjectEventHandler AfterInsert
-		{
-			add { Events.AddHandler(AfterInsertObject, value); }
-			remove { Events.RemoveHandler(AfterInsertObject, value); }
-		}
+        /// <summary>
+        /// Wires up an event for the DataObject AfterInsert Event
+        /// </summary>
+        public event DataObjectEventHandler AfterInsert {
+            add { Events.AddHandler(AfterInsertObject, value); }
+            remove { Events.RemoveHandler(AfterInsertObject, value); }
+        }
 
-		/// <summary>
-		/// Wires up an event for the DataBuddy AfterUpdate Event
-		/// </summary>
-		public event DataObjectEventHandler AfterUpdate
-		{
-			add { Events.AddHandler(AfterUpdateObject, value); }
-			remove { Events.RemoveHandler(AfterUpdateObject, value); }
-		}
+        /// <summary>
+        /// Wires up an event for the DataObject AfterUpdate Event
+        /// </summary>
+        public event DataObjectEventHandler AfterUpdate {
+            add { Events.AddHandler(AfterUpdateObject, value); }
+            remove { Events.RemoveHandler(AfterUpdateObject, value); }
+        }
 
-		/// <summary>
-		/// Wires up an event for the DataBuddy BeforeRemove Event
-		/// </summary>
-		public event DataObjectEventHandler BeforeRemove
-		{
-			add { Events.AddHandler(BeforeRemoveObject, value); }
-			remove { Events.RemoveHandler(BeforeRemoveObject, value); }
-		}
+        /// <summary>
+        /// Wires up an event for the DataObject BeforeRemove Event
+        /// </summary>
+        public event DataObjectEventHandler BeforeRemove {
+            add { Events.AddHandler(BeforeRemoveObject, value); }
+            remove { Events.RemoveHandler(BeforeRemoveObject, value); }
+        }
 
-		/// <summary>
-		/// Wires up an event for the DataBuddy AfterRemove Event
-		/// </summary>
-		public event DataObjectEventHandler AfterRemove
-		{
-			add { Events.AddHandler(AfterRemoveObject, value); }
-			remove { Events.RemoveHandler(AfterRemoveObject, value); }
-		}
+        /// <summary>
+        /// Wires up an event for the DataObject AfterRemove Event
+        /// </summary>
+        public event DataObjectEventHandler AfterRemove {
+            add { Events.AddHandler(AfterRemoveObject, value); }
+            remove { Events.RemoveHandler(AfterRemoveObject, value); }
+        }
 
-		/// <summary>
-		/// Wires up an event for the DataBuddy BeforeDestroy Event
-		/// </summary>
-		public event DataObjectEventHandler BeforeDestroy
-		{
-			add { Events.AddHandler(BeforeDestroyObject, value); }
-			remove { Events.RemoveHandler(BeforeDestroyObject, value); }
-		}
+        /// <summary>
+        /// Wires up an event for the DataObject BeforeDestroy Event
+        /// </summary>
+        public event DataObjectEventHandler BeforeDestroy {
+            add { Events.AddHandler(BeforeDestroyObject, value); }
+            remove { Events.RemoveHandler(BeforeDestroyObject, value); }
+        }
 
-		/// <summary>
-		/// Wires up an event for the DataBuddy AfterDestroy Event
-		/// </summary>
-		public event DataObjectEventHandler AfterDestroy
-		{
-			add { Events.AddHandler(AfterDestroyObject, value); }
-			remove { Events.RemoveHandler(AfterDestroyObject, value); }
-		}
+        /// <summary>
+        /// Wires up an event for the DataObject AfterDestroy Event
+        /// </summary>
+        public event DataObjectEventHandler AfterDestroy {
+            add { Events.AddHandler(AfterDestroyObject, value); }
+            remove { Events.RemoveHandler(AfterDestroyObject, value); }
+        }
 
-		private void ExecuteDataObjectEvent(object key, DataBuddyBase dbb)
-		{
-			DataObjectEventHandler doe = Events[key] as DataObjectEventHandler;
-			if (doe != null)
-			{
-				doe(dbb, EventArgs.Empty);
-			}
-		}
+        private void ExecuteDataObjectEvent(object key, object dbb) {
+            DataObjectEventHandler doe = Events[key] as DataObjectEventHandler;
+            if (doe != null) {
+                doe(dbb, EventArgs.Empty);
+            }
+        }
 
-		/// <summary>
-		/// Executes the BeforeValidate Vent
-		/// </summary>
-		internal void ExecuteBeforeValidateEvent(DataBuddyBase dbb)
-		{
-			ExecuteDataObjectEvent(BeforeValidateObject, dbb);
-		}
+        /// <summary>
+        /// Executes the BeforeValidate Event
+        /// </summary>
+        public void ExecuteBeforeValidateEvent(object dbb) {
+            ExecuteDataObjectEvent(BeforeValidateObject, dbb);
+        }
 
-		/// <summary>
-		/// Executes the BeforeInsert Vent
-		/// </summary>
-		internal void ExecuteBeforeInsertEvent(DataBuddyBase dbb)
-		{
-			ExecuteDataObjectEvent(BeforeInsertObject, dbb);
-		}
+        /// <summary>
+        /// Executes the BeforeInsert Event
+        /// </summary>
+        public void ExecuteBeforeInsertEvent(object dbb) {
+            ExecuteDataObjectEvent(BeforeInsertObject, dbb);
+        }
 
-		/// <summary>
-		/// Executes the BeforeUpdate Vent
-		/// </summary>
-		internal void ExecuteBeforeUpdateEvent(DataBuddyBase dbb)
-		{
-			ExecuteDataObjectEvent(BeforeUpdateOjbect, dbb);
-		}
+        /// <summary>
+        /// Executes the BeforeUpdate Event
+        /// </summary>
+        public void ExecuteBeforeUpdateEvent(object dbb) {
+            ExecuteDataObjectEvent(BeforeUpdateOjbect, dbb);
+        }
 
-		/// <summary>
-		/// Executes the AfterCommit Vent
-		/// </summary>
-		internal void ExecuteAfterCommitEvent(DataBuddyBase dbb)
-		{
-			ExecuteDataObjectEvent(AfterCommitObject, dbb);
-		}
+        /// <summary>
+        /// Executes the AfterCommit Event
+        /// </summary>
+        public void ExecuteAfterCommitEvent(object dbb) {
+            ExecuteDataObjectEvent(AfterCommitObject, dbb);
+        }
 
-		/// <summary>
-		/// Executes the AfterInsert Vent
-		/// </summary>
-		internal void ExecuteAfterInsertEvent(DataBuddyBase dbb)
-		{
-			ExecuteDataObjectEvent(AfterInsertObject, dbb);
-		}
+        /// <summary>
+        /// Executes the AfterInsert Event
+        /// </summary>
+        public void ExecuteAfterInsertEvent(object dbb) {
+            ExecuteDataObjectEvent(AfterInsertObject, dbb);
+        }
 
-		/// <summary>
-		/// Executes the AfterUpdate Vent
-		/// </summary>
-		internal void ExecuteAfterUpdateEvent(DataBuddyBase dbb)
-		{
-			ExecuteDataObjectEvent(AfterUpdateObject, dbb);
-		}
+        /// <summary>
+        /// Executes the AfterUpdate Event
+        /// </summary>
+        public void ExecuteAfterUpdateEvent(object dbb) {
+            ExecuteDataObjectEvent(AfterUpdateObject, dbb);
+        }
 
-		/// <summary>
-		/// Executes the BeforeRemove Vent
-		/// </summary>
-		internal void ExecuteBeforeRemoveEvent(DataBuddyBase dbb)
-		{
-			ExecuteDataObjectEvent(BeforeRemoveObject, dbb);
-		}
+        /// <summary>
+        /// Executes the BeforeRemove Event
+        /// </summary>
+        public void ExecuteBeforeRemoveEvent(object dbb) {
+            ExecuteDataObjectEvent(BeforeRemoveObject, dbb);
+        }
 
-		/// <summary>
-		/// Executes the AfterRemove Vent
-		/// </summary>
-		internal void ExecuteAfterRemoveEvent(DataBuddyBase dbb)
-		{
-			ExecuteDataObjectEvent(AfterRemoveObject, dbb);
-		}
+        /// <summary>
+        /// Executes the AfterRemove Event
+        /// </summary>
+        public void ExecuteAfterRemoveEvent(object dbb) {
+            ExecuteDataObjectEvent(AfterRemoveObject, dbb);
+        }
 
-		/// <summary>
-		/// Executes the BeforeDestroy Vent
-		/// </summary>
-		internal void ExecuteBeforeDestroyEvent(DataBuddyBase dbb)
-		{
-			ExecuteDataObjectEvent(BeforeDestroyObject, dbb);
-		}
+        /// <summary>
+        /// Executes the BeforeDestroy Event
+        /// </summary>
+        public void ExecuteBeforeDestroyEvent(object dbb) {
+            ExecuteDataObjectEvent(BeforeDestroyObject, dbb);
+        }
 
-		/// <summary>
-		/// Executes the AfterDestroy Vent
-		/// </summary>
-		internal void ExecuteAfterDestroyEvent(DataBuddyBase dbb)
-		{
-			ExecuteDataObjectEvent(AfterDestroyObject, dbb);
-		}
+        /// <summary>
+        /// Executes the AfterDestroy Event
+        /// </summary>
+        public void ExecuteAfterDestroyEvent(object dbb) {
+            ExecuteDataObjectEvent(AfterDestroyObject, dbb);
+        }
 
 		#endregion
 

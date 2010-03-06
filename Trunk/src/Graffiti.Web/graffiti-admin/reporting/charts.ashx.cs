@@ -1,10 +1,10 @@
 
 using System;
 using System.Collections.Generic;
-using System.Data;
 using System.Text;
 using System.Web;
 using System.Xml;
+using Graffiti.Core.Services;
 
 namespace Graffiti.Core
 {
@@ -12,9 +12,12 @@ namespace Graffiti.Core
     {
         HttpContext context;
 
+        private IPostService _postService = ServiceLocator.Get<IPostService>();
+        private IRolePermissionService _rolePermissionService = ServiceLocator.Get<IRolePermissionService>();
+
         public void ProcessRequest(HttpContext context)
         {
-            if (!RolePermissionManager.CanViewControlPanel(GraffitiUsers.Current))
+            if (!_rolePermissionService.CanViewControlPanel(GraffitiUsers.Current))
                 context.Response.End();
 
             string report;
@@ -87,7 +90,7 @@ namespace Graffiti.Core
             xml.WriteStartElement("graph");
             xml.WriteAttributeString("gid", "1");
 
-            IDictionary<DateTime, int> dateCounts = Reports.ViewsByDateReport(minDate, maxDate);
+            IDictionary<DateTime, int> dateCounts = Reports.ViewsByDate(minDate, maxDate);
             for (int i = 0; i <= maxDate.Subtract(minDate).Days; i++)
             {
                 DateTime date = minDate.Date.AddDays(i);
@@ -136,7 +139,7 @@ namespace Graffiti.Core
             {
                 xml.WriteStartElement("value");
                 xml.WriteAttributeString("xid", key.ToString());
-                xml.WriteAttributeString("url", Post.GetCachedPost(key).Url);
+                xml.WriteAttributeString("url", _postService.FetchCachedPost(key).Url);
                 xml.WriteValue(viewsBySingle_ReportData.Titles[key]);
                 xml.WriteEndElement();
             }
@@ -151,7 +154,7 @@ namespace Graffiti.Core
             {
                 xml.WriteStartElement("value");
                 xml.WriteAttributeString("xid", key.ToString());
-                xml.WriteAttributeString("url", Post.GetCachedPost(key).Url);
+                xml.WriteAttributeString("url", _postService.FetchCachedPost(key).Url);
                 xml.WriteValue(viewsBySingle_ReportData.Counts[key]);
                 xml.WriteEndElement();
             }
@@ -168,7 +171,7 @@ namespace Graffiti.Core
             DateTime minDate = new DateTime(long.Parse(context.Request.QueryString["minDate"]));
             DateTime maxDate = new DateTime(long.Parse(context.Request.QueryString["maxDate"]));
 
-            ReportData data = Reports.GetViewsByPost(minDate, maxDate);
+            ReportData data = Reports.ViewsByPost(minDate, maxDate);
 
 
             xml.WriteStartElement("chart");
@@ -180,7 +183,7 @@ namespace Graffiti.Core
             {
                 xml.WriteStartElement("value");
                 xml.WriteAttributeString("xid", key.ToString());
-                xml.WriteAttributeString("url", Post.GetCachedPost(key).Url);
+                xml.WriteAttributeString("url", _postService.FetchCachedPost(key).Url);
                 xml.WriteValue(data.Titles[key]);
                 xml.WriteEndElement();
             }
@@ -222,7 +225,7 @@ namespace Graffiti.Core
 
                 xml.WriteStartElement("slice");
                 xml.WriteAttributeString("title", data.Titles[key]);
-                xml.WriteAttributeString("url", Post.GetCachedPost(key).Url);
+                xml.WriteAttributeString("url", _postService.FetchCachedPost(key).Url);
 
                 if (counter == 1)
                     xml.WriteAttributeString("pull_out", "true");
@@ -374,7 +377,7 @@ namespace Graffiti.Core
             {
                 xml.WriteStartElement("value");
                 xml.WriteAttributeString("xid", key.ToString());
-                xml.WriteAttributeString("url", Post.GetCachedPost(key).Url);
+                xml.WriteAttributeString("url", _postService.FetchCachedPost(key).Url);
                 xml.WriteValue(data.Counts[key]);
                 xml.WriteEndElement();
             }

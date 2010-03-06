@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Xml;
-using DataBuddy;
 
 namespace Graffiti.Core.API
 {
@@ -15,22 +15,15 @@ namespace Graffiti.Core.API
             switch (Context.Request.HttpMethod.ToUpper())
             {
                 case "GET":
-
                     if(!String.IsNullOrEmpty(Context.Request.QueryString["revision"]))
                         GetPostsForRevision(writer);
                     else
                         GetPosts(writer);
-
                     break;
-
                 case "POST":
-
                     CreateUpdateDeletePost(writer, user);
                     break;
-
                 default:
-                   
-
                     break;
             }
         }
@@ -49,9 +42,9 @@ namespace Graffiti.Core.API
                 XmlAttribute postidAttribute = doc.SelectSingleNode("/post").Attributes["id"];
 
                 int pid = Int32.Parse(postidAttribute.Value);
-                Post p = new Post(pid);
+                Post p = _postService.FetchPost(pid);
 
-                Permission perm = RolePermissionManager.GetPermissions(p.CategoryId, user);
+                Permission perm = _rolePermissionService.GetPermissions(p.CategoryId, user);
 
                 if (GraffitiUsers.IsAdmin(user) || perm.Publish)
                     writer.WriteRaw(DeletePost(doc));
@@ -72,15 +65,9 @@ namespace Graffiti.Core.API
 
             int version = (Int32.Parse(v ?? "-1"));
 
-            Query q = VersionStore.CreateQuery();
-            q.AndWhere(VersionStore.Columns.ItemId, postid);
-            q.AndWhere(VersionStore.Columns.Type, "post/xml");
-            if (version > 0)
-                q.AndWhere(VersionStore.Columns.Version, version);
-
-            VersionStoreCollection vsc = VersionStoreCollection.FetchByQuery(q);
+            VersionStoreCollection vsc = new VersionStoreCollection(_versionStoreService.FetchVersionStoreByPostId(postid, version).Where(x => x.Type == "post/xml"));
             PostCollection posts = new PostCollection();
-            posts.Add(new Post(postid));
+            posts.Add(_postService.FetchPost(postid));
 
             foreach (VersionStore vs in vsc)
             {
@@ -105,15 +92,16 @@ namespace Graffiti.Core.API
         private void GetPosts(XmlTextWriter writer)
         {
             PostFilter filter = PostFilter.FromQueryString(Request.QueryString);
-            Query q = filter.ToQuery();
-            q.AndWhere(Post.Columns.IsDeleted, false);
+            PostCollection posts = new PostCollection(filter.ToQuery().Where(x => !x.IsDeleted).ToList());
 
-            PostCollection posts = PostCollection.FetchByQuery(q);
-                 
+            PostFilter allFilter = PostFilter.FromQueryString(Request.QueryString);
+            PostCollection allPosts = new PostCollection(allFilter.ToQuery(false).Where(x => !x.IsDeleted).ToList());
+     
             writer.WriteStartElement("posts");
-            writer.WriteAttributeString("pageIndex", q.PageIndex.ToString() );
-            writer.WriteAttributeString("pageSize", q.PageSize.ToString());
-            writer.WriteAttributeString("totalPosts", q.GetRecordCount().ToString());
+            writer.WriteAttributeString("pageIndex", filter.PageIndex.ToString() );
+            writer.WriteAttributeString("pageSize", filter.PageSize.ToString());
+            writer.WriteAttributeString("totalPosts", allPosts.Count.ToString());
+            
             foreach (Post post in posts)
             {
                 ConvertPostToXML(post, writer);
@@ -188,11 +176,11 @@ namespace Graffiti.Core.API
                 throw new RESTConflict("No post id was specified to delete");
 
             int pid = Int32.Parse(postidAttribute.Value);
-            Post p = new Post(pid);
+            Post p = _postService.FetchPost(pid);
             if (p.IsNew)
                 throw new RESTConflict("No post exists with an id of " + pid);
 
-            Post.Delete(pid);
+            _postService.DeletePost(pid);
 
             return "<result id=\"" + pid + "\">deleted</result>";
         }
@@ -207,7 +195,7 @@ namespace Graffiti.Core.API
             {
                 int pid = Int32.Parse(postidAttribute.Value);
                 if (pid > 0)
-                    post = new Post(pid);
+                    post = _postService.FetchPost(pid);
                 else
                     post = new Post();
             }
@@ -274,7 +262,7 @@ namespace Graffiti.Core.API
                 post[cNode.Attributes["key"].Value] = cNode.InnerText;
             }
 
-            Permission perm = RolePermissionManager.GetPermissions(post.CategoryId, user);
+            Permission perm = _rolePermissionService.GetPermissions(post.CategoryId, user);
 
             if (GraffitiUsers.IsAdmin(user) || perm.Publish)
                 post.IsDeleted = GetNodeValue(node.SelectSingleNode("isDeleted"), post.IsDeleted);

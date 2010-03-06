@@ -1,19 +1,26 @@
-<%@ Import namespace="DataBuddy"%>
+<%@ Import Namespace="Graffiti.Web"%>
+<%@ Import Namespace="Graffiti.Core.Services"%>
 <%@ Import namespace="System.Threading"%>
 <%@ Import namespace="Graffiti.Core"%>
 <%@ Application Language="C#" %>
+<%@ Import Namespace="Graffiti.Web"%>
+<%@ Import Namespace="Graffiti.Core.Services"%>
 
 <script runat="server">
 
     void Application_Start(object sender, EventArgs e) 
     {
+        ServiceLocator.Initialize(KernelFactory.CreateKernel());
+       
         // Code that runs on application startup
-
+        IRolePermissionService _rolePermissionService = ServiceLocator.Get<IRolePermissionService>();
+        
+        
         applicationPath = HttpRuntime.AppDomainAppPath;
         _timer = new System.Threading.Timer(PeriodicTasks, null, 30000, 150000);
 		
         // make sure the everyone roles etc are created
-        RolePermissionManager.GetRolePermissions();
+        _rolePermissionService.GetRolePermissions();
 
         if(!SiteSettings.Get().GenerateFolders)
             UrlRouting.Initialize();
@@ -25,12 +32,16 @@
     
     static void PeriodicTasks(object state)
     {
+        ICommentService _commentService = ServiceLocator.Get<ICommentService>();
+        IPostService _postService = ServiceLocator.Get<IPostService>();
+        ILogService _logService = ServiceLocator.Get<ILogService>();
+        
         _timer.Change(Timeout.Infinite, Timeout.Infinite);
         try
         {
-            Comment.DeleteDeletedComments();
-            Comment.DeleteUnpublishedComments();
-            Post.DestroyDeletedPosts();
+            _commentService.DeleteDeletedComments();
+            _commentService.DeleteUnpublishedComments();
+            _postService.DestroyDeletedPosts();
             FeedManager.UpdateFeedData();
             UploadFileManager.RemoveUploadContextsOlderThan(applicationPath, 6);
             
@@ -38,7 +49,7 @@
             if (firstRunComplete)
             {
                 
-                Log.RemoveLogsOlderThan(48);
+                _logService.RemoveLogsOlderThan(48);
                 
             }
         }

@@ -8,7 +8,6 @@ using System.Net;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Web;
-using DataBuddy;
 using System.Web.UI;
 
 namespace Graffiti.Core
@@ -55,10 +54,10 @@ namespace Graffiti.Core
             }
         }
 
-        public static bool IsAccess
-        {
-            get { return DataService.DataProviderType == typeof(MSAccessProvider); }
-        }
+        //public static bool IsAccess
+        //{
+        //    get { return DataService.DataProviderType == typeof(MSAccessProvider); }
+        //}
 
         public static string GetFileText(string path)
         {

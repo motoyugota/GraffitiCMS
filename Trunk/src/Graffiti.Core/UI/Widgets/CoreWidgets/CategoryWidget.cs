@@ -8,7 +8,6 @@ namespace Graffiti.Core
     [WidgetInfo("34a544d7-3839-4e14-af48-ab233231d0e1", "Category Widget", "Represents a box")]
     public class CategoryWidget : Widget
     {
-
         public override string Name
         {
             get
@@ -53,14 +52,13 @@ namespace Graffiti.Core
             CategoryCollection cc = null;
 
             if (CategoryIds == null || CategoryIds.Length == 0)
-                cc = new CategoryController().GetTopLevelCachedCategories();
+                cc = new CategoryCollection(_categoryService.FetchTopLevelCachedCategories());
             else
             {
-                CategoryController controller = new CategoryController();
                 cc = new CategoryCollection();
                 foreach (int i in CategoryIds)
                 {
-                    Category c = controller.GetCachedCategory(i, true);
+                    Category c = _categoryService.FetchCachedCategory(i, true);
                     if(c != null)
                         cc.Add(c);
                 }

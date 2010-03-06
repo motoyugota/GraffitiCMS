@@ -1,9 +1,6 @@
 using System;
-using System.Web;
-using System.Web.UI;
+using System.Linq;
 using Graffiti.Core;
-using DataBuddy;
-using System.Text;
 using System.Collections.Generic;
 
 public partial class graffiti_admin_presentation_uncateogrized_post_widget : AdminControlPanelPage
@@ -27,13 +24,10 @@ public partial class graffiti_admin_presentation_uncateogrized_post_widget : Adm
     {
         txtTitle.Text = widget.Title;
 
-        Query q = Post.CreateQuery();
-        q.AndWhere(Post.Columns.CategoryId, CategoryController.UnCategorizedId);
-        q.AndWhere(Post.Columns.IsDeleted, false);
-        q.AndWhere(Post.Columns.Status, 1);
-
-        PostCollection pc = new PostCollection();
-        pc.LoadAndCloseReader(q.ExecuteReader());
+        PostCollection pc = new PostCollection(_postService.FetchPosts()
+            .Where(x => x.CategoryId == _categoryService.UnCategorizedId())
+            .Where(x => !x.IsDeleted)
+            .Where(x => x.Status == 1).ToList());
 
         PostCollection pcInUse = new PostCollection();
         PostCollection pcNotInUse = new PostCollection();

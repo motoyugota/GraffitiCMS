@@ -1,7 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
-using DataBuddy;
+using System.Linq;
+using Graffiti.Core.Services;
 
 namespace Graffiti.Core.API
 {
@@ -17,6 +18,9 @@ namespace Graffiti.Core.API
     /// </summary>
     public class PostFilter
     {
+        private ICategoryService _categoryService;
+        private IPostService _postService;
+
         private string _author = string.Empty;
         private int _categoryId = 0;
         private PostStatus _status = PostStatus.NotSet;
@@ -32,6 +36,8 @@ namespace Graffiti.Core.API
         // force creations to come from querystring parsing
         private PostFilter()
         {
+            _categoryService = ServiceLocator.Get<ICategoryService>();
+            _postService = ServiceLocator.Get<IPostService>();
         }
 
 
@@ -101,19 +107,24 @@ namespace Graffiti.Core.API
         }
 
 
-        // generate query object from filter
-        public Query ToQuery()
+        public IList<Post> ToQuery()
         {
-            Query query = Post.CreateQuery();
+            return ToQuery(true);
+        }
+
+        // generate query object from filter
+        public IList<Post> ToQuery(bool paged)
+        {
+            IList <Post> posts = _postService.FetchPosts();
 
             if (Id <= 0)
             {
                 if (!string.IsNullOrEmpty(Author))
-                    query.AndWhere(Post.Columns.UserName, Author);
+                    posts = posts.Where(x => x.UserName == Author).ToList();
 
                 if (CategoryId > 0)
                 {
-                    Category category = new CategoryController().GetCachedCategory(CategoryId, false);
+                    Category category = _categoryService.FetchCachedCategory(CategoryId, false);
 
                     if(IncludeChildCategories && category.HasChildren)
                     {
@@ -123,37 +134,36 @@ namespace Graffiti.Core.API
 
                         ids.Add(category.Id);
 
-                        query.AndInWhere(Post.Columns.CategoryId, ids.ToArray());
+                        posts = posts.Where(x => ids.Contains(x.CategoryId)).ToList();
                     }
                     else
-                        query.AndWhere(Post.Columns.CategoryId, CategoryId);
+                        posts = posts.Where(x => x.CategoryId == CategoryId).ToList();
                 }
                 if (Status == PostStatus.NotSet)
-                    query.AndWhere(Post.Columns.Status, PostStatus.Publish);
+                    posts = posts.Where(x => x.Status == (int)PostStatus.Publish).ToList();
                 else
-                    query.AndWhere(Post.Columns.Status, Status);
+                    posts = posts.Where(x => x.Status == (int)Status).ToList();
 
                 if (IsDeleted != TrueFalseIgnore.Ignore)
-                    query.AndWhere(Post.Columns.IsDeleted, IsDeleted == TrueFalseIgnore.True ? true : false);
+                    posts = posts.Where(x => x.IsDeleted == (IsDeleted == TrueFalseIgnore.True ? true : false)).ToList();
 
                 if (IsHome != TrueFalseIgnore.Ignore)
-                    query.AndWhere(Post.Columns.IsHome, IsHome == TrueFalseIgnore.True ? true : false);
+                    posts = posts.Where(x => x.IsHome == (IsHome == TrueFalseIgnore.True ? true : false)).ToList();
 
                 if(ParentId > 0)
-                    query.AndWhere(Post.Columns.ParentId,ParentId);
+                    posts = posts.Where(x => x.ParentId == ParentId).ToList();
 
+                posts = posts.OrderByDescending(x => x.Published).ToList();
 
-                query.PageIndex = PageIndex;
-                query.PageSize = PageSize;
-
-                query.OrderByDesc(Post.Columns.Published);
+                if (PageIndex > 0 && PageSize > 0 && posts.Count > PageSize && paged)
+                    posts = posts.Skip(PageSize * (PageIndex - 1)).Take(PageSize).ToList();
             }
             else
             {
-                query.AndWhere(Post.Columns.Id, Id);
+                posts = posts.Where(x => x.Id == Id).ToList();
             }
 
-            return query;
+            return posts;
         }
 
         #region Properties...

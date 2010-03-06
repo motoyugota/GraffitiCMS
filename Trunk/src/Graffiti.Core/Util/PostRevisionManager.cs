@@ -1,18 +1,23 @@
 using System;
 using System.Collections.Generic;
 using System.Web;
-using DataBuddy;
+using Graffiti.Core.Services;
 
 namespace Graffiti.Core
 {
-    public static  class PostRevisionManager
+    public class PostRevisionManager
     {
+        private static IPostService _postService = ServiceLocator.Get<IPostService>();
+        private static ICategoryService _categoryService = ServiceLocator.Get<ICategoryService>();
+        private static IRolePermissionService _rolePermissionService = ServiceLocator.Get<IRolePermissionService>();
+        private static IVersionStoreService _versionStoreService = ServiceLocator.Get<IVersionStoreService>();
+
         public static void SendRequestedChangesMessage(Post p, IGraffitiUser user)
         {
             List<IGraffitiUser> users = new List<IGraffitiUser>();
             foreach (IGraffitiUser u in GraffitiUsers.GetUsers("*"))
             {
-                if (GraffitiUsers.IsAdmin(u) || RolePermissionManager.GetPermissions(p.CategoryId, u).Publish)
+                if (GraffitiUsers.IsAdmin(u) || _rolePermissionService.GetPermissions(p.CategoryId, u).Publish)
                     users.Add(u);
             }
 
@@ -52,7 +57,7 @@ namespace Graffiti.Core
             List<IGraffitiUser> users = new List<IGraffitiUser>();
             foreach(IGraffitiUser u in GraffitiUsers.GetUsers("*"))
             {
-                if (GraffitiUsers.IsAdmin(u) || RolePermissionManager.GetPermissions(p.CategoryId, u).Publish)
+                if (GraffitiUsers.IsAdmin(u) || _rolePermissionService.GetPermissions(p.CategoryId, u).Publish)
                     users.Add(u);
             }
             
@@ -96,7 +101,7 @@ namespace Graffiti.Core
 
         public static int CommitPost(Post p, IGraffitiUser user, bool isFeaturedPost, bool isFeaturedCategory)
         {
-            Permission perm = RolePermissionManager.GetPermissions(p.CategoryId, user);
+            Permission perm = _rolePermissionService.GetPermissions(p.CategoryId, user);
             bool isMan = perm.Publish;
             bool isEdit = GraffitiUsers.IsAdmin(user);
 
@@ -119,23 +124,23 @@ namespace Graffiti.Core
             if(p.IsNew) //No VERSION WORK, just save it.
             {
                 p.Version = 1;
-                p.Save(user.Name,SiteSettings.CurrentUserTime);
+                _postService.SavePost(p, user.Name,SiteSettings.CurrentUserTime);
             }
             else if(p.IsPublished) //Make a copy of the current post, then save this one.
             {
-                Post old_Post = new Post(p.Id);
+                Post old_Post = _postService.FetchPost(p.Id);
 
                 //if(old_Post.PostStatus == PostStatus.Publish)
                 VersionPost(old_Post);
 
                 p.Version = GetNextVersionId(p.Id, p.Version);
-                p.Save(user.Name);
+                _postService.SavePost(p, user.Name);
             }
             else
             {
                 p.Version = GetNextVersionId(p.Id, p.Version);
                 VersionPost(p);
-                Post.UpdatePostStatus(p.Id,p.PostStatus);
+                _postService.UpdatePostStatus(p.Id,p.PostStatus);
             }
 
             ProcessFeaturedPosts(p, user, isFeaturedPost, isFeaturedCategory);
@@ -154,13 +159,7 @@ namespace Graffiti.Core
                 return 1;
             else
             {
-                QueryCommand command = new QueryCommand("Select Max(v.Version) FROM graffiti_VersionStore as v where v.Name = " + DataService.Provider.SqlVariable("Name"));
-				command.Parameters.Add(VersionStore.FindParameter("Name")).Value = "Post:" + postid.ToString();
-                object obj = DataService.ExecuteScalar(command);
-                if (obj == null || obj is System.DBNull)
-                    return 2;
-                else
-                    return Math.Max(((int)obj), currentVersion) + 1;
+                return _versionStoreService.GetNextVersionId(postid, currentVersion);
             }
         }
 
@@ -182,12 +181,12 @@ namespace Graffiti.Core
             if (p.IsPublished && isFeaturedCategory)
             {
                 c.FeaturedId = p.Id;
-                c.Save(user.Name);
+                _categoryService.SaveCategory(c, user.Name);
             }
             else if (c.FeaturedId == p.Id)
             {
                 c.FeaturedId = -1;
-                c.Save(user.Name);
+                _categoryService.SaveCategory(c, user.Name);
             }
         }
 
@@ -200,7 +199,7 @@ namespace Graffiti.Core
             vs.UniqueId = Guid.NewGuid();
             vs.Data = old_Post.ToXML();
             vs.Version = old_Post.Version;
-            vs.Save(GraffitiUsers.Current.Name);
+            vs = _versionStoreService.SaveVersionStore(vs, GraffitiUsers.Current.Name);
         }
     }
 }

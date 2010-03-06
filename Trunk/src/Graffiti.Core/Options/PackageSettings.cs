@@ -1,10 +1,9 @@
 using System;
 using System.Collections.Generic;
-using System.Collections.Specialized;
-using System.Text;
 using System.Xml;
 using System.Web;
 using System.IO;
+using Graffiti.Core.Services;
 
 namespace Graffiti.Core
 {
@@ -14,6 +13,8 @@ namespace Graffiti.Core
     [Serializable]
     public class PackageSettings
     {
+        private static IVersionStoreService _versionStoreService = ServiceLocator.Get<IVersionStoreService>();
+
         private PackageCollection _packages;
 
         public PackageCollection Packages
@@ -157,13 +158,13 @@ namespace Graffiti.Core
                         File.Move(fileName + ".old", fileName);
                     else
                     {
-                        VersionStoreCollection vsc = VersionStore.GetVersionHistory(fileName, false);
+                        VersionStoreCollection vsc = new VersionStoreCollection(_versionStoreService.FetchVersionHistory(fileName, false));
 
                         if (vsc != null && vsc.Count > 0)
                         {
                             WriteFile(fileName, vsc[0].Data);
 
-                            VersionStore.Destroy(VersionStore.Columns.UniqueId, vsc[0].UniqueId);
+                            _versionStoreService.DestroyVersionStore(vsc[0].UniqueId);
                         }
                     }
                 }
@@ -259,7 +260,7 @@ namespace Graffiti.Core
                     if (fileToCreateName.ToLower().EndsWith(".dll"))
                         File.Move(fileToCreateName, fileToCreateName + ".old");
                     else
-                        VersionStore.VersionFile(new FileInfo(fileToCreateName));
+                        _versionStoreService.VersionFile(new FileInfo(fileToCreateName), GraffitiUsers.Current.Name, SiteSettings.CurrentUserTime);
 
                     File.Delete(fileToCreateName);
                 }

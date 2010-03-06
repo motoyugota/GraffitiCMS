@@ -1,27 +1,19 @@
 using System;
-using System.Data;
-using System.Configuration;
 using System.Globalization;
 using System.IO;
-using System.Web;
-using System.Web.Security;
-using System.Web.UI;
-using System.Web.UI.WebControls;
-using System.Web.UI.WebControls.WebParts;
-using System.Web.UI.HtmlControls;
-using System.Collections.Generic;
 using System.Xml.Serialization;
-using DataBuddy;
+using Graffiti.Core.Services;
 
 namespace Graffiti.Core
 {
     public static class ObjectManager
     {
+        private static IObjectStoreService _objectStoreService = ServiceLocator.Get<IObjectStoreService>();
+
         public static void Delete(string name)
         {
-            ObjectStore os = ObjectStore.FetchByColumn(ObjectStore.Columns.Name, name);
-
-            ObjectStore.Destroy(os.Id);
+            ObjectStore os = _objectStoreService.FetchByName(name);
+            _objectStoreService.DestroyObjectStore(os.Id);
 
             ZCache.RemoveCache("object-" + name);
         }
@@ -32,7 +24,7 @@ namespace Graffiti.Core
             T t = ZCache.Get<T>(cacheKey);
             if(t == null)
             {
-               ObjectStore os = ObjectStore.FetchByColumn(ObjectStore.Columns.Name, name);
+               ObjectStore os = _objectStoreService.FetchByName(name);
                if(os.IsLoaded)
                {
                    t = ConvertToObject<T>(os.Data);
@@ -53,7 +45,7 @@ namespace Graffiti.Core
 
         public static void Save(object objectToSave, string name)
         {
-            ObjectStore os = ObjectStore.FetchByColumn(ObjectStore.Columns.Name, name);
+            ObjectStore os = _objectStoreService.FetchByName(name);
             os.Data = ConvertToString(objectToSave);
            
             if (!os.IsLoaded)
@@ -64,7 +56,7 @@ namespace Graffiti.Core
                 os.Version++;
             }
 
-            os.Save();
+            os = _objectStoreService.SaveObjectStore(os);
 
             ZCache.RemoveCache("object-" + name);
             ZCache.InsertCache("object-" + name,objectToSave,120);

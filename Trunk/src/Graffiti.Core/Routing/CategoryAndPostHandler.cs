@@ -2,13 +2,20 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Web;
-using System.Web.Compilation;
 using System.Web.Routing;
+using Graffiti.Core.Services;
 
 namespace Graffiti.Core
 {
 	public class CategoryAndPostHandler : IRouteHandler
 	{
+	    private ICategoryService _categoryService;
+
+        public CategoryAndPostHandler(ICategoryService categoryService)
+        {
+            _categoryService = categoryService;            
+        }
+
 		public IHttpHandler GetHttpHandler(RequestContext requestContext)
 		{
 			string path = requestContext.RouteData.Values["path"] != null ? requestContext.RouteData.Values["path"].ToString() : null;
@@ -71,8 +78,7 @@ namespace Graffiti.Core
 		// Not used yet, will be needed to support n-level categories
 		public List<Category> GetCategories(string path)
 		{
-			CategoryController cc = new CategoryController();
-			var categoryStack = new List<Category>() { cc.GetUnCategorizedCategory() };
+			var categoryStack = new List<Category>() { _categoryService.FetchUnCategorizedCategory() };
 
 			string[] pathArray = GetPaths(path);
 			string lastCategoryPath = pathArray.LastOrDefault();
@@ -83,7 +89,7 @@ namespace Graffiti.Core
 					continue;
 
 				Category parentCategory = categoryStack[categoryStack.Count - 1];
-				Category category = cc.GetCachedCategoryByLinkName(string.Format("{0}/{1}", parentCategory.LinkName, linkName), parentCategory.Id, true);
+				Category category = _categoryService.FetchCachedCategoryByLinkName(string.Format("{0}/{1}", parentCategory.LinkName, linkName), parentCategory.Id, true);
 
 				// If category cannot be found, we reached the end of the stack and remaining items must be content
 				if (category == null)
@@ -97,7 +103,7 @@ namespace Graffiti.Core
 
 		public CategoryPage GetCategory(string param)
 		{
-			var category = new CategoryController().GetCachedCategoryByLinkName(param, true);
+			var category =_categoryService.FetchCachedCategoryByLinkName(param, true);
 
 			if (category != null)
 			{
@@ -124,7 +130,7 @@ namespace Graffiti.Core
 
 				postPage.PostId = post.Id;
 				postPage.CategoryID = post.CategoryId;
-				postPage.CategoryName = new CategoryController().GetCachedCategory(post.CategoryId, false).LinkName;
+				postPage.CategoryName = _categoryService.FetchCachedCategory(post.CategoryId, false).LinkName;
 				postPage.PostName = post.Name;
 				postPage.Name = post.Name;
 				postPage.MetaDescription = post.MetaDescription;

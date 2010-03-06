@@ -71,10 +71,6 @@
     <Compile Include="RESTConflict.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\DataBuddy\DataBuddy.csproj">
-      <Project>{D1137CEB-9B3D-4774-B4F0-9BC0C272B8B8}</Project>
-      <Name>DataBuddy</Name>
-    </ProjectReference>
     <ProjectReference Include="..\Graffiti.Core\Graffiti.Core.csproj">
       <Project>{7C676AF7-35BE-4F98-953F-69769ED4175B}</Project>
       <Name>Graffiti.Core</Name>
