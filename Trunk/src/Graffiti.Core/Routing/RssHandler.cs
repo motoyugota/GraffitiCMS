@@ -7,17 +7,17 @@ namespace Graffiti.Core
 {
 	public class RssHandler : IRouteHandler
 	{
-        private ICategoryService _categoryService;
+		private ICategoryService _categoryService;
 
-        public RssHandler(ICategoryService categoryService) 
-        {
-            _categoryService = categoryService;
-        }
+		public RssHandler(ICategoryService categoryService)
+		{
+			_categoryService = categoryService;
+		}
 
-        public RssHandler()
-        {
-            _categoryService = ServiceLocator.Get<ICategoryService>();
-        }
+		public RssHandler()
+		{
+			_categoryService = ServiceLocator.Get<ICategoryService>();
+		}
 
 		public IHttpHandler GetHttpHandler(RequestContext requestContext)
 		{
@@ -27,19 +27,13 @@ namespace Graffiti.Core
 
 
 			if (!String.IsNullOrEmpty(categoryTwoName))
-			{
-				return GetFeed(categoryTwoName);
-			}
+				return GetFeed(categoryOneName + "/" + categoryTwoName);
 
 			if (!String.IsNullOrEmpty(categoryOneName))
-			{
 				return GetFeed(categoryOneName);
-			}
 
 			if (!string.IsNullOrEmpty(tagName))
-			{
 				return GetTagFeed(tagName);
-			}
 
 			return GetFeed(null);
 		}
@@ -48,9 +42,8 @@ namespace Graffiti.Core
 		{
 			var feed = new RSS();
 			if (!string.IsNullOrEmpty(tagName))
-			{
 				feed.TagName = tagName;
-			}
+
 			return feed;
 		}
 
