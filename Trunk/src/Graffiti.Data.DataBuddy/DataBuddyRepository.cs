@@ -945,7 +945,12 @@ namespace Graffiti.Data.DataBuddy
             return tagWeight;
         }
 
-        private Category ConvertDataCategoryToCategory(DataCategory data)
+		  private Category ConvertDataCategoryToCategory(DataCategory data)
+		  {
+			  return ConvertDataCategoryToCategory(data, null);
+		  }
+
+        private Category ConvertDataCategoryToCategory(DataCategory data, Category parent)
         {
             Category category = new Category();
 
@@ -965,10 +970,10 @@ namespace Graffiti.Data.DataBuddy
             category.MetaDescription = data.MetaDescription;
             category.MetaKeywords = data.MetaKeywords;
             category.Name = data.Name;
-            if (data.Parent != null)
-            {
-                category.Parent = ConvertDataCategoryToCategory(data.Parent);   
-            }
+				if (parent != null)
+					category.Parent = parent;
+			   else if (data.Parent != null)
+					category.Parent = ConvertDataCategoryToCategory(data.Parent);
             category.ParentId = data.ParentId;
             category.PostCount = data.PostCount;
             category.PostView = data.PostView;
@@ -980,7 +985,7 @@ namespace Graffiti.Data.DataBuddy
 
             foreach (DataCategory dataCategory in data.Children)
             {
-                category.Children.Add(ConvertDataCategoryToCategory(dataCategory));
+                category.Children.Add(ConvertDataCategoryToCategory(dataCategory, category));
             }
 
             return category;

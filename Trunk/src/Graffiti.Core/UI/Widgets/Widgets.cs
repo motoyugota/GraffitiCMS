@@ -176,6 +176,7 @@ namespace Graffiti.Core
             Widget widget = Activator.CreateInstance(type) as Widget;
             widget.Id = Guid.NewGuid();
             widget.Order = Widgets.FetchByLocation(WidgetLocation.Queue).Count + 1;
+				widget.SetValues(HttpContext.Current, widget.GetDefaults());
             ObjectStore os = new ObjectStore();
             os.ContentType = "xml/widget";
 

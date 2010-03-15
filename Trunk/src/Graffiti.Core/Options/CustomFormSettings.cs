@@ -158,45 +158,48 @@ namespace Graffiti.Core
                     fieldValues[cf.Id.ToString()] = customFieldValues[cf.Id.ToString()];
             }
 
-            StringBuilder sb = new StringBuilder();
-            foreach (CustomField cf in this.Fields)
-            {
-                switch (cf.FieldType)
-                {
-                    case FieldType.TextBox:
-                        new TextFormElement(cf.Id.ToString(), cf.Name, cf.Description).Write(sb, fieldValues);
-                        break;
-                    case FieldType.TextArea:
-                        new TextAreaFormElement(cf.Id.ToString(), cf.Name, cf.Description, 5).Write(sb, fieldValues);
-                        break;
-                    case FieldType.CheckBox:
-                        new CheckFormElement(cf.Id.ToString(), cf.Name, cf.Description, cf.Checked).Write(sb, fieldValues);
-                        break;
+			StringBuilder sb = new StringBuilder();
+			foreach (CustomField cf in this.Fields)
+			{
+				switch (cf.FieldType)
+				{
+					case FieldType.TextBox:
+						new TextFormElement(cf.Id.ToString(), cf.Name, cf.Description).Write(sb, fieldValues);
+						break;
+		
+					case FieldType.TextArea:
+						new TextAreaFormElement(cf.Id.ToString(), cf.Name, cf.Description, cf.Rows).Write(sb, fieldValues);
+						break;
 
-                    case FieldType.File:
-                        new FileFormElement(cf.Id.ToString(), cf.Name,cf.Description).Write(sb,fieldValues);
-                        break;
+					case FieldType.CheckBox:
+						bool isNew = (customFieldValues.Count == 0);
+						new CheckFormElement(cf.Id.ToString(), cf.Name, cf.Description, cf.Checked, isNew).Write(sb, fieldValues);
+						break;
 
-                    case FieldType.WYSIWYG:
-                        new WYWIWYGFormElement(cf.Id.ToString(), cf.Name,cf.Description).Write(sb,fieldValues);
-                        break;
+					case FieldType.File:
+						new FileFormElement(cf.Id.ToString(), cf.Name, cf.Description).Write(sb, fieldValues);
+						break;
 
-                    case FieldType.DateTime:
-                        new DateTimeFormElement(cf.Id.ToString(), cf.Name, cf.Description).Write(sb, fieldValues);
-                        break;
+					case FieldType.WYSIWYG:
+						new WYWIWYGFormElement(cf.Id.ToString(), cf.Name, cf.Description).Write(sb, fieldValues);
+						break;
 
-                    case FieldType.List:
-                        if (cf.ListOptions != null && cf.ListOptions.Count > 0)
-                        {
-                            ListFormElement lfe = new ListFormElement(cf.Id.ToString(), cf.Name, cf.Description);
-                            foreach (ListItemFormElement life in cf.ListOptions)
-                                lfe.Add(life);
+					case FieldType.DateTime:
+						new DateTimeFormElement(cf.Id.ToString(), cf.Name, cf.Description).Write(sb, fieldValues);
+						break;
 
-                            lfe.Write(sb, fieldValues);
-                        }
-                        break;
-                }
-            }
+					case FieldType.List:
+						if (cf.ListOptions != null && cf.ListOptions.Count > 0)
+						{
+							ListFormElement lfe = new ListFormElement(cf.Id.ToString(), cf.Name, cf.Description);
+							foreach (ListItemFormElement life in cf.ListOptions)
+								lfe.Add(life);
+
+							lfe.Write(sb, fieldValues);
+						}
+						break;
+				}
+			}
 
             return sb.ToString();
         }

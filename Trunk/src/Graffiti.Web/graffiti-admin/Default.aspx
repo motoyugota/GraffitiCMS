@@ -131,40 +131,7 @@ function approveComment(id)
             if (GraffitiUsers.IsAdmin(GraffitiUsers.Current))
                 GetWaitingApprovals();
 
-            //Feed feed = FeedManager.GetFeed("http://graffiticms.com/blog/feed/", false);
-
-            // ***************************************
-            // BEGIN HACK FOR MONO
-            // ***************************************
-            // these lines to be deleted in favor of the previous line
-            // on next release - after a version that is at least Mono 1.9 is out
-            Feed feed = null;
-            if ( typeof( object ).Assembly.GetType( "System.MonoType", false ) != null )
-            {
-                Type monoRuntimeType;
-                System.Reflection.MethodInfo getDisplayNameMethod;
-                if (
-                    ( monoRuntimeType = typeof( object ).Assembly.GetType( "Mono.Runtime" ) ) != null
-                    && (getDisplayNameMethod = monoRuntimeType.GetMethod(
-                        "GetDisplayName"
-                        , System.Reflection.BindingFlags.NonPublic
-                            | System.Reflection.BindingFlags.Static
-                            | System.Reflection.BindingFlags.DeclaredOnly
-                            | System.Reflection.BindingFlags.ExactBinding
-                        , null, Type.EmptyTypes, null ) ) != null )
-                {
-                    string displayName = (string)getDisplayNameMethod.Invoke( null, null );
-                    decimal version = 0.0m;
-                    string [] dnParts = ( displayName == null ) ? null : displayName.Split( ' ' );
-                    if ( dnParts != null && dnParts.Length > 1 && decimal.TryParse( dnParts[1], out version ) && version >= 1.9m )
-                        feed = FeedManager.GetFeed("http://graffiticms.com/blog/feed/", false);
-                }
-            }
-            else
-                feed = FeedManager.GetFeed("http://graffiticms.com/blog/feed/", false);
-            // ***************************************
-            // END HACK FOR MONO
-            // ***************************************
+            Feed feed = FeedManager.GetFeed("http://graffiticms.com/blog/feed/", false);
 
             List<RssItem> items = new List<RssItem>();
             if(feed != null && feed.Document != null && feed.Document.Channel != null && feed.Document.Channel.Items.Count > 0)

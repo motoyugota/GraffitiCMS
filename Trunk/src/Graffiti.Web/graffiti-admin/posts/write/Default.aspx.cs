@@ -13,7 +13,7 @@ public partial class graffiti_admin_posts_write_Default : ControlPanelPage
     {
 
 
-        NameValueCollection nvcCustomFields = Request.Form;
+		NameValueCollection nvcCustomFields = null;
 
         IGraffitiUser user = GraffitiUsers.Current;
         bool isAdmin = GraffitiUsers.IsAdmin(user);
@@ -201,16 +201,25 @@ public partial class graffiti_admin_posts_write_Default : ControlPanelPage
         }
 
         CustomFormSettings cfs = CustomFormSettings.Get(int.Parse(CategoryList.SelectedItem.Value));
+		if (cfs.HasFields)
+		{
+			if (nvcCustomFields == null)
+			{
+				nvcCustomFields = new NameValueCollection();
+				foreach (CustomField cf in cfs.Fields)
+				{
+					if (Request.Form[cf.Id.ToString()] != null)
+						nvcCustomFields[cf.Name] = Request.Form[cf.Id.ToString()];
+				}
+			}
 
-        if (cfs.HasFields)
-        {
-            the_CustomFields.Text = cfs.GetHtmlForm(nvcCustomFields);
-        }
-        else
-        {
-            CustomFieldsTab.Tab.Enabled = false;
-            the_CustomFields.Text = "";
-        }
+			the_CustomFields.Text = cfs.GetHtmlForm(nvcCustomFields);
+		}
+		else
+		{
+			CustomFieldsTab.Tab.Enabled = false;
+			the_CustomFields.Text = "";
+		}
 
         PublishStatus.Attributes.Add("onchange", "Publish_Status_Change();");
     }
@@ -363,14 +372,17 @@ public partial class graffiti_admin_posts_write_Default : ControlPanelPage
             p.IsHome = HomeSortOverride.Checked;
             p.PostStatus = (PostStatus)Enum.Parse(typeof(PostStatus), Request.Form[PublishStatus.UniqueID]);
 
-            CustomFormSettings cfs = CustomFormSettings.Get(c);
-            if (cfs.HasFields)
-            {
-                foreach (CustomField cf in cfs.Fields)
-                {
-                    p[cf.Name] = Request.Form[cf.Id.ToString()];
-                }
-            }
+			CustomFormSettings cfs = CustomFormSettings.Get(c);
+			if (cfs.HasFields)
+			{
+				foreach (CustomField cf in cfs.Fields)
+				{
+					if (cf.FieldType == FieldType.CheckBox && Request.Form[cf.Id.ToString()] == null)
+						p[cf.Name] = false.ToString();
+					else
+						p[cf.Name] = Request.Form[cf.Id.ToString()];
+				}
+			}
 
             if (HasDuplicateName(p))
             {

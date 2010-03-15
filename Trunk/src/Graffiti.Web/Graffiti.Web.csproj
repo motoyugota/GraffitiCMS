@@ -651,6 +651,7 @@
     <Content Include="graffiti-admin\site-options\plug-ins\Default.aspx" />
     <Content Include="graffiti-admin\site-options\plug-ins\Edit.aspx" />
     <Content Include="graffiti-admin\site-options\settings\Default.aspx" />
+    <Content Include="graffiti-admin\site-options\utilities\EditorFileSelector.aspx" />
     <Content Include="graffiti-admin\site-options\utilities\FileBrowser-AddFolder.aspx" />
     <Content Include="graffiti-admin\site-options\utilities\Default.aspx" />
     <Content Include="graffiti-admin\site-options\utilities\FileBrowser-UploadFiles.aspx" />
@@ -701,6 +702,7 @@
     <Content Include="graffiti-admin\user-management\users\Default.aspx" />
     <Content Include="graffiti-admin\user-management\users\DeleteUser.aspx" />
     <Content Include="graffiti-admin\user-management\users\RenameUser.aspx" />
+    <Content Include="graffiti-setup\Default.aspx" />
     <Content Include="login\Default.aspx" />
     <Content Include="login\reset-password\Default.aspx" />
     <Content Include="resources\resources.xml" />
@@ -773,6 +775,8 @@
     <Content Include="__utility\ckeditor\lang\zh.js" />
     <Content Include="__utility\ckeditor\lang\_languages.js" />
     <Content Include="__utility\ckeditor\license.html" />
+    <Content Include="__utility\ckeditor\plugins\a11yhelp\dialogs\a11yhelp.js" />
+    <Content Include="__utility\ckeditor\plugins\a11yhelp\lang\en.js" />
     <Content Include="__utility\ckeditor\plugins\about\dialogs\about.js" />
     <Content Include="__utility\ckeditor\plugins\about\dialogs\logo_ckeditor.png" />
     <Content Include="__utility\ckeditor\plugins\clipboard\dialogs\paste.js" />
@@ -961,11 +965,11 @@
     <VisualStudio>
       <FlavorProperties GUID="{349c5851-65df-11da-9384-00065b846f21}">
         <WebProjectProperties>
-          <UseIIS>False</UseIIS>
+          <UseIIS>True</UseIIS>
           <AutoAssignPort>True</AutoAssignPort>
           <DevelopmentServerPort>2311</DevelopmentServerPort>
           <DevelopmentServerVPath>/</DevelopmentServerVPath>
-          <IISUrl>http://graffiti</IISUrl>
+          <IISUrl>http://localhost/graffiti2</IISUrl>
           <NTLMAuthentication>False</NTLMAuthentication>
           <UseCustomServer>False</UseCustomServer>
           <CustomServerUrl>
