@@ -2,6 +2,7 @@
 <%@ Import namespace="DataBuddy"%>
 <%@ Import Namespace="System.IO" %>
 <%@ Import Namespace="System.Collections.Generic" %>
+<%@ Import Namespace="Graffiti.Core.Services" %>
 
 <asp:Content ID="Content1" ContentPlaceHolderID="HeaderRegion" Runat="Server">
 <script language="javascript">
@@ -134,6 +135,7 @@ function ToggleScrollOff()
 
     private string _theme = string.Empty;
     private string version;
+	private IVersionStoreService versionStoreService = ServiceLocator.Get<IVersionStoreService>();
     
     void Page_Load(object sender, EventArgs e)
     {
@@ -216,7 +218,9 @@ function ToggleScrollOff()
         }
 
         string ext = Path.GetExtension(filePath).Substring(1);
-        VersionStoreCollection vsc = VersionStore.GetVersionHistory(filePath);
+
+
+		var vsc = new VersionStoreCollection(versionStoreService.FetchVersionHistory(filePath, false));
 
         if (vsc.Count > 1)
         {
@@ -320,19 +324,18 @@ function ToggleScrollOff()
 
         try
         {
+			if (versionStoreService.CurrentVersion(fi) == 0 && File.ReadAllText(currentFile) != "[feed me content!]")
+				versionStoreService.VersionFile(fi, GraffitiUsers.Current.Name, SiteSettings.CurrentUserTime);
 
-            if (VersionStore.CurrentVersion(fi) == 0 && File.ReadAllText(currentFile) != "[feed me content!]")
-                VersionStore.VersionFile(fi);
-                
-            using (StreamWriter sw = new StreamWriter(currentFile, false))
+			using (StreamWriter sw = new StreamWriter(currentFile, false))
             {
                 sw.Write(File_Contents.Text);
                 sw.Close();
             }
 
-            VersionStore.VersionFile(fi);
+			versionStoreService.VersionFile(fi, GraffitiUsers.Current.Name, SiteSettings.CurrentUserTime);
 
-            version = VersionStore.CurrentVersion(fi).ToString();
+			version = versionStoreService.CurrentVersion(fi).ToString();
             
             LoadFiles();
             LoadFileContents();
@@ -357,7 +360,8 @@ function ToggleScrollOff()
         FileInfo fi = new FileInfo(filePath);
         fi.Delete();
 
-        VersionStore.Destroy(VersionStore.Columns.Name, filePath);
+		var currentVersion = versionStoreService.CurrentVersion(fi);
+		versionStoreService.DestroyVersionStore(filePath);
 
         Response.Redirect(Request.RawUrl);
     }

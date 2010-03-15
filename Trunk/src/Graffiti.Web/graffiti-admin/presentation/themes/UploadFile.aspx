@@ -2,6 +2,7 @@
 <%@ Import Namespace="System.IO" %>
 <%@ Import Namespace="System.Text" %>
 <%@ Import Namespace="Graffiti.Core" %>
+<%@ Import Namespace="Graffiti.Core.Services" %>
 
 <asp:Content ContentPlaceHolderID="HeaderRegion" runat="server">
 </asp:Content>
@@ -23,6 +24,8 @@
 
 <script runat="Server">
 
+	IVersionStoreService versionStoreService = ServiceLocator.Get<IVersionStoreService>();
+	
     protected void Upload_Click(object sender, EventArgs e)
     {
         string fileName = String.Empty;
@@ -66,7 +69,7 @@
 
             Util.CreateFile(currentFile, encodedFile);
 
-            VersionStore.VersionFile(fi);
+			versionStoreService.VersionFile(fi, GraffitiUsers.Current.Name, SiteSettings.CurrentUserTime);
 
             ClientScript.RegisterStartupScript(this.GetType(), "close-and-postback",
                     "window.parent.location.href = 'EditTheme.aspx?theme=" + Request.QueryString["theme"] +

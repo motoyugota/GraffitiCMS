@@ -1,5 +1,6 @@
 <%@ Page Language="C#" MasterPageFile="~/graffiti-admin/common/AdminMasterPage.master" Title="Graffiti Reports" Inherits="Graffiti.Core.ControlPanelPage" %>
 <%@ Register TagPrefix="reports" TagName="daterangefilter" Src="~/graffiti-admin/reporting/daterangefilter_id.ascx" %>
+<%@ Import Namespace="Graffiti.Core.Services" %>
 <asp:Content ID="Content1" ContentPlaceHolderID="HeaderRegion" Runat="Server">
 	<script type="text/javascript" src="../../swfobject.js"></script>
 	<link href="../../reporting.css" runat="Server" type="text/css" media="all" rel="Stylesheet" />
@@ -7,14 +8,15 @@
 
 <script runat="server">
 
-    DateRange dateRange;
-
+    private DateRange dateRange;
+	private IPostService postService = ServiceLocator.Get<IPostService>();
+	
 	void Page_Load(object sender, EventArgs e)
 	{
         int postId;
 		int.TryParse(Request.QueryString["id"], out postId);
 
-		Post post = new Post(postId);
+		var post = postService.FetchPost(postId);
 		PostLink.Text = post.Title;
 		PostLink.NavigateUrl = post.Url;
 
@@ -87,4 +89,3 @@
 </asp:Content>
 <asp:Content ID="Content3" ContentPlaceHolderID="SideBarRegion" Runat="Server">
 </asp:Content>
-

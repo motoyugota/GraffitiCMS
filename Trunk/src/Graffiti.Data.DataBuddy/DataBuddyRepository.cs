@@ -506,6 +506,10 @@ namespace Graffiti.Data.DataBuddy
         {
             DataVersionStore.Destroy(DataVersionStore.Columns.UniqueId, uniqueId);
         }
+		public void DestroyVersionStore(string filePath)
+		{
+			DataVersionStore.Destroy(DataVersionStore.Columns.Name, filePath);
+		}
 
         public int VersionFile(FileInfo fileInfo, string username, DateTime saved)
         {

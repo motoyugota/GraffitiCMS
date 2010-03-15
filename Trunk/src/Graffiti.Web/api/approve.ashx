@@ -6,14 +6,18 @@ using System.Web;
 using System.Xml;
 using Graffiti.Core;
 using DataBuddy;
+using Graffiti.Core.Services;
+using System.Linq;
 
 namespace Graffiti.Web
 {
     public class Approve : IHttpHandler 
 	{
-        
-        private IRolePermissionService _rolePermissionService = ServiceLocator.Get<IRolePermissionService>():
-	    
+
+		private IRolePermissionService _rolePermissionService = ServiceLocator.Get<IRolePermissionService>();
+	    private IPostService _postService = ServiceLocator.Get<IPostService>();
+	    private IVersionStoreService _versionStoreService = ServiceLocator.Get<IVersionStoreService>();
+			
 		public void ProcessRequest (HttpContext context) 
 		{
             string u = context.Request.QueryString["u"];
@@ -24,7 +28,7 @@ namespace Graffiti.Web
             if (u != null || key != null || p != null || v != null)
             {
                 IGraffitiUser user = GraffitiUsers.GetUser(u);
-                Post the_Post = new Post(p);
+                var the_Post = _postService.FetchPost(p);
 
                 Permission perm = _rolePermissionService.GetPermissions(the_Post.CategoryId, user);
                 if (user != null && (GraffitiUsers.IsAdmin(user) || perm.Publish))
@@ -36,18 +40,14 @@ namespace Graffiti.Web
                             int version = Int32.Parse(v);
                             if (the_Post.Version != version)
                             {
-                                the_Post = null;
+								var vs = _versionStoreService.FetchVersionStoreByPostId(the_Post.Id,version)
+									.Where(x => x.Type == "post/xml")
+									.FirstOrDefault();
 
-                                Query q = VersionStore.CreateQuery();
-                                q.AndWhere(VersionStore.Columns.Type, "post/xml");
-                                q.AndWhere(VersionStore.Columns.ItemId, p);
-                                q.AndWhere(VersionStore.Columns.Version, version);
-
-                                VersionStore vs = VersionStore.FetchByQuery(q);
-                                if (vs != null && !vs.IsNew)
-                                {
+                                if (vs != null)
                                     the_Post = Post.FromXML(vs.Data);
-                                }
+								else
+									the_Post = null;
                             }
 
                         }

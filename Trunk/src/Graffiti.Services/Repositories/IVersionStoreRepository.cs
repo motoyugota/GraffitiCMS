@@ -14,6 +14,7 @@ namespace Graffiti.Data
         int GetNextVersionId(int postId, int currentVersionId);
         VersionStore SaveVersionStore(VersionStore versionStore, string username);
         int CurrentVersion(FileInfo fileInfo);
-        void DestroyVersionStore(Guid uniqueId);
-    }
+		void DestroyVersionStore(Guid uniqueId);
+		void DestroyVersionStore(string filePath);
+	}
 }

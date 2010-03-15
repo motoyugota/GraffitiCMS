@@ -52,9 +52,13 @@ namespace Graffiti.Services
             return _versionStoreRepository.CurrentVersion(fileInfo);
         }
 
-        public void DestroyVersionStore(Guid uniqueId)
-        {
-            _versionStoreRepository.DestroyVersionStore(uniqueId);
-        }
-    }
+		public void DestroyVersionStore(Guid uniqueId)
+		{
+			_versionStoreRepository.DestroyVersionStore(uniqueId);
+		}
+		public void DestroyVersionStore(string filePath)
+		{
+			_versionStoreRepository.DestroyVersionStore(filePath);
+		}
+	}
 }

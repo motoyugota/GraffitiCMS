@@ -1,5 +1,6 @@
 <%@ Page Language="C#" MasterPageFile="~/graffiti-admin/common/AdminMasterPage.master" %>
 <%@ Import Namespace="System.Collections.Generic" %>
+<%@ Import Namespace="Graffiti.Core.Services" %>
 
 <asp:Content ContentPlaceHolderID="MainRegion" runat="server">
 <h1>Graffiti Migration Tool</h1>
@@ -492,8 +493,8 @@ setTimeout('<asp:Literal id="js" runat="server"></asp:Literal>', 1);
                 if (ddlAuthor.Items[x].Text == GraffitiUsers.Current.ProperName)
                     ddlAuthor.SelectedIndex = x;
 
-
-            ddlCategory.DataSource = new CategoryController().GetCachedCategories();
+			var categoryService = ServiceLocator.Get<ICategoryService>();
+            ddlCategory.DataSource = categoryService.FetchAllCachedCategories();
             ddlCategory.DataTextField = "Name";
             ddlCategory.DataValueField = "Id";
             ddlCategory.DataBind();

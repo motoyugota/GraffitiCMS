@@ -1,31 +1,36 @@
 <%@ Page Language="C#" AutoEventWireup="true" CodeBehind="PostMerge.aspx.cs" Inherits="Graffiti.Web.graffiti_admin.posts.PostMerge" MasterPageFile="../common/AdminModal.master" %>
 <%@ Import Namespace="System.Collections.Generic" %>
 <%@ Import Namespace="DataBuddy" %>
+<%@ Import Namespace="Graffiti.Core.Services" %>
+<%@ Import Namespace="System.Linq" %>
 
 <script runat="server">
 
     List<Post> posts = null;
     int versionLeft = -2;
     int versionRight = -1;
-    
-    void Page_Init(object sneder, EventArgs e)
+
+	IVersionStoreService versionStoreService = ServiceLocator.Get<IVersionStoreService>();
+	IPostService postService = ServiceLocator.Get<IPostService>();
+		
+    void Page_Init(object sender, EventArgs e)
     {
-        Query versionQuery = VersionStore.CreateQuery();
-        versionQuery.AndWhere(VersionStore.Columns.Type, "post/xml");
-        versionQuery.AndWhere(VersionStore.Columns.ItemId, Request.QueryString["id"]);
-        versionQuery.OrderByDesc(VersionStore.Columns.Version);
-        VersionStoreCollection vsc = new VersionStoreCollection();
-        vsc.LoadAndCloseReader(versionQuery.ExecuteReader());
+		
+		int id = int.Parse(Request.QueryString["id"]);
+		
+		var vsc = versionStoreService.FetchVersionHistory(id);
 
         posts = new List<Post>();
-        foreach (VersionStore vs in vsc)
+        foreach (var vs in vsc)
         {
             Post post = ObjectManager.ConvertToObject<Post>(vs.Data);
             posts.Add(post);
         }
 
-        posts.Add(new Post(Request.QueryString["id"]));
-        posts.Sort(delegate(Post p1, Post p2) { return Comparer<int>.Default.Compare(p2.Version, p1.Version); });
+		var currentPost = postService.FetchPost(id);
+        posts.Add(currentPost);
+        
+		posts.Sort(delegate(Post p1, Post p2) { return Comparer<int>.Default.Compare(p2.Version, p1.Version); });
         
         if (string.IsNullOrEmpty(Request.Form[mergeVersion1.UniqueID]))
             versionLeft = int.Parse(Request.QueryString["versionLeft"] ?? "-2");

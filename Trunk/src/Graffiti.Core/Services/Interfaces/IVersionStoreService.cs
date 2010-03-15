@@ -13,6 +13,7 @@ namespace Graffiti.Core.Services
         int VersionFile(FileInfo fileInfo, string username, DateTime saved);
         int GetNextVersionId(int postId, int currentVersionId);
         int CurrentVersion(FileInfo fileInfo);
-        void DestroyVersionStore(Guid uniqueId);
-    }
+		void DestroyVersionStore(Guid uniqueId);
+		void DestroyVersionStore(string filePath);
+	}
 }

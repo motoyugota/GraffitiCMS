@@ -1,22 +1,21 @@
 <%@ Page Language="C#" %>
 <%@ Import namespace="System.Collections.Generic"%>
 <%@ Import namespace="DataBuddy"%>
-
+<%@ Import Namespace="Graffiti.Core.Services" %>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
 <script runat="server">
-    
+	IPostService postService = ServiceLocator.Get<IPostService>();
+	IVersionStoreService versionStoreService = ServiceLocator.Get<IVersionStoreService>();
+	    
     void Page_Load(object sender, EventArgs e)
     {
-        Post p = new Post(Request.QueryString["id"]);
+		var id = int.Parse(Request.QueryString["id"]);
+		var p = postService.FetchPost(id);
+		
         this.Title = "Versions: " + p.Title;
-        
-        Query versionQuery = VersionStore.CreateQuery();
-        versionQuery.AndWhere(VersionStore.Columns.Type, "post/xml");
-        versionQuery.AndWhere(VersionStore.Columns.ItemId, Request.QueryString["id"]);
-        versionQuery.OrderByDesc(VersionStore.Columns.Version);
-        VersionStoreCollection vsc = new VersionStoreCollection();
-        vsc.LoadAndCloseReader(versionQuery.ExecuteReader());
+
+		var vsc = versionStoreService.FetchVersionHistory(id);
         
         List<Post> posts = new List<Post>();
         foreach(VersionStore vs in vsc)
