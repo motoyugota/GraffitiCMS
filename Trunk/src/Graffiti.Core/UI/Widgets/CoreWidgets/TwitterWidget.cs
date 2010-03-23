@@ -9,22 +9,14 @@ namespace Graffiti.Core
     [WidgetInfo("3ec475ab-cd5c-47f6-8e37-e7752a46cc5a","Twitter", "Twitter messages")]
     public class TwitterWidget : WidgetFeed
     {
-        private string _UserName;
-
-        public string UserName
-        {
-            get { return _UserName; }
-            set { _UserName = value; }
-        }
+		public string UserName { get; set; }
 
         private int _itemsToDisplay = 3;
-
         public int ItemsToDisplay
         {
             get { return _itemsToDisplay; }
             set { _itemsToDisplay = value; }
         }
-	
 
         public override string FeedUrl
         {

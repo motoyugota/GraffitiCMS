@@ -147,7 +147,7 @@ namespace Graffiti.Core
                 ObjectManager.Save(this, "CustomFormSettings-" + CategoryId.ToString());
         }
 
-        public string GetHtmlForm(NameValueCollection customFieldValues)
+		public string GetHtmlForm(NameValueCollection customFieldValues, bool isNew)
         {
             NameValueCollection fieldValues = new NameValueCollection();
             foreach (CustomField cf in this.Fields)
@@ -172,7 +172,6 @@ namespace Graffiti.Core
 						break;
 
 					case FieldType.CheckBox:
-						bool isNew = (customFieldValues.Count == 0);
 						new CheckFormElement(cf.Id.ToString(), cf.Name, cf.Description, cf.Checked, isNew).Write(sb, fieldValues);
 						break;
 

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.IO;
 using System.Reflection;
 using System.Web;
@@ -176,7 +177,12 @@ namespace Graffiti.Core
             Widget widget = Activator.CreateInstance(type) as Widget;
             widget.Id = Guid.NewGuid();
             widget.Order = Widgets.FetchByLocation(WidgetLocation.Queue).Count + 1;
+
+			// Get default values if any were configured.
+			NameValueCollection defaultValues = widget.GetDefaults();
+			if (defaultValues != null && defaultValues.Count > 0)
 				widget.SetValues(HttpContext.Current, widget.GetDefaults());
+
             ObjectStore os = new ObjectStore();
             os.ContentType = "xml/widget";
 

@@ -43,6 +43,19 @@ namespace Graffiti.Core
             set { _categoryId = value; }
         }
 
+		public bool _showExcerpt = false;
+		public bool ShowExcerpt
+		{
+			get { return _showExcerpt; }
+			set { _showExcerpt = value; }
+		}
+
+		public int _numberOfPosts = 5;
+		public int NumberOfPosts
+		{
+			get { return _numberOfPosts; }
+			set { _numberOfPosts = value; }
+		}
         protected override FormElementCollection AddFormElements()
         {
             FormElementCollection fec = new FormElementCollection();
@@ -101,8 +114,12 @@ namespace Graffiti.Core
         public override StatusType SetValues(System.Web.HttpContext context, NameValueCollection nvc)
         {
             base.SetValues(context, nvc);
-            NumberOfPosts = Int32.Parse(nvc["numberOFposts"]);
-            CategoryId = Int32.Parse(nvc["categoryid"]);
+			if (!string.IsNullOrEmpty(nvc["numberOFposts"]))
+				NumberOfPosts = Int32.Parse(nvc["numberOFposts"]);
+
+			if (!string.IsNullOrEmpty(nvc["categoryid"]))
+				CategoryId = Int32.Parse(nvc["categoryid"]);
+
             ShowExcerpt = (nvc["showExcerpt"] == "checked" || nvc["showExcerpt"] == "on");
             return StatusType.Success;
         }
@@ -114,9 +131,5 @@ namespace Graffiti.Core
                 return "Popular Post Configuration";
             }
         }
-
-        public bool ShowExcerpt = false;
-
-        public int NumberOfPosts = 5;
     }
 }
