@@ -6,232 +6,236 @@ using System.Web;
 
 public partial class graffiti_admin_roles_Default : AdminControlPanelPage
 {
-    protected void Page_Load(object sender, EventArgs e)
-    {
-        LiHyperLink.SetNameToCompare(Context, "UserManagement");
+	protected string DecodeFromQS(string key)
+	{
+		return Request.QueryString[key] != null ? HttpUtility.HtmlDecode(HttpUtility.UrlDecode(Request.QueryString[key])) : null;
+	}
+	protected void Page_Load(object sender, EventArgs e)
+	{
+		LiHyperLink.SetNameToCompare(Context, "UserManagement");
 
-        string role = Request.QueryString["role"] != null ? HttpUtility.HtmlEncode(Server.UrlDecode(Request.QueryString["role"])) : null;
+		string role = DecodeFromQS("role");
 
-        if (!Page.IsPostBack)
-        {
-            SetupTogglePermissionsScript(read, edit, publish, read, "read");
-            SetupTogglePermissionsScript(read, edit, publish, edit, "edit");
-            SetupTogglePermissionsScript(read, edit, publish, publish, "publish");
+		if (!Page.IsPostBack)
+		{
+			SetupTogglePermissionsScript(read, edit, publish, read, "read");
+			SetupTogglePermissionsScript(read, edit, publish, edit, "edit");
+			SetupTogglePermissionsScript(read, edit, publish, publish, "publish");
 
-            SetupTogglePermissionsScript(readRolePermission, editRolePermission, publishRolePermission, readRolePermission, "read");
-            SetupTogglePermissionsScript(readRolePermission, editRolePermission, publishRolePermission, editRolePermission, "edit");
-            SetupTogglePermissionsScript(readRolePermission, editRolePermission, publishRolePermission, publishRolePermission, "publish");
+			SetupTogglePermissionsScript(readRolePermission, editRolePermission, publishRolePermission, readRolePermission, "read");
+			SetupTogglePermissionsScript(readRolePermission, editRolePermission, publishRolePermission, editRolePermission, "edit");
+			SetupTogglePermissionsScript(readRolePermission, editRolePermission, publishRolePermission, publishRolePermission, "publish");
 
-            if (!String.IsNullOrEmpty(role))
-            {
-                RolePermissionsCollection rpc = _rolePermissionService.GetRolePermissions();
+			if (!String.IsNullOrEmpty(role))
+			{
+				RolePermissionsCollection rpc = _rolePermissionService.GetRolePermissions();
 
-                RolePermissions rp = rpc.Find(
-                                            delegate(RolePermissions rper)
-                                            {
-                                                return rper.RoleName.ToLower() == role.ToLower();
-                                            });
+				RolePermissions rp = rpc.Find(
+													 delegate(RolePermissions rper)
+													 {
+														 return rper.RoleName.ToLower() == role.ToLower();
+													 });
 
-                if (rp != null)
-                {
-                    readRolePermission.Checked = rp.HasRead;
-                    editRolePermission.Checked = rp.HasEdit;
-                    publishRolePermission.Checked = rp.HasPublish;
-                }
-            }
-        }
+				if (rp != null)
+				{
+					readRolePermission.Checked = rp.HasRead;
+					editRolePermission.Checked = rp.HasEdit;
+					publishRolePermission.Checked = rp.HasPublish;
+				}
+			}
+		}
 
-        if (role != null)
-        {
-            if (!IsPostBack)
-            {
-                if (Request.QueryString["new"] != null)
-                {
-                    Message.Text = "The role <strong>" + role + "</strong> was created.";
-                    Message.Type = StatusType.Success;
-                }
+		if (role != null)
+		{
+			string encodedRoleName = HttpUtility.HtmlEncode(role);
 
-                litExistingRoleName.Text = role;
-                PageText.Text = "Update " + role;
+			if (!IsPostBack)
+			{
+				if (Request.QueryString["new"] != null)
+				{
+					Message.Text = string.Format("The role <strong>{0}</strong> was created.", encodedRoleName);
+					Message.Type = StatusType.Success;
+				}
 
-                CategoryList.DataSource = _categoryService.FetchAllCachedCategories();
-                CategoryList.DataBind();
-            }
+				litExistingRoleName.Text = encodedRoleName;
+				PageText.Text = "Update " + encodedRoleName;
 
-            new_role_container.Visible = false;
-            Role_List.Visible = false;
-            role_edit_form.Visible = true;
-        }
-        else
-        {
-            if (!Page.IsPostBack)
-            {
-                RolePermissionsCollection rps = _rolePermissionService.GetRolePermissions();
+				CategoryList.DataSource = _categoryService.FetchAllCachedCategories();
+				CategoryList.DataBind();
+			}
 
-                rps.Sort(delegate(RolePermissions rp1, RolePermissions rp2) 
-                {
-                    return Comparer<string>.Default.Compare(rp1.RoleName, rp2.RoleName);  
-                });
+			new_role_container.Visible = false;
+			Role_List.Visible = false;
+			role_edit_form.Visible = true;
+		}
+		else
+		{
+			if (!Page.IsPostBack)
+			{
+				RolePermissionsCollection rps = _rolePermissionService.GetRolePermissions();
 
-                // move everyone to the top
-                RolePermissionsCollection rpss = new RolePermissionsCollection();
+				rps.Sort(delegate(RolePermissions rp1, RolePermissions rp2)
+				{
+					return Comparer<string>.Default.Compare(rp1.RoleName, rp2.RoleName);
+				});
 
-                foreach (RolePermissions rp in rps)
-                {
-                    if (rp.RoleName == GraffitiUsers.EveryoneRole)
-                        rpss.Insert(0, rp);
-                }
+				// move everyone to the top
+				RolePermissionsCollection rpss = new RolePermissionsCollection();
 
-                foreach (RolePermissions rp in rps)
-                {
-                    if (rp.RoleName != GraffitiUsers.EveryoneRole)
-                        rpss.Add(rp);
-                }
+				foreach (RolePermissions rp in rps)
+				{
+					if (rp.RoleName == GraffitiUsers.EveryoneRole)
+						rpss.Insert(0, rp);
+				}
 
-                Role_List.DataSource = rpss;
-                Role_List.DataBind();
+				foreach (RolePermissions rp in rps)
+				{
+					if (rp.RoleName != GraffitiUsers.EveryoneRole)
+						rpss.Add(rp);
+				}
 
-                if (Request.QueryString["roleSaved"] != null)
-                {
-                    string roleSaved = HttpUtility.HtmlEncode(Server.UrlDecode(Request.QueryString["roleSaved"]));
-                    Message.Text = "The role <strong>" + roleSaved + "</strong> was updated.";
-                    Message.Type = StatusType.Success;
-                }
-            }
+				Role_List.DataSource = rpss;
+				Role_List.DataBind();
 
-            new_role_container.Visible = true;
-            role_edit_form.Visible = false;
-            Role_List.Visible = true;
-        }
-    }
+				if (Request.QueryString["roleSaved"] != null)
+				{
+					string roleSaved = HttpUtility.UrlDecode(Request.QueryString["roleSaved"]);
+					Message.Text = string.Format("The role <strong>{0}</strong> was updated.", roleSaved);
+					Message.Type = StatusType.Success;
+				}
+			}
 
-    protected void CategoryList_OnItemDataBound(object sender, RepeaterItemEventArgs e)
-    {
-        string roleName = Server.UrlDecode(Request.QueryString["role"]);
+			new_role_container.Visible = true;
+			role_edit_form.Visible = false;
+			Role_List.Visible = true;
+		}
+	}
 
-        Category category = e.Item.DataItem as Category;
+	protected void CategoryList_OnItemDataBound(object sender, RepeaterItemEventArgs e)
+	{
+		string roleName = DecodeFromQS("role");
 
-        HiddenField cat = e.Item.FindControl("categoryId") as HiddenField;
-        Label categoryName = e.Item.FindControl("categoryName") as Label;
+		Category category = e.Item.DataItem as Category;
+		HiddenField cat = e.Item.FindControl("categoryId") as HiddenField;
+		Label categoryName = e.Item.FindControl("categoryName") as Label;
 
-        if (cat != null && category != null)
-            cat.Value = category.Id.ToString();
+		if (cat != null && category != null)
+			cat.Value = category.Id.ToString();
 
-        if (categoryName != null && category != null)
-            categoryName.Text = category.ParentId > 0 ? category.Parent.Name + " - " + category.Name : category.Name;
+		if (categoryName != null && category != null)
+			categoryName.Text = category.ParentId > 0 ? category.Parent.Name + " - " + category.Name : category.Name;
 
-        CheckBox read = e.Item.FindControl("readRoleCatPermission") as CheckBox;
-        CheckBox edit = e.Item.FindControl("editRoleCatPermission") as CheckBox;
-        CheckBox publish = e.Item.FindControl("publishRoleCatPermission") as CheckBox;
+		CheckBox read = e.Item.FindControl("readRoleCatPermission") as CheckBox;
+		CheckBox edit = e.Item.FindControl("editRoleCatPermission") as CheckBox;
+		CheckBox publish = e.Item.FindControl("publishRoleCatPermission") as CheckBox;
 
-        if (read != null && edit != null && publish != null)
-        {
-            SetupTogglePermissionsScript(read, edit, publish, read, "read");
-            SetupTogglePermissionsScript(read, edit, publish, edit, "edit");
-            SetupTogglePermissionsScript(read, edit, publish, publish, "publish");
+		if (read != null && edit != null && publish != null)
+		{
+			SetupTogglePermissionsScript(read, edit, publish, read, "read");
+			SetupTogglePermissionsScript(read, edit, publish, edit, "edit");
+			SetupTogglePermissionsScript(read, edit, publish, publish, "publish");
 
-            RoleCategoryPermissionsCollection rpc = _rolePermissionService.GetRoleCategoryPermissions();
+			RoleCategoryPermissionsCollection rpc = _rolePermissionService.GetRoleCategoryPermissions();
 
-            RoleCategoryPermissions rp = rpc.Find(
-                                        delegate(RoleCategoryPermissions rcper)
-                                        {
-                                            return rcper.RoleName.ToLower() == roleName.ToLower() &&
-                                                    rcper.CategoryId == category.Id;
-                                        });
+			RoleCategoryPermissions rp = rpc.Find(
+												 delegate(RoleCategoryPermissions rcper)
+												 {
+													 return rcper.RoleName.ToLower() == roleName.ToLower() &&
+																rcper.CategoryId == category.Id;
+												 });
 
-            if (rp != null)
-            {
-                read.Checked = rp.HasRead;
-                edit.Checked = rp.HasEdit;
-                publish.Checked = rp.HasPublish;
-            }
-        }
-    }
+			if (rp != null)
+			{
+				read.Checked = rp.HasRead;
+				edit.Checked = rp.HasEdit;
+				publish.Checked = rp.HasPublish;
+			}
+		}
+	}
 
-    protected void CreateRole_Click(object sender, EventArgs e)
-    {
+	protected void CreateRole_Click(object sender, EventArgs e)
+	{
+		string encodedRoleName = HttpUtility.HtmlEncode(txtRoleName.Text);
 
-        if (_rolePermissionService.IsDuplicate(txtRoleName.Text))
-        {
-            Message.Text = "The role <strong>" + txtRoleName.Text + "</strong> already exists.";
-            Message.Type = StatusType.Error;
-            return;
-        }
+		if (_rolePermissionService.IsDuplicate(txtRoleName.Text))
+		{
+			Message.Text = string.Format("The role <strong>{0}</strong> already exists.", encodedRoleName);
+			Message.Type = StatusType.Error;
+			return;
+		}
 
-        if (txtRoleName.Text == "gAdmin")
-        {
-            Message.Text = "The role <strong>" + txtRoleName.Text + "</strong> is a reserved Graffiti Role and cannot be used.";
-            Message.Type = StatusType.Error;
-            return;
-        }
+		if (txtRoleName.Text == "gAdmin")
+		{
+			Message.Text = string.Format("The role <strong>{0}</strong> is a reserved Graffiti Role and cannot be used.", encodedRoleName);
+			Message.Type = StatusType.Error;
+			return;
+		}
 
-        GraffitiUsers.AddUpdateRole(txtRoleName.Text, read.Checked, edit.Checked, publish.Checked);
-        
-        Response.Redirect("~/graffiti-admin/user-management/roles/?role=" + Server.UrlEncode(txtRoleName.Text) + "&new=true");
-    }
+		GraffitiUsers.AddUpdateRole(txtRoleName.Text, read.Checked, edit.Checked, publish.Checked);
 
-    protected void EditRoles_Save(object sender, EventArgs e)
-    {
-        string roleName = Server.UrlDecode(Request.QueryString["role"]);
+		Response.Redirect(string.Format("~/graffiti-admin/user-management/roles/?role={0}&new=true", HttpUtility.UrlEncode(encodedRoleName)));
+	}
 
-        _rolePermissionService.ClearPermissionsForRole(roleName);
+	protected void EditRoles_Save(object sender, EventArgs e)
+	{
+		string roleName = DecodeFromQS("role");
+		_rolePermissionService.ClearPermissionsForRole(roleName);
+		bool isCategoryPermissions = false;
 
-        bool isCategoryPermissions = false;
+		foreach (RepeaterItem ri in CategoryList.Items)
+		{
+			HiddenField cat = ri.FindControl("categoryId") as HiddenField;
+			CheckBox read = ri.FindControl("readRoleCatPermission") as CheckBox;
+			CheckBox edit = ri.FindControl("editRoleCatPermission") as CheckBox;
+			CheckBox publish = ri.FindControl("publishRoleCatPermission") as CheckBox;
 
-        foreach (RepeaterItem ri in CategoryList.Items)
-        {
-            HiddenField cat = ri.FindControl("categoryId") as HiddenField;
-            CheckBox read = ri.FindControl("readRoleCatPermission") as CheckBox;
-            CheckBox edit = ri.FindControl("editRoleCatPermission") as CheckBox;
-            CheckBox publish = ri.FindControl("publishRoleCatPermission") as CheckBox;
+			if (read != null && edit != null && publish != null)
+			{
+				if (read.Checked || edit.Checked || publish.Checked)
+				{
+					isCategoryPermissions = true;
+					GraffitiUsers.AddUpdateRole(roleName, Convert.ToInt32(cat.Value), read.Checked, edit.Checked, publish.Checked);
+				}
+			}
+		}
 
-            if (read != null && edit != null && publish != null)
-            {
-                if (read.Checked || edit.Checked || publish.Checked)
-                {
-                    isCategoryPermissions = true;
-                    GraffitiUsers.AddUpdateRole(roleName, Convert.ToInt32(cat.Value), read.Checked, edit.Checked, publish.Checked);
-                }
-            }
-        }
+		if (!isCategoryPermissions)
+		{
+			GraffitiUsers.AddUpdateRole(roleName, readRolePermission.Checked, editRolePermission.Checked, publishRolePermission.Checked);
+		}
+		else
+		{
+			GraffitiUsers.AddUpdateRole(roleName, false, false, false);
+		}
 
-        if (!isCategoryPermissions)
-        {
-            GraffitiUsers.AddUpdateRole(roleName, readRolePermission.Checked, editRolePermission.Checked, publishRolePermission.Checked);
-        }
-        else
-        {
-            GraffitiUsers.AddUpdateRole(roleName, false, false, false);
-        }
+		Response.Redirect(string.Format("~/graffiti-admin/user-management/roles/?roleSaved={0}", HttpUtility.UrlEncode(HttpUtility.HtmlEncode(roleName))));
+	}
 
-        Response.Redirect("~/graffiti-admin/user-management/roles/?roleSaved=" + roleName);
-    }
+	protected bool CanDelete()
+	{
+		return GraffitiUsers.IsAdmin(GraffitiUsers.Current);
+	}
 
-    protected bool CanDelete()
-    {
-        return GraffitiUsers.IsAdmin(GraffitiUsers.Current);
-    }
+	protected string IsAltRow(int index)
+	{
+		if (index % 2 == 0)
+			return string.Empty;
+		else
+			return " class=\"alt\"";
+	}
 
-    protected string IsAltRow(int index)
-    {
-        if (index % 2 == 0)
-            return string.Empty;
-        else
-            return " class=\"alt\"";
-    }
+	protected string IsNotSystemRole(string role)
+	{
+		if (role != GraffitiUsers.EveryoneRole && role != GraffitiUsers.ManagerRole && role != GraffitiUsers.ContributorRole)
+			return "";
+		else
+			return "style=\"display: none;\"";
+	}
 
-    protected string IsNotSystemRole(string role)
-    {
-        if (role != GraffitiUsers.EveryoneRole && role != GraffitiUsers.ManagerRole && role != GraffitiUsers.ContributorRole)
-            return "";
-        else
-            return "style=\"display: none;\"";
-    }
+	private void SetupTogglePermissionsScript(CheckBox read, CheckBox edit, CheckBox publish, CheckBox applyTo, string command)
+	{
+		string onclick = "togglePermissions('{0}','{1}','{2}','{3}');";
 
-    private void SetupTogglePermissionsScript(CheckBox read, CheckBox edit, CheckBox publish, CheckBox applyTo, string command)
-    {
-        string onclick = "togglePermissions('{0}','{1}','{2}','{3}');";
-
-        applyTo.Attributes.Add("onclick", String.Format(onclick, read.ClientID, edit.ClientID, publish.ClientID, command));
-    }
+		applyTo.Attributes.Add("onclick", String.Format(onclick, read.ClientID, edit.ClientID, publish.ClientID, command));
+	}
 }
