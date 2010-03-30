@@ -306,7 +306,7 @@ namespace Graffiti.Core
 
 			List<DynamicNavigationItem> items = NavigationSettings.Get().SafeItems();
 			List<Link> links = new List<Link>();
-			//will hold a reference to the selected item
+			// Will hold a reference to the selected item
 			DynamicNavigationItem selectedItem = null;
 
 			//We can only do this on a graffit page that exposes the post/category/etc properties
@@ -317,12 +317,12 @@ namespace Graffiti.Core
 				if (ttp.PostId > 0)
 					current_PostID = ttp.PostId;
 
-				//Is this page a category
-				//Note: Post pages do expose their categories and do not require a seperate lookup
+				// Is this page a category?
+				// Note: Post pages expose their categories and do not require a seperate lookup
 				if (ttp.CategoryID > 0)
 				{
-					//This could be a subcategory. Since we do not expose
-					//subcategories via NavBar(), we should mark the parent ( if it exists) as selected tiem
+					// This could be a subcategory. Since we do not expose subcategories via NavBar(), 
+					// we should mark the parent (if it exists) as selected item
 					current_CategoryID = ttp.CategoryID;
 					Category the_Category = _categoryService.FetchCachedCategory(current_CategoryID, true);
 					if (the_Category != null)
@@ -507,59 +507,95 @@ namespace Graffiti.Core
 									isLast ? (((isFirst || isSelected) ? " " : null) + "last" + text) : null);
 		}
 
+
+		/// <summary>
+		/// Creates a list of links which can be used to build custom sub category navigation.
+		/// </summary>
+		/// <param name="usePostsIfNoChildCategories">If the current top-level category does not have any child categories, should posts from that category be returned as links instead?</param>
+		/// <returns></returns>
+		public List<Link> NavigationSubLinks(bool usePostsIfNoChildCategories)
+		{
+			List<Link> links = new List<Link>();
+
+			Category currentCategory = null;
+			TemplatedThemePage ttp = HttpContext.Current.Handler as TemplatedThemePage;
+			CategoryCollection categories = new CategoryCollection();
+
+			if (ttp != null)
+			{
+				// Is this page a category?
+				// Note: Post pages expose their categories and do not require a seperate lookup
+				if (ttp.CategoryID > 0)
+				{
+					// This could be a subcategory. Since we do not expose subcategories via NavBar(), 
+					// we should mark the parent (if it exists) as selected item
+					currentCategory = _categoryService.FetchCachedCategory(ttp.CategoryID, true);
+					if (currentCategory != null)
+					{
+						// If the current category has a parent, we have to assume it's a child category.
+						// In which case, we need to list out all the children of the parent.
+						if (currentCategory.ParentId > 0)
+						{
+							Category parentCategory = _categoryService.FetchCachedCategory(currentCategory.ParentId, true);
+							categories = parentCategory.Children;
+						}
+						else
+						{
+							categories = currentCategory.Children;
+						}
+
+						if (categories != null && categories.Count > 0)
+						{
+							foreach (Category category in categories)
+							{
+								Link link = new Link();
+								link.IsSelected = (currentCategory.Id == category.Id);
+								link.Text = category.Name;
+								link.CategoryId = category.Id;
+								link.NavigationType = DynamicNavigationType.Category;
+								link.Url = category.Url;
+								links.Add(link);
+							}
+						}
+						else if (usePostsIfNoChildCategories && currentCategory.PostCount > 0)
+						{
+							PostCollection posts = new Data().PostsByCategory(currentCategory, 10);
+							foreach (Post post in posts)
+							{
+								Link link = new Link();
+								link.IsSelected = (currentCategory.Id == post.CategoryId);
+								link.Text = post.Title;
+								link.CategoryId = post.Id;
+								link.PostId = post.Id;
+								link.NavigationType = DynamicNavigationType.Post;
+								link.Url = post.Url;
+								links.Add(link);
+							}
+						}
+					}
+				}
+			}
+
+			return links;
+		}
+
 		/// <summary>
 		/// Renders sub category navigation based on the current page
 		/// </summary>
 		/// <returns></returns>
 		public string SubNavBar()
 		{
-			int current_Parent_CategoryID = -1;
-			int current_CategoryID = -1;
-			StringBuilder output = new StringBuilder();
-			TemplatedThemePage ttp = HttpContext.Current.Handler as TemplatedThemePage;
-			CategoryCollection categories = new CategoryCollection();
+			StringBuilder sb = new StringBuilder();
+			List<Link> links = NavigationSubLinks(false);
 
-
-			if (ttp != null)
+			for (int i = 0; i < links.Count; i++)
 			{
+				Link link = links[i];
 
-				//Is this page a category
-				//Note: Post pages do expose their categories and do not require a seperate lookup
-				if (ttp.CategoryID > 0)
-				{
-					//This could be a subcategory. Since we do not expose
-					//subcategories via NavBar(), we should mark the parent ( if it exists) as selected tiem
-					current_CategoryID = ttp.CategoryID;
-					Category the_Category = _categoryService.FetchCachedCategory(current_CategoryID, true);
-					if (the_Category != null)
-					{
-						current_Parent_CategoryID = the_Category.ParentId;
-
-						categories = the_Category.Children;
-					}
-				}
-
-				// If the current category has a parent, we have to assume it's a child category. In which case, we need to list
-				// out all the children of the parent.
-				if (current_Parent_CategoryID != -1)
-				{
-					Category parentCategory = _categoryService.FetchCachedCategory(current_Parent_CategoryID, true);
-
-					categories = parentCategory.Children;
-				}
-
-				//We default to post first, but if that has not been selected, try to find a category
-				if (current_CategoryID > 0 || current_Parent_CategoryID > 0)
-				{
-					foreach (Category category in categories)
-					{
-						output.AppendFormat(lihrefWithClassFormat, category.Url, category.Name, null, null);
-					}
-				}
+				sb.AppendFormat(lihrefWithClassFormat, link.Url, link.Text, GetNavigationCSSClass(link.IsSelected, i == 0, i == links.Count - 1, null),
+									 GetNavigationCSSClass(link.IsSelected, i == 0, i == links.Count - 1, "li"));
 			}
-
-
-			return output.ToString();
+			return sb.ToString();
 		}
 
 

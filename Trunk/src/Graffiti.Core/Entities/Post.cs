@@ -154,11 +154,12 @@ namespace Graffiti.Core
             return sb.ToString();
         }
 
-        /// <summary>
-        /// Returns the Post excerpt. If a PostBody exists, it will be used. If not, it returns
-        /// the first 300 none HTML characters
-        /// </summary>
-        public string Excerpt(string startText, string endText, string linkText, int len) {
+		  /// <summary>
+		  /// Returns the Post excerpt. If a PostBody exists, it will be used.
+		  /// If not, it returns the first 300 non-HTML characters
+		  /// </summary>
+		  public string Excerpt(string startText, string endText, string linkText, int len)
+		  {
             string link = "";
 
             if (!String.IsNullOrEmpty(linkText))
@@ -167,7 +168,7 @@ namespace Graffiti.Core
             if (!string.IsNullOrEmpty(ExtendedBody))
                 return PostBody + link;
             else if (PostBody != null && PostBody.Length <= len)
-                return Util.RemoveHtml(PostBody, PostBody.Length);
+                return PostBody;
             else
                 return "<p>" + Util.RemoveHtml(PostBody, len) + "...</p>" + link;
         }
