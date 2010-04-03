@@ -248,7 +248,7 @@
     <Compile Include="UI\Widgets\CoreWidgets\DeliciousWidget.cs" />
     <Compile Include="UI\Widgets\CoreWidgets\PageWidget.cs" />
     <Compile Include="UI\Widgets\CoreWidgets\PlainTextBox.cs" />
-    <Compile Include="UI\Widgets\CoreWidgets\PopulartPostWidget.cs" />
+    <Compile Include="UI\Widgets\CoreWidgets\PopularPostWidget.cs" />
     <Compile Include="UI\Widgets\CoreWidgets\RecentCommentsWidget.cs" />
     <Compile Include="UI\Widgets\CoreWidgets\RecentPostWidget.cs" />
     <Compile Include="UI\Widgets\CoreWidgets\GenericFeedWidget.cs" />

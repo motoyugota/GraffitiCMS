@@ -28,7 +28,7 @@ public partial class graffiti_admin_categories_PostSortOrder : AdminControlPanel
                     Posts.Items.Clear();
 
                     string itemFormat = "<div style=\"border: solid 1px #999; padding: 4px;\"><strong>{0}</strong></div>";
-                    foreach (Post p in _postService.FetchPosts().Where(x => x.CategoryId == c.Id).OrderBy(x => x.SortOrder))
+                    foreach (Post p in _postService.FetchPosts().Where(x => x.CategoryId == c.Id).Where(x => x.IsDeleted == false).OrderBy(x => x.SortOrder))
                     {
                         Posts.Items.Add(new Telligent.Glow.OrderedListItem(string.Format(itemFormat, p.Title), p.Title, p.Id.ToString()));
                     }
