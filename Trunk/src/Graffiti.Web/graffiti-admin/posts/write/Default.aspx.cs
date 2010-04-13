@@ -11,8 +11,6 @@ public partial class graffiti_admin_posts_write_Default : ControlPanelPage
 {
     protected void Page_Load(object sender, EventArgs e)
     {
-
-
 		NameValueCollection nvcCustomFields = null;
 
         IGraffitiUser user = GraffitiUsers.Current;
@@ -395,7 +393,9 @@ public partial class graffiti_admin_posts_write_Default : ControlPanelPage
 
             PostRevisionManager.CommitPost(p, user, FeaturedSite.Checked, FeaturedCategory.Checked);
 
-            Response.Redirect("~/graffiti-admin/posts/" + "?id=" + p.Id + "&status=" + p.Status);
+            string CatQuery = (Request.QueryString["category"] == null) ? null : (p.Status == 1) ? "&category=" + p.CategoryId : "&category=" + Request.QueryString["category"];
+            string AuthQuery = (Request.QueryString["author"] == null) ? null : "&author=" + Request.QueryString["author"];
+            Response.Redirect("~/graffiti-admin/posts/" + "?id=" + p.Id + "&status=" + p.Status + CatQuery + AuthQuery);
         }
         catch (Exception ex)
         {
