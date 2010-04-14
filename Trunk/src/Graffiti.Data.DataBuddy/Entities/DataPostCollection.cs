@@ -77,8 +77,8 @@ namespace Graffiti.Data.DataBuddy
             q.AndWhere(DataPost.Columns.IsPublished, true);
             q.AndWhere(DataPost.Columns.IsDeleted, false);
 
-            if (SiteSettings.Get().FilterUncategorizedPostsFromLists)
-                q.AndWhere(DataPost.Columns.CategoryId, DataCategoryController.UnCategorizedId, Comparison.NotEquals);
+            //if (SiteSettings.Get().FilterUncategorizedPostsFromLists) //removed to restore uncat post visibility in control panel
+                //q.AndWhere(DataPost.Columns.CategoryId, DataCategoryController.UnCategorizedId, Comparison.NotEquals);
 
             q.AndWhere(DataPost.Columns.Published, SiteSettings.CurrentUserTime, Comparison.LessOrEquals);
 

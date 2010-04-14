@@ -22,7 +22,7 @@ public partial class graffiti_admin_site_options_configuration_Default : AdminCo
             chkCacheViews.Checked = settings.CacheViews;
             txtDateFormat.Text = settings.DateFormat;
             txtTimeFormat.Text = settings.TimeFormat;
-            chkFilterUncategorizedPostsFromLists.Checked = settings.FilterUncategorizedPostsFromLists;
+            chkFilterUncategorizedPostsFromLists.Checked = ! settings.FilterUncategorizedPostsFromLists;
             chkIncludeChildPosts.Checked = settings.IncludeChildPosts;
             txtPageSize.Text = settings.PageSize.ToString();
             chkGenerateFolders.Checked = settings.GenerateFolders;
@@ -48,7 +48,7 @@ public partial class graffiti_admin_site_options_configuration_Default : AdminCo
             settings.CacheViews = chkCacheViews.Checked;
             settings.DateFormat = txtDateFormat.Text;
             settings.TimeFormat = txtTimeFormat.Text;
-            settings.FilterUncategorizedPostsFromLists = chkFilterUncategorizedPostsFromLists.Checked;
+            settings.FilterUncategorizedPostsFromLists = ! chkFilterUncategorizedPostsFromLists.Checked;
             settings.IncludeChildPosts = chkIncludeChildPosts.Checked;
             settings.PageSize = Int32.Parse(txtPageSize.Text);
             settings.GenerateFolders = chkGenerateFolders.Checked;

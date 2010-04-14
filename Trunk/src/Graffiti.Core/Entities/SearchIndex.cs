@@ -44,8 +44,8 @@ namespace Graffiti.Core
 
 		private static List<Post> ItemsToIndex()
 		{
-		    IPostService _postService = null; //use service locator here
-		    return _postService.FetchPosts().ToList();
+		    //IPostService _postService = null; //use service locator here
+		    return _postService.DefaultQuery().ToList();
 		}
 
 		private static Document CreateDocument(Post t)
@@ -185,8 +185,8 @@ namespace Graffiti.Core
 				SimpleHTMLFormatter html = new SimpleHTMLFormatter(":openhighlight", ":closehighlight"); //use placeholders instead of html to allow later htmlencode
 				Highlighter highlighter = new Highlighter(html, new QueryScorer(q));
 
-				int start = sq.PageIndex * sq.PageSize;
-				int end = (sq.PageIndex + 1) * sq.PageSize;
+				int start = (sq.PageIndex - 1) * sq.PageSize;
+				int end = sq.PageIndex * sq.PageSize;
 
 				if (start > hits.Length())
 					start = hits.Length();
