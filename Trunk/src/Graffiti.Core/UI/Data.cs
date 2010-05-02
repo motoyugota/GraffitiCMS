@@ -656,14 +656,53 @@ namespace Graffiti.Core
 		/// <param name="numberOfPosts"></param>
 		/// <returns></returns>
 		public PostCollection RecentPosts(int numberOfPosts)
-		{
-			PostCollection pc = ZCache.Get<PostCollection>("Posts-Recent-" + numberOfPosts);
-			if (pc == null)
-			{
-			    pc = new PostCollection(_postService.FetchRecentPosts(numberOfPosts));
-				ZCache.InsertCache("Posts-Recent-" + numberOfPosts, pc, 60);
-			}
-			return pc;
+        {
+            return RecentPosts(numberOfPosts, -1);
+        }
+
+        /// <summary>
+        /// Gets x amount of recent posts from the specified category Id
+        /// </summary>
+        /// <param name="numberOfPosts"></param>
+        /// <param name="categoryId"></param>
+        /// <returns></returns>
+        public PostCollection RecentPosts(int numberOfPosts, int categoryId)
+        {
+            PostCollection pc = ZCache.Get<PostCollection>("Posts-Recent-" + numberOfPosts + "c:" + categoryId);
+            if (pc == null)
+            {
+                IList<Post> posts = _postService.FetchPosts();
+
+                if (categoryId > 0)
+                {
+                    Category category = _categoryService.FetchCachedCategory(categoryId, true);
+                    if (category != null)
+                    {
+                        if (category.ParentId > 0)
+                            posts = posts.Where(x => x.CategoryId == category.Id).ToList();
+                        else
+                        {
+                            List<int> ids = new List<int>(category.Children.Count + 1);
+                            foreach (Category child in category.Children)
+                                ids.Add(child.Id);
+
+                            ids.Add(category.Id);
+
+                            posts = posts.Where(x => ids.Contains(category.Id)).ToList();
+                        }
+                    }
+                    else
+                    {
+                        //this should result in no data, but it will signal to 
+                        //the end user to edit/remove this widget
+                        posts = posts.Where(x => x.CategoryId == categoryId).ToList();
+                    }
+                }
+
+                pc = new PostCollection(posts.OrderByDescending(x => x.Views).Take(numberOfPosts).ToList());
+                ZCache.InsertCache("Posts-Popular-" + numberOfPosts + "c:" + categoryId, pc, 60);
+            }
+            return pc;
 		}
 
 		/// <summary>
