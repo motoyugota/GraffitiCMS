@@ -16,6 +16,7 @@ namespace Graffiti.Core
         private static IPostService _postService = ServiceLocator.Get<IPostService>();
         private static ICommentService _commentService = ServiceLocator.Get<ICommentService>();
         private static IRolePermissionService _rolePermissionService = ServiceLocator.Get<IRolePermissionService>();
+        private static IVersionStoreService _versionService = ServiceLocator.Get<IVersionStoreService>();
 
         static GraffitiUsers()
         {
@@ -468,6 +469,33 @@ namespace Graffiti.Core
                         c.CreatedBy = newUserName;
 
                     _commentService.SaveComment(c);
+                }
+            }
+
+            //Check if the user has created any post versions
+            IList<VersionStore> versions = _versionService.FetchVersions();
+            VersionStoreCollection vsc = new VersionStoreCollection(versions);
+            
+            if (vsc != null && vsc.Count > 0)
+            {
+                foreach (VersionStore v in vsc)
+                {
+                    Post vp = ObjectManager.ConvertToObject<Graffiti.Core.Post>(v.Data);
+
+                    if (v.CreatedBy == oldUserName)
+                        v.CreatedBy = newUserName;
+                    if (v.Type == "post/xml")
+                    {
+                        if (vp.UserName == oldUserName)
+                            vp.UserName = newUserName;
+                        if (vp.ModifiedBy == oldUserName)
+                            vp.ModifiedBy = newUserName;
+                        if (vp.CreatedBy == oldUserName)
+                            vp.CreatedBy = newUserName;
+                        v.Data = vp.ToXML();
+                    }
+
+                    _versionService.SaveVersionStore(v, newUserName);
                 }
             }
 

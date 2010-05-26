@@ -480,6 +480,11 @@ namespace Graffiti.Data.DataBuddy
 
         #region VersionStore
 
+        public IQueryable<VersionStore> FetchVersions()
+        {
+            return DataVersionStore.GetVersions().Select(x => ConvertDataVersionStoreToVersionStore(x)).AsQueryable();
+        }
+
         public IQueryable<VersionStore> FetchVersionHistory(string filename, bool checkLicensed)
         {
             return DataVersionStore.GetVersionHistory(filename, checkLicensed).Select(x => ConvertDataVersionStoreToVersionStore(x)).AsQueryable();

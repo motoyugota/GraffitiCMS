@@ -412,6 +412,12 @@ namespace Graffiti.Data.DataBuddy
                 return vs.Version;
             }
 
+            public static DataVersionStoreCollection GetVersions()
+            {
+                Query versionQuery = CreateQuery();
+                return DataVersionStoreCollection.FetchByQuery(versionQuery);
+            }
+        
             public static DataVersionStoreCollection GetVersionHistory(string filePath) {
                 return GetVersionHistory(filePath, true);
             }

@@ -17,6 +17,11 @@ namespace Graffiti.Services
             _versionStoreRepository = versionStoreRepository;
         }
 
+        public IList<VersionStore> FetchVersions()
+        {
+            return _versionStoreRepository.FetchVersions().ToList();
+        }
+
         public IList<VersionStore> FetchVersionHistory(string filename, bool checkLicensed)
         {
             return _versionStoreRepository.FetchVersionHistory(filename, checkLicensed).ToList();

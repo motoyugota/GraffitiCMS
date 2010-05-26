@@ -7,6 +7,7 @@ namespace Graffiti.Data
 {
     public interface IVersionStoreRepository 
     {
+        IQueryable<VersionStore> FetchVersions();
         IQueryable<VersionStore> FetchVersionHistory(string filename, bool checkLicensed);
         IQueryable<VersionStore> FetchVersionHistory(int postId);
         IQueryable<VersionStore> FetchVersionHistoryByPostId(int postId, int version);

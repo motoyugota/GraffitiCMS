@@ -6,6 +6,7 @@ namespace Graffiti.Core.Services
 {
     public interface IVersionStoreService 
     {
+        IList<VersionStore> FetchVersions();
         IList<VersionStore> FetchVersionHistory(string filename, bool checkLicensed);
         IList<VersionStore> FetchVersionHistory(int postId);
         IList<VersionStore> FetchVersionStoreByPostId(int postId, int version);
