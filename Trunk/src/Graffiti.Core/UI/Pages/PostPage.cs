@@ -4,6 +4,7 @@ namespace Graffiti.Core
 {
     public class PostPage : TemplatedThemePage
     {
+        private string viewName;
         protected override string ViewName
         {
             get
@@ -47,10 +48,10 @@ namespace Graffiti.Core
                 if (ViewExists(category.Parent.LinkName + baseName))
                     return category.Parent.LinkName + baseName;
             }
-
+            /*
             else if (ViewExists(CategoryName + baseName))
                 return CategoryName + baseName;
-
+            */
             else if (CategoryID == _categoryService.UnCategorizedId() && ViewExists("page" + baseName))
                 return "page" + baseName;
 
