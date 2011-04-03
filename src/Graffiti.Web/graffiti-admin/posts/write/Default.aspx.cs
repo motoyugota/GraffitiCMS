@@ -233,8 +233,6 @@ public partial class graffiti_admin_posts_write_Default : ControlPanelPage
 
 		if (isAdmin || RolePermissionManager.GetPermissions(Int32.Parse(CategoryList.SelectedValue), GraffitiUsers.Current).Publish)
 			PublishStatus.Items.Add(new ListItem("Published", "1"));
-		else
-			P_Status.Style.Add("display", "none");
 
 		PublishStatus.Items.Add(new ListItem("Draft", "2"));
 
