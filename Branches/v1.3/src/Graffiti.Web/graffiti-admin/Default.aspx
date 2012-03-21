@@ -186,7 +186,7 @@
 				if (!SiteSettings.Get().GenerateFolders)
 				{
 					WarningPanel.Visible = true;
-					WarningLabel.Text = string.Format("Your web server may not suport URL Routing (urls without extensions), and the <a href=\"{0}\"><em>Generate Folders for Posts/Categories/Tags</em></a> setting is disabled. This is a legacy setting that generates folders for every post, category, and tag so that you don't need extensions for urls. You should go enable that setting now if you are running a verison of IIS lower than 7 (or if you are using an alternate web server).", VirtualPathUtility.ToAbsolute("~/graffiti-admin/site-options/configuration/"));
+					WarningLabel.Text = string.Format("Your web server may not suport URL Routing (urls without extensions), and the <a href=\"{0}\"><em>Generate Folders for Posts/Categories/Tags</em></a> setting is disabled. This is a legacy setting that generates folders for every post, category, and tag so that you don't need extensions for urls. You should go enable that setting now if you are running a version of IIS lower than 7 (or if you are using an alternate web server).", VirtualPathUtility.ToAbsolute("~/graffiti-admin/site-options/configuration/"));
 				}
 			}
 		}
