@@ -116,7 +116,6 @@ namespace Graffiti.Core.API
             writer.WriteAttributeString("id", comment.Id.ToString());
             writer.WriteAttributeString("postId", comment.PostId.ToString());
             writer.WriteElementString("body", comment.Body);
-            writer.WriteElementString("ipAddress", comment.IPAddress);
             writer.WriteElementString("name", comment.Name);
             writer.WriteElementString("author", comment.UserName);
             writer.WriteElementString("spamScore", comment.SpamScore.ToString());
