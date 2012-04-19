@@ -120,15 +120,21 @@
 
 		try
 		{
-			// get the latest version
+			// get the latest version from codeplex release feed
+            
+            System.Net.HttpWebRequest request = (System.Net.HttpWebRequest)System.Net.WebRequest.Create("http://graffiticms.codeplex.com/project/feeds/rss?ProjectRSSFeed=codeplex://release/graffiticms");
+            request.Timeout = 1000; //one second timeout in case the site is down
+            System.Net.WebResponse response = request.GetResponse();
+            System.IO.Stream responseStream = response.GetResponseStream();
+             
 			XmlDocument document = new XmlDocument();
-			document.Load("http://extendgraffiti.com/currentversion.xml");
+			document.Load(responseStream);
 
-			string newVersion = document.SelectSingleNode("currentversion/assembly").InnerText.Replace(".", "");
-
+            string newVersion = document.SelectSingleNode("rss/channel/item/title[starts-with(.,'Released:')]").InnerText; //.Replace(".", "").Replace(" Beta", "");
+            newVersion = Regex.Match(newVersion, @"(Graffiti CMS \d+\.\d(?:.\d)?(?:.\d)?)+").ToString().Replace("Graffiti CMS ", "").Replace(".", "");
 			int longestVersion = newVersion.Length > oldVersion.Length ? newVersion.Length : oldVersion.Length;
-
-			newVersion = newVersion.PadRight(longestVersion, '0');
+            
+            newVersion = newVersion.PadRight(longestVersion, '0');
 			oldVersion = oldVersion.PadRight(longestVersion, '0');
 
 			if (Convert.ToDecimal(oldVersion) < Convert.ToDecimal(newVersion))
