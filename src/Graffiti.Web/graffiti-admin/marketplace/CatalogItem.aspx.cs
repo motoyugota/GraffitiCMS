@@ -79,7 +79,7 @@ public partial class graffiti_admin_marketplace_CatalogItem : AdminControlPanelP
             InstallButton.Visible = true;
 
         InstallButton.Text = "Install " + _itemTypeName;
-        DownloadButton.Text = "Downlaod " + _itemTypeName;
+        DownloadButton.Text = "Download " + _itemTypeName;
         BuyButton.Text = "Buy " + _itemTypeName;
     }
 

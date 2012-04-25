@@ -24,7 +24,7 @@ namespace Graffiti.Core
         private bool _isCustomReady = false;
 
         /// <summary>
-        /// Returns a custom fiels keys and values
+        /// Returns a custom fields keys and values
         /// </summary>
         /// <returns></returns>
         public NameValueCollection CustomFields()
