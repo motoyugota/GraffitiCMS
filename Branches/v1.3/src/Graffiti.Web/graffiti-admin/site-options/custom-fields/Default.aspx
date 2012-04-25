@@ -93,7 +93,7 @@
                 </asp:PlaceHolder>
 
                 <asp:PlaceHolder runat="Server" ID = "ListRegion" Visible="False">
-                    <h2>List Options:<span class="form_tip">(please add on option per line)</span></h2>
+                    <h2>List Options:<span class="form_tip">(please add one option per line)</span></h2>
                     <asp:TextBox runat="Server" ID = "ExistingListOptions" TextMode="MultiLine" Rows="5" Columns="60" CssClass="Large" TabIndex="5" />
                 </asp:PlaceHolder>
 
