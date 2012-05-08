@@ -142,6 +142,10 @@ namespace Graffiti.Core
             //We always need a post name
             Name = Util.CleanForUrl(!string.IsNullOrEmpty(Name) ? Name : Title);
 
+            //Make sure the name isnt blank or else the post path would be the root of the site
+            if (string.IsNullOrEmpty(Name))
+                throw new Exception("Post name must contain some letters or numbers.");
+
             if (IsNew)
             {
                 UniqueId = Guid.NewGuid();
@@ -471,7 +475,7 @@ namespace Graffiti.Core
         {
             string dir = HttpContext.Current.Server.MapPath(p.Url);
             
-            if(Directory.Exists(dir))
+            if(Directory.Exists(dir) & p.Url != "/") //do not delete root of site if post is created there by mistake
             {
                 try
                 {
