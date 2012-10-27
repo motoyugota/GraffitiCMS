@@ -21,7 +21,7 @@ namespace Graffiti.Core
 
 		public override string FeedUrl
 		{
-			get { return "http://twitter.com/statuses/user_timeline/" + UserName + ".rss"; }
+            get { return "https://api.twitter.com/1/statuses/user_timeline.rss?screen_name=" + UserName; }
 		}
 
 		public override string RenderData()
