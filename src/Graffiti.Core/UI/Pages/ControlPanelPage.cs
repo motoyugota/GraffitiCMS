@@ -3,54 +3,54 @@ using System.Web.UI;
 
 namespace Graffiti.Core
 {
-    public class GraffitiPage : Page
-    {
-        protected virtual void Authenticate()
-        {
-        }
+	public class GraffitiPage : Page
+	{
+		protected virtual void Authenticate()
+		{
+		}
 
-        protected override void OnInit(EventArgs e)
-        {
-            Authenticate();
-            base.OnInit(e);
-        }
-    }
+		protected override void OnInit(EventArgs e)
+		{
+			Authenticate();
+			base.OnInit(e);
+		}
+	}
 
-    public class ControlPanelPage : GraffitiPage
-    {
+	public class ControlPanelPage : GraffitiPage
+	{
+		protected override void Authenticate()
+		{
+			if (GraffitiUsers.Current == null)
+				Response.Redirect("~/login/");
 
-        protected override void Authenticate()
-        {
-            if (GraffitiUsers.Current == null)
-                Response.Redirect("~/login/");
+			if (!RolePermissionManager.CanViewControlPanel(GraffitiUsers.Current) &&
+			    !GraffitiUsers.IsAdmin(GraffitiUsers.Current))
+				Response.Redirect("~/");
+		}
+	}
 
-            if (!RolePermissionManager.CanViewControlPanel(GraffitiUsers.Current) && !GraffitiUsers.IsAdmin(GraffitiUsers.Current))
-                Response.Redirect("~/");
-        }
+	public class ManagerControlPanelPage : ControlPanelPage
+	{
+		protected override void Authenticate()
+		{
+			if (GraffitiUsers.Current == null)
+				Response.Redirect("~/login/");
 
-    }
+			if (!RolePermissionManager.CanViewControlPanel(GraffitiUsers.Current) &&
+			    !GraffitiUsers.IsAdmin(GraffitiUsers.Current))
+				Response.Redirect("~/");
+		}
+	}
 
-    public class ManagerControlPanelPage : ControlPanelPage
-    {
-        protected override void Authenticate()
-        {
-            if (GraffitiUsers.Current == null)
-                Response.Redirect("~/login/");
+	public class AdminControlPanelPage : ControlPanelPage
+	{
+		protected override void Authenticate()
+		{
+			if (GraffitiUsers.Current == null)
+				Response.Redirect("~/login/");
 
-            if (!RolePermissionManager.CanViewControlPanel(GraffitiUsers.Current) && !GraffitiUsers.IsAdmin(GraffitiUsers.Current))
-                Response.Redirect("~/");   
-        }
-    }
-
-    public class AdminControlPanelPage : ControlPanelPage
-    {
-        protected override void Authenticate()
-        {
-            if (GraffitiUsers.Current == null)
-                Response.Redirect("~/login/");
-
-            if (!GraffitiUsers.IsAdmin(GraffitiUsers.Current))
-                Response.Redirect("~/");
-        }
-    }
+			if (!GraffitiUsers.IsAdmin(GraffitiUsers.Current))
+				Response.Redirect("~/");
+		}
+	}
 }

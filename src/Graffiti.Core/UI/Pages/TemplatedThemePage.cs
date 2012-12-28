@@ -1,22 +1,26 @@
 using System;
 using System.Collections.Generic;
-using System.Configuration;
 using System.Web;
-using System.Web.UI;
 
 namespace Graffiti.Core
 {
 	/// <summary>
-	/// Base page class used by all Graffiti pages. 
+	///     Base page class used by all Graffiti pages.
 	/// </summary>
 	public abstract class TemplatedThemePage : GraffitiPage
 	{
+		private static Dictionary<string, bool> fileCache = new Dictionary<string, bool>();
+		private static readonly Macros macros = new Macros();
 		public int CategoryID = -1;
-		public int PostId = -1;
+		public string CategoryName, MetaDescription, MetaKeywords;
 		public string Name = null;
-		public string TagName, RedirectUrl, PostName, CategoryName, MetaDescription, MetaKeywords;
+		public int PostId = -1;
+		public string PostName;
+		public string RedirectUrl;
+		public string TagName;
 
 		private bool _isInexed = true;
+
 		public virtual bool IsIndexable
 		{
 			get { return _isInexed; }
@@ -24,10 +28,32 @@ namespace Graffiti.Core
 		}
 
 
-		private static Dictionary<string, bool> fileCache = new Dictionary<string, bool>();
+		/// <summary>
+		///     We use a 1 based page index
+		/// </summary>
+		protected int PageIndex
+		{
+			get { return Int32.Parse(Context.Request.QueryString["p"] ?? "1"); }
+		}
 
 		/// <summary>
-		/// Checks to see if an optionally named/existing theme exists.
+		///     Current view
+		/// </summary>
+		protected virtual string ViewName
+		{
+			get { return ViewLookUp(".view", null); }
+		}
+
+		/// <summary>
+		///     Current theme
+		/// </summary>
+		protected virtual string ThemeName
+		{
+			get { return GraffitiContext.Current.Theme; }
+		}
+
+		/// <summary>
+		///     Checks to see if an optionally named/existing theme exists.
 		/// </summary>
 		protected bool ViewExists(string viewName)
 		{
@@ -44,19 +70,6 @@ namespace Graffiti.Core
 				return ViewManager.Exists(ThemeName, viewName);
 		}
 
-		/// <summary>
-		/// We use a 1 based page index
-		/// </summary>
-		protected int PageIndex
-		{
-			get { return Int32.Parse(Context.Request.QueryString["p"] ?? "1"); }
-		}
-
-		/// <summary>
-		/// Current view
-		/// </summary>
-		protected virtual string ViewName { get { return ViewLookUp(".view", null); } }
-
 		protected virtual string ViewLookUp(string baseName, string defaultViewName)
 		{
 			if (defaultViewName == null)
@@ -66,7 +79,7 @@ namespace Graffiti.Core
 		}
 
 		/// <summary>
-		/// Overridable in subclasses. Should be used to add custom data to the graffitiContext.
+		///     Overridable in subclasses. Should be used to add custom data to the graffitiContext.
 		/// </summary>
 		/// <param name="graffitiContext">The context passed to the view at runtime.</param>
 		protected virtual void LoadContent(GraffitiContext graffitiContext)
@@ -74,7 +87,7 @@ namespace Graffiti.Core
 		}
 
 		/// <summary>
-		/// Used by page templates to set default values
+		///     Used by page templates to set default values
 		/// </summary>
 		protected virtual void Initialize()
 		{
@@ -97,8 +110,10 @@ namespace Graffiti.Core
 
 				LoadContent(graffitiContext);
 
-				if (!RolePermissionManager.GetPermissions(CategoryID, GraffitiUsers.Current, graffitiContext["where"].ToString() == "home" ||
-																		  graffitiContext["where"].ToString() == "search").Read)
+				if (
+					!RolePermissionManager.GetPermissions(CategoryID, GraffitiUsers.Current,
+					                                      graffitiContext["where"].ToString() == "home" ||
+					                                      graffitiContext["where"].ToString() == "search").Read)
 					Response.Redirect(ResolveUrl("~/access-denied/"));
 
 				ViewManager.Render(Context, graffitiContext, ThemeName);
@@ -118,10 +133,8 @@ namespace Graffiti.Core
 			Context.Response.End();
 		}
 
-		static readonly Macros macros = new Macros();
-
 		/// <summary>
-		/// Loads/sets all global default content
+		///     Loads/sets all global default content
 		/// </summary>
 		/// <param name="graffitiContext">Current context</param>
 		/// <param name="view">Name of the view requested</param>
@@ -150,25 +163,25 @@ namespace Graffiti.Core
 
 		protected void SetDataTypeHelpers(GraffitiContext graffitiContext)
 		{
-			object[] builtInHelpers = new object[]
-			{
-				new StaticAccessorHelper<Byte>(),
-				new StaticAccessorHelper<SByte>(),
-				new StaticAccessorHelper<Int16>(),
-				new StaticAccessorHelper<Int32>(),
-				new StaticAccessorHelper<Int64>(),
-				new StaticAccessorHelper<UInt16>(),
-				new StaticAccessorHelper<UInt32>(),
-				new StaticAccessorHelper<UInt64>(),
-				new StaticAccessorHelper<Single>(),
-				new StaticAccessorHelper<Double>(),
-				new StaticAccessorHelper<Boolean>(),
-				new StaticAccessorHelper<Char>(),
-				new StaticAccessorHelper<Decimal>(),
-				new StaticAccessorHelper<String>(),
-				new StaticAccessorHelper<Guid>(),
-				new StaticAccessorHelper<DateTime>()
-			};
+			var builtInHelpers = new object[]
+				                     {
+					                     new StaticAccessorHelper<Byte>(),
+					                     new StaticAccessorHelper<SByte>(),
+					                     new StaticAccessorHelper<Int16>(),
+					                     new StaticAccessorHelper<Int32>(),
+					                     new StaticAccessorHelper<Int64>(),
+					                     new StaticAccessorHelper<UInt16>(),
+					                     new StaticAccessorHelper<UInt32>(),
+					                     new StaticAccessorHelper<UInt64>(),
+					                     new StaticAccessorHelper<Single>(),
+					                     new StaticAccessorHelper<Double>(),
+					                     new StaticAccessorHelper<Boolean>(),
+					                     new StaticAccessorHelper<Char>(),
+					                     new StaticAccessorHelper<Decimal>(),
+					                     new StaticAccessorHelper<String>(),
+					                     new StaticAccessorHelper<Guid>(),
+					                     new StaticAccessorHelper<DateTime>()
+				                     };
 
 			foreach (object helper in builtInHelpers)
 			{
@@ -180,14 +193,6 @@ namespace Graffiti.Core
 		{
 			string the_View_Name = ViewLookUp("." + key + ".view", key + ".view");
 			return macros.LoadThemeView(the_View_Name);
-		}
-
-		/// <summary>
-		/// Current theme
-		/// </summary>
-		protected virtual string ThemeName
-		{
-			get { return GraffitiContext.Current.Theme; }
 		}
 	}
 }

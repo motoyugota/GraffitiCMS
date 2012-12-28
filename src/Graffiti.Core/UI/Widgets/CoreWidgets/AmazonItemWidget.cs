@@ -3,16 +3,25 @@ using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Web;
 
 namespace Graffiti.Core
 {
 	[WidgetInfo("3af19ee1-fef2-4b38-a2c1-c1ea0b112261", "Amazon Items", "A list of Amazon Items")]
 	public class AmazonItemWidget : Widget
 	{
-		public string[] Links = new string[0];
+		private const string amazonFormat =
+			"<a href=\"http://www.amazon.com/exec/obidos/redirect?path=ASIN/{0}&amp;link_code=as2&amp;camp=1789&amp;tag={1}&amp;creative=9325\"><img src=\"http://images.amazon.com/images/P/{0}.01._AA_SCTZZZZZZZ_.jpg\" /></a>";
+
 		public string AmazonId;
-		public int HowMany = -1;
 		public string AmazonLinkItems = null;
+		public int HowMany = -1;
+		public string[] Links = new string[0];
+
+		public override string Name
+		{
+			get { return "Amazon Items" + (!string.IsNullOrEmpty(Title) ? ": " + Title : string.Empty); }
+		}
 
 		public override string RenderData()
 		{
@@ -34,11 +43,6 @@ namespace Graffiti.Core
 
 			sb.Append("</ul>");
 			return sb.ToString();
-		}
-
-		public override string Name
-		{
-			get { return "Amazon Items" + (!string.IsNullOrEmpty(Title) ? ": " + Title : string.Empty); }
 		}
 
 		protected override FormElementCollection AddFormElements()
@@ -68,7 +72,7 @@ namespace Graffiti.Core
 			return nvc;
 		}
 
-		public override StatusType SetValues(System.Web.HttpContext context, NameValueCollection nvc)
+		public override StatusType SetValues(HttpContext context, NameValueCollection nvc)
 		{
 			StatusType st = base.SetValues(context, nvc);
 
@@ -85,10 +89,10 @@ namespace Graffiti.Core
 
 			AmazonId = nvc["amazonid"];
 
-			List<string> newLinks = new List<string>();
+			var newLinks = new List<string>();
 			if (!string.IsNullOrEmpty(AmazonLinkItems))
 			{
-				string[] lines = AmazonLinkItems.Split(new char[] { '\n' }, StringSplitOptions.RemoveEmptyEntries);
+				var lines = AmazonLinkItems.Split(new[] {'\n'}, StringSplitOptions.RemoveEmptyEntries);
 				foreach (string line in lines)
 				{
 					string asin = ParseLinkForASIN(line);
@@ -117,19 +121,14 @@ namespace Graffiti.Core
 					if (!string.IsNullOrEmpty(asin))
 					{
 						Log.Info("Amazon Widget", "Successful Link Conversion",
-								  "Converted  " + link + " to " + asin);
+						         "Converted  " + link + " to " + asin);
 
 						return asin;
 					}
 				}
-
 			}
 			Log.Warn("Amazon Widget", "The link " + link + " could not be processed");
 			return null;
 		}
-
-		private const string amazonFormat =
-			 "<a href=\"http://www.amazon.com/exec/obidos/redirect?path=ASIN/{0}&amp;link_code=as2&amp;camp=1789&amp;tag={1}&amp;creative=9325\"><img src=\"http://images.amazon.com/images/P/{0}.01._AA_SCTZZZZZZZ_.jpg\" /></a>";
-
 	}
 }

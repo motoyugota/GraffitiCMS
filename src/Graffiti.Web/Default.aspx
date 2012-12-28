@@ -1,125 +1,114 @@
 <%@ Page Language="C#" AutoEventWireup="true"  Inherits="Graffiti.Core.TemplatedThemePage" ClassName="GraffitiHomePage" %>
-<%@ Import namespace="DataBuddy"%>
+<%@ Import Namespace="DataBuddy" %>
 <script runat="Server">
 
-    protected override string ViewLookUp(string baseName, string defaultViewName)
-    {
-        if (ViewExists("home" + baseName))
-            return "home" + baseName;
-        else
-            return base.ViewLookUp(baseName, defaultViewName);
+	protected override string ViewLookUp(string baseName, string defaultViewName)
+	{
+		if (ViewExists("home" + baseName))
+			return "home" + baseName;
+		else
+			return base.ViewLookUp(baseName, defaultViewName);
+	}
 
-    }
+	public override bool IsIndexable
+	{
+		get { return PageIndex <= 1; }
+		set { base.IsIndexable = value; }
+	}
 
-    public override bool IsIndexable
-    {
-        get
-        {
-            return PageIndex <= 1;
-        }
-        set
-        {
-            base.IsIndexable = value;
-        }
-    }
+	protected override void LoadContent(GraffitiContext graffitiContext)
+	{
+		graffitiContext["where"] = "home";
+		graffitiContext["title"] = SiteSettings.Get().Title;
 
-    protected override void LoadContent(GraffitiContext graffitiContext)
-    {
+		if (SiteSettings.Get().UseCustomHomeList)
+		{
+			graffitiContext.RegisterOnRequestDelegate("posts", GetCustomHomeSortPosts);
 
-        graffitiContext["where"] = "home";
-        graffitiContext["title"] = SiteSettings.Get().Title;
+			// GetCustomHomeSortPosts needs to be called so the pager works
+			GetCustomHomeSortPosts("posts", graffitiContext);
+		}
+		else
+		{
+			graffitiContext.RegisterOnRequestDelegate("posts", GetDefaultPosts);
 
-        if (SiteSettings.Get().UseCustomHomeList)
-        {
-            graffitiContext.RegisterOnRequestDelegate("posts", GetCustomHomeSortPosts);
-            
-            // GetCustomHomeSortPosts needs to be called so the pager works
-            GetCustomHomeSortPosts("posts", graffitiContext);
-        }
-        else
-        {
-            graffitiContext.RegisterOnRequestDelegate("posts", GetDefaultPosts);
-            
-            // GetDefaultPosts needs to be called so the pager works
-            GetDefaultPosts("posts", graffitiContext);
-        }
-    }
-    
-    protected object GetCustomHomeSortPosts(string key, GraffitiContext graffitiContext)
-    {
-        PostCollection pc = ZCache.Get<PostCollection>(CacheKey + ":customhome:" + PageIndex);
-        if (pc == null)
-        {
-            pc = new PostCollection();
+			// GetDefaultPosts needs to be called so the pager works
+			GetDefaultPosts("posts", graffitiContext);
+		}
+	}
 
-            Query q = PostCollection.HomeQueryOverride(PageIndex, SiteSettings.Get().PageSize);
-            
-            pc.LoadAndCloseReader(q.ExecuteReader());
-            ZCache.InsertCache(CacheKey + ":customhome:" + PageIndex, pc, 30);
+	protected object GetCustomHomeSortPosts(string key, GraffitiContext graffitiContext)
+	{
+		PostCollection pc = ZCache.Get<PostCollection>(CacheKey + ":customhome:" + PageIndex);
+		if (pc == null)
+		{
+			pc = new PostCollection();
 
-        }
+			Query q = PostCollection.HomeQueryOverride(PageIndex, SiteSettings.Get().PageSize);
 
-        object postCount = ZCache.Get<object>(CacheKey + ":customhome:" +"Count");
-        if (postCount == null)
-        {
-            postCount = PostCollection.HomeQueryOverride(-1, -1).GetRecordCount();
-            ZCache.InsertCache(CacheKey + ":customhome:" + "Count", postCount, 60);
-        }
+			pc.LoadAndCloseReader(q.ExecuteReader());
+			ZCache.InsertCache(CacheKey + ":customhome:" + PageIndex, pc, 30);
+		}
 
-        graffitiContext.TotalRecords = (int)postCount;
-        graffitiContext.PageIndex = PageIndex;
-        graffitiContext.PageSize = SiteSettings.Get().PageSize;
+		object postCount = ZCache.Get<object>(CacheKey + ":customhome:" + "Count");
+		if (postCount == null)
+		{
+			postCount = PostCollection.HomeQueryOverride(-1, -1).GetRecordCount();
+			ZCache.InsertCache(CacheKey + ":customhome:" + "Count", postCount, 60);
+		}
 
-        PostCollection permissionsFiltered = new PostCollection();
-        permissionsFiltered.AddRange(pc);
+		graffitiContext.TotalRecords = (int) postCount;
+		graffitiContext.PageIndex = PageIndex;
+		graffitiContext.PageSize = SiteSettings.Get().PageSize;
 
-        foreach (Post p in pc)
-        {
-            if (!RolePermissionManager.GetPermissions(p.CategoryId, GraffitiUsers.Current).Read)
-                permissionsFiltered.Remove(p);
-        }
-        
-        return permissionsFiltered;
-    }
+		PostCollection permissionsFiltered = new PostCollection();
+		permissionsFiltered.AddRange(pc);
 
-    protected object GetDefaultPosts(string key, GraffitiContext graffitiContext)
-    {
-        PostCollection pc = ZCache.Get<PostCollection>(CacheKey + PageIndex);
-        if (pc == null)
-        {
-            pc = new PostCollection();
-            Query q = PostCollection.DefaultQuery();
-            q.PageSize = SiteSettings.Get().PageSize;
-            q.PageIndex = PageIndex;
-            pc.LoadAndCloseReader(q.ExecuteReader());
-            ZCache.InsertCache(CacheKey + PageIndex, pc, 30);
+		foreach (Post p in pc)
+		{
+			if (!RolePermissionManager.GetPermissions(p.CategoryId, GraffitiUsers.Current).Read)
+				permissionsFiltered.Remove(p);
+		}
 
-        }
+		return permissionsFiltered;
+	}
 
-        object postCount = ZCache.Get<object>(CacheKey + "Count");
-        if (postCount == null)
-        {
-            postCount = PostCollection.DefaultQuery().GetRecordCount();
-            ZCache.InsertCache(CacheKey + "Count", postCount, 60);
-        }
+	protected object GetDefaultPosts(string key, GraffitiContext graffitiContext)
+	{
+		PostCollection pc = ZCache.Get<PostCollection>(CacheKey + PageIndex);
+		if (pc == null)
+		{
+			pc = new PostCollection();
+			Query q = PostCollection.DefaultQuery();
+			q.PageSize = SiteSettings.Get().PageSize;
+			q.PageIndex = PageIndex;
+			pc.LoadAndCloseReader(q.ExecuteReader());
+			ZCache.InsertCache(CacheKey + PageIndex, pc, 30);
+		}
 
-        graffitiContext.TotalRecords = (int)postCount;
-        graffitiContext.PageIndex = PageIndex;
-        graffitiContext.PageSize = SiteSettings.Get().PageSize;
+		object postCount = ZCache.Get<object>(CacheKey + "Count");
+		if (postCount == null)
+		{
+			postCount = PostCollection.DefaultQuery().GetRecordCount();
+			ZCache.InsertCache(CacheKey + "Count", postCount, 60);
+		}
+
+		graffitiContext.TotalRecords = (int) postCount;
+		graffitiContext.PageIndex = PageIndex;
+		graffitiContext.PageSize = SiteSettings.Get().PageSize;
 
 
-        PostCollection permissionsFiltered = new PostCollection();
-        permissionsFiltered.AddRange(pc);
+		PostCollection permissionsFiltered = new PostCollection();
+		permissionsFiltered.AddRange(pc);
 
-        foreach (Post p in pc)
-        {
-            if (!RolePermissionManager.GetPermissions(p.CategoryId, GraffitiUsers.Current).Read)
-                permissionsFiltered.Remove(p);
-        }
+		foreach (Post p in pc)
+		{
+			if (!RolePermissionManager.GetPermissions(p.CategoryId, GraffitiUsers.Current).Read)
+				permissionsFiltered.Remove(p);
+		}
 
-        return permissionsFiltered;
-    }
+		return permissionsFiltered;
+	}
 
-    private const string CacheKey = "Posts-Index-";
-    
+		private const string CacheKey = "Posts-Index-";
 </script>

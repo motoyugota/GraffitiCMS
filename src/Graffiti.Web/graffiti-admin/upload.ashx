@@ -1,3 +1,6 @@
 <%@ WebHandler Language="C#" CodeBehind="upload.ashx.cs" Class="upload01" %>
-public class upload01 : Graffiti.Web.upload
-{}
+using Graffiti.Web;
+
+public class upload01 : upload
+{
+}

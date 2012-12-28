@@ -11,26 +11,35 @@ using DataBuddy;
 namespace Graffiti.Core
 {
 
-
 	#region Event Handler Subscriptions
+
 	public delegate void DataObjectEventHandler(DataBuddyBase dataObject, EventArgs e);
+
 	public delegate void UserEventHandler(IGraffitiUser user, EventArgs e);
+
 	public delegate void RssEventHandler(XmlTextWriter writer, EventArgs e);
+
 	public delegate void RssPostEventHandler(XmlTextWriter writer, PostEventArgs e);
+
 	public delegate void EmailTemplateHandler(EmailTemplate template, EventArgs e);
+
 	public delegate void RenderContentEventHandler(StringBuilder sb, EventArgs e);
+
 	public delegate void RenderPostBodyEventHandler(StringBuilder sb, PostEventArgs e);
+
 	public delegate void GraffitiContextEventHandler(GraffitiContext context, EventArgs e);
+
 	public delegate void UrlRoutingEventHandler(RouteCollection routes, EventArgs e);
+
 	#endregion
 
 	/// <summary>
-	/// Manages events
+	///     Manages events
 	/// </summary>
 	public static class Events
 	{
 		/// <summary>
-		/// Gets an event from the ObjectStore or creates a new one if it doesn't exist
+		///     Gets an event from the ObjectStore or creates a new one if it doesn't exist
 		/// </summary>
 		public static EventDetails GetEvent(string typeName)
 		{
@@ -46,8 +55,9 @@ namespace Graffiti.Core
 			}
 			return ed;
 		}
+
 		/// <summary>
-		/// Saves an EventDetails to the ObjectStore
+		///     Saves an EventDetails to the ObjectStore
 		/// </summary>
 		/// <param name="ed"></param>
 		public static void Save(EventDetails ed)
@@ -65,7 +75,7 @@ namespace Graffiti.Core
 		}
 
 		/// <summary>
-		/// Clears the Event cache.
+		///     Clears the Event cache.
 		/// </summary>
 		public static void ResetCache()
 		{
@@ -74,9 +84,8 @@ namespace Graffiti.Core
 		}
 
 
-
 		/// <summary>
-		/// Manages a single instance of GraffitiApplication which controls the events to be invoked
+		///     Manages a single instance of GraffitiApplication which controls the events to be invoked
 		/// </summary>
 		public static GraffitiApplication Instance()
 		{
@@ -90,7 +99,7 @@ namespace Graffiti.Core
 					{
 						ga = new GraffitiApplication();
 
-						List<EventDetails> details = GetEvents();
+						var details = GetEvents();
 
 						foreach (EventDetails detail in details)
 						{
@@ -108,24 +117,24 @@ namespace Graffiti.Core
 		}
 
 		/// <summary>
-		/// Returns a list of all known events based the assemblies in the bin directory
+		///     Returns a list of all known events based the assemblies in the bin directory
 		/// </summary>
 		/// <returns></returns>
 		public static List<EventDetails> GetEvents()
 		{
-			List<EventDetails> details = ZCache.Get<List<EventDetails>>("EventDetails");
+			var details = ZCache.Get<List<EventDetails>>("EventDetails");
 			if (details == null)
 			{
 				details = new List<EventDetails>();
 
 				ObjectStoreCollection osc =
-					 ObjectStoreCollection.FetchByColumn(ObjectStore.Columns.ContentType, "eventdetails/xml");
+					ObjectStoreCollection.FetchByColumn(ObjectStore.Columns.ContentType, "eventdetails/xml");
 
-                // Can't log errors until after Events have been fully loaded
-                var warnings = new List<String>();
+				// Can't log errors until after Events have been fully loaded
+				var warnings = new List<String>();
 
-				string[] assemblies =
-					 Directory.GetFileSystemEntries(HttpRuntime.BinDirectory, "*.dll");
+				var assemblies =
+					Directory.GetFileSystemEntries(HttpRuntime.BinDirectory, "*.dll");
 				for (int i = 0; i < assemblies.Length; i++)
 				{
 					try
@@ -135,7 +144,7 @@ namespace Graffiti.Core
 						{
 							try
 							{
-								if (type.IsClass && !type.IsAbstract && type.IsSubclassOf(typeof(GraffitiEvent)))
+								if (type.IsClass && !type.IsAbstract && type.IsSubclassOf(typeof (GraffitiEvent)))
 								{
 									string the_Type = type.AssemblyQualifiedName;
 									the_Type = the_Type.Substring(0, the_Type.IndexOf(", Version="));
@@ -159,38 +168,41 @@ namespace Graffiti.Core
 							}
 							catch (Exception exType)
 							{
-                                warnings.Add(String.Format("Failed to load type {0}. Reason: {1}", type.FullName, exType.Message));
+								warnings.Add(String.Format("Failed to load type {0}. Reason: {1}", type.FullName, exType.Message));
 							}
 						}
-
 					}
 					catch (ReflectionTypeLoadException rtle)
 					{
 						if (assemblies[i].IndexOf("DataBuddy") == -1 && assemblies[i].IndexOf("RssToolkit") == -1)
-                            warnings.Add(String.Format("Failed to load assembly {0}. Reason: {1}", assemblies[i], rtle.Message));
+							warnings.Add(String.Format("Failed to load assembly {0}. Reason: {1}", assemblies[i], rtle.Message));
 					}
 
 					catch (Exception exAssembly)
 					{
-                        warnings.Add(String.Format("Failed to load assembly {0}. Reason: {1}", assemblies[i], exAssembly.Message));
+						warnings.Add(String.Format("Failed to load assembly {0}. Reason: {1}", assemblies[i], exAssembly.Message));
 					}
 				}
 
 				ZCache.InsertCache("EventDetails", details, 300);
 
-                // Now we can log errors
-                foreach (var warning in warnings)
-                    Log.Warn("Plugin", warning);
+				// Now we can log errors
+				foreach (var warning in warnings)
+					Log.Warn("Plugin", warning);
 			}
 
 			return details;
 		}
 
-
 		#region Private Helpers
 
 		/// <summary>
-		/// Returns instance of ObjectStore for a specific type name
+		///     used to ensure that only one instance of GraffitiEvents exists
+		/// </summary>
+		private static readonly object lockedOnly = new object();
+
+		/// <summary>
+		///     Returns instance of ObjectStore for a specific type name
 		/// </summary>
 		private static ObjectStore GetEventFromStore(string typeName)
 		{
@@ -201,7 +213,7 @@ namespace Graffiti.Core
 		}
 
 		/// <summary>
-		/// Creates an EventDetail from the ObjectStore
+		///     Creates an EventDetail from the ObjectStore
 		/// </summary>
 		private static EventDetails LoadEventDetailsFromObjectStore(ObjectStore os)
 		{
@@ -212,7 +224,7 @@ namespace Graffiti.Core
 		}
 
 		/// <summary>
-		/// Events need some "help" deserializing. This method handles this.
+		///     Events need some "help" deserializing. This method handles this.
 		/// </summary>
 		private static GraffitiEvent InstantiateGraffitiEvent(string typeName, string xml)
 		{
@@ -226,7 +238,7 @@ namespace Graffiti.Core
 		}
 
 		/// <summary>
-		/// Creates a new EventDetails and instantiates the Graffiti event for the give Type Name
+		///     Creates a new EventDetails and instantiates the Graffiti event for the give Type Name
 		/// </summary>
 		private static EventDetails CreateNewEventFromTypeName(string typeName)
 		{
@@ -236,18 +248,11 @@ namespace Graffiti.Core
 
 			EventDetails ed = new EventDetails();
 			ed.EventType = typeName;
-			ed.Enabled = type.Assembly == typeof(Events).Assembly;
+			ed.Enabled = type.Assembly == typeof (Events).Assembly;
 			ed.Event = InstantiateGraffitiEvent(typeName, null);
 			return ed;
 		}
 
-		/// <summary>
-		/// used to ensure that only one instance of GraffitiEvents exists
-		/// </summary>
-		private static readonly object lockedOnly = new object();
-
 		#endregion
-
 	}
-
 }

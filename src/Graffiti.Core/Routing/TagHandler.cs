@@ -1,5 +1,4 @@
 ﻿using System.Web;
-using System.Web.Compilation;
 using System.Web.Routing;
 
 namespace Graffiti.Core
@@ -8,7 +7,9 @@ namespace Graffiti.Core
 	{
 		public IHttpHandler GetHttpHandler(RequestContext requestContext)
 		{
-			string tagName = requestContext.RouteData.Values["tagname"] != null ? requestContext.RouteData.Values["tagname"].ToString() : null;
+			string tagName = requestContext.RouteData.Values["tagname"] != null
+				                 ? requestContext.RouteData.Values["tagname"].ToString()
+				                 : null;
 
 			TagPage tp = new TagPage();
 			tp.TagName = tagName;

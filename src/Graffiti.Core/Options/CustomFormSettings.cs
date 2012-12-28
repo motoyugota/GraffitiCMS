@@ -6,18 +6,22 @@ using System.Text;
 namespace Graffiti.Core
 {
 	/// <summary>
-	/// Defines a single custom form. This object is stored in the ObjectStore
+	///     Defines a single custom form. This object is stored in the ObjectStore
 	/// </summary>
 	[Serializable]
 	public class CustomFormSettings
 	{
 		public static readonly string DefaultCustomFormName = "Default::Custom::Form";
-		public string Name;
 		public int CategoryId;
+		public List<CustomField> Fields;
 		public int FormCategoryId;
 		public bool IsNew = true;
+		public string Name;
 
-		public List<CustomField> Fields;
+		public bool HasFields
+		{
+			get { return Fields != null && Fields.Count > 0; }
+		}
 
 		public void Add(CustomField field)
 		{
@@ -30,13 +34,8 @@ namespace Graffiti.Core
 			Fields.Add(field);
 		}
 
-		public bool HasFields
-		{
-			get { return Fields != null && Fields.Count > 0; }
-		}
-
 		/// <summary>
-		/// Returns a named custom form. The default post form is named "post".
+		///     Returns a named custom form. The default post form is named "post".
 		/// </summary>
 		public static CustomFormSettings Get(int categoryId)
 		{
@@ -137,7 +136,7 @@ namespace Graffiti.Core
 			if (string.IsNullOrEmpty(Name))
 				throw new Exception("The name of the custom form cannot be null");
 
-			this.IsNew = false;
+			IsNew = false;
 			if (CategoryId == -1)
 				ObjectManager.Save(this, DefaultCustomFormName);
 			else
@@ -147,7 +146,7 @@ namespace Graffiti.Core
 		public string GetHtmlForm(NameValueCollection customFieldValues, bool isNew)
 		{
 			NameValueCollection fieldValues = new NameValueCollection();
-			foreach (CustomField cf in this.Fields)
+			foreach (CustomField cf in Fields)
 			{
 				if (customFieldValues[cf.Name] != null)
 					fieldValues[cf.Id.ToString()] = customFieldValues[cf.Name];
@@ -156,14 +155,14 @@ namespace Graffiti.Core
 			}
 
 			StringBuilder sb = new StringBuilder();
-			foreach (CustomField cf in this.Fields)
+			foreach (CustomField cf in Fields)
 			{
 				switch (cf.FieldType)
 				{
 					case FieldType.TextBox:
 						new TextFormElement(cf.Id.ToString(), cf.Name, cf.Description).Write(sb, fieldValues);
 						break;
-		
+
 					case FieldType.TextArea:
 						new TextAreaFormElement(cf.Id.ToString(), cf.Name, cf.Description, cf.Rows).Write(sb, fieldValues);
 						break;
@@ -200,7 +199,4 @@ namespace Graffiti.Core
 			return sb.ToString();
 		}
 	}
-
-
-
 }

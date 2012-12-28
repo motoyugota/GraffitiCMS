@@ -1,5 +1,4 @@
-﻿using System;
-using System.Web.Routing;
+﻿using System.Web.Routing;
 
 namespace Graffiti.Core
 {
@@ -7,7 +6,7 @@ namespace Graffiti.Core
 	{
 		public static void Initialize()
 		{
-            RouteTable.Routes.Clear();
+			RouteTable.Routes.Clear();
 			RegisterRoutes(RouteTable.Routes);
 		}
 
@@ -24,7 +23,7 @@ namespace Graffiti.Core
 
 			// Used to determine support for URL routing
 			routes.Add("GraffitiInfo", new Route("__utility/GraffitiUrlRoutingCheck", new GraffitiUrlRoutingCheckRouteHandler()));
-			
+
 			// Ignore non-virtual system folders
 			routes.Add("ignoreAdmin", new Route("graffiti-admin/{*pathInfo}", new StopRoutingHandler()));
 			routes.Add("ignoreAPI", new Route("api/{*pathInfo}", new StopRoutingHandler()));
@@ -32,8 +31,8 @@ namespace Graffiti.Core
 			routes.Add("ignoreUtility", new Route("__utility/{*pathInfo}", new StopRoutingHandler()));
 			routes.Add("ignoreFiles", new Route("files/{*pathInfo}", new StopRoutingHandler()));
 
-            // Allow plugins to add Routes before the default CategoryAndPost ones
-            Events.Instance().ExecuteUrlRoutingAdd(routes);
+			// Allow plugins to add Routes before the default CategoryAndPost ones
+			Events.Instance().ExecuteUrlRoutingAdd(routes);
 
 			routes.Add("TagPage", new Route("tags/{TagName}/", new TagHandler()));
 			routes.Add("TagFeed", new Route("tags/{TagName}/feed/", new RssHandler()));
@@ -58,6 +57,5 @@ namespace Graffiti.Core
 
 			RouteTable.Routes.Add(route);
 		}
-
 	}
 }

@@ -1,7 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Reflection;
 using System.Web;
 using NVelocity;
 
@@ -11,11 +9,22 @@ namespace Graffiti.Core
 
 
 	/// <summary>
-	/// Summary description for GraffitiContext
+	///     Summary description for GraffitiContext
 	/// </summary>
 	public class GraffitiContext : VelocityContext
 	{
 		private static readonly bool _isFullTrust = false;
+		[ThreadStatic] private static GraffitiContext currentContext;
+
+		private Dictionary<string, OnRequestDelegate> _LateBoundContextItems = new Dictionary<string, OnRequestDelegate>();
+
+		private HttpContext _context;
+		private string _theme;
+		//private ToolboxContext toolboxContext = null;
+
+		//private RequestToolboxContext rtc = null;
+		private ApplicationToolboxContext atc;
+
 		static GraffitiContext()
 		{
 			/*
@@ -28,59 +37,12 @@ namespace Graffiti.Core
 			*/
 		}
 
-		private Dictionary<string, OnRequestDelegate> _LateBoundContextItems = new Dictionary<string, OnRequestDelegate>();
-
-		private HttpContext _context = null;
-		//private ToolboxContext toolboxContext = null;
-
-		[ThreadStatic]
-		private static GraffitiContext currentContext = null;
-
-		//private RequestToolboxContext rtc = null;
-		private ApplicationToolboxContext atc = null;
-
 		private GraffitiContext(HttpContext context)
 		{
 			_context = context;
 
 			atc = ToolboxManager.GetApplicationToolbox();
 			currentContext = this;
-		}
-
-		public override object InternalGet(string key)
-		{
-			object obj = null;
-			//if (rtc != null)
-			//    obj = rtc.Get(key);
-
-			if (atc != null)
-				obj = atc.Get(key);
-
-			if (obj == null)
-				obj = base.InternalGet(key);
-
-			if (obj != null && obj is OnRequestDelegate)
-			{
-				obj = ((OnRequestDelegate)obj).Invoke(key, this);
-				Put(key, obj);
-			}
-
-			if (obj == null)
-			{
-				if (_LateBoundContextItems.ContainsKey(key))
-				{
-					OnRequestDelegate lbc = _LateBoundContextItems[key];
-					obj = lbc.Invoke(key, this);
-					Put(key, obj);
-				}
-			}
-
-			return obj;
-		}
-
-		public void RegisterOnRequestDelegate(string key, OnRequestDelegate item)
-		{
-			_LateBoundContextItems[key] = item;
 		}
 
 
@@ -94,23 +56,6 @@ namespace Graffiti.Core
 		{
 			get { return currentContext; }
 		}
-
-		public static void Unload()
-		{
-			currentContext = null;
-		}
-
-		public static GraffitiContext Create(HttpContext context)
-		{
-			GraffitiContext gContext = new GraffitiContext(context);
-
-			// Allow plugins to modify the GraffitiContext after it is loaded
-			Graffiti.Core.Events.Instance().ExecuteLoadGraffitiContext(gContext);
-
-			return gContext;
-		}
-
-		private string _theme;
 
 		public string Theme
 		{
@@ -133,19 +78,19 @@ namespace Graffiti.Core
 
 		public int PageIndex
 		{
-			get { return (int)(Get("pageIndex") ?? -1); }
+			get { return (int) (Get("pageIndex") ?? -1); }
 			set { Put("pageIndex", value); }
 		}
 
 		public int TotalRecords
 		{
-			get { return (int)(Get("totalRecords") ?? -1); }
+			get { return (int) (Get("totalRecords") ?? -1); }
 			set { Put("totalRecords", value); }
 		}
 
 		public int PageSize
 		{
-			get { return (int)(Get("pageSize") ?? 10); }
+			get { return (int) (Get("pageSize") ?? 10); }
 			set { Put("pageSize", value); }
 		}
 
@@ -156,24 +101,73 @@ namespace Graffiti.Core
 				ThemeConfigurationData config = Get("themeConfiguration") as ThemeConfigurationData;
 				if (config == null)
 				{
-					config = ObjectManager.Get<ThemeConfigurationData>(ThemeConfigurationData.GetKey(this.Theme));
-					config.Theme = this.Theme;
+					config = ObjectManager.Get<ThemeConfigurationData>(ThemeConfigurationData.GetKey(Theme));
+					config.Theme = Theme;
 				}
 
 				return config;
 			}
+		}
+
+		public override object InternalGet(string key)
+		{
+			object obj = null;
+			//if (rtc != null)
+			//    obj = rtc.Get(key);
+
+			if (atc != null)
+				obj = atc.Get(key);
+
+			if (obj == null)
+				obj = base.InternalGet(key);
+
+			if (obj != null && obj is OnRequestDelegate)
+			{
+				obj = ((OnRequestDelegate) obj).Invoke(key, this);
+				Put(key, obj);
+			}
+
+			if (obj == null)
+			{
+				if (_LateBoundContextItems.ContainsKey(key))
+				{
+					OnRequestDelegate lbc = _LateBoundContextItems[key];
+					obj = lbc.Invoke(key, this);
+					Put(key, obj);
+				}
+			}
+
+			return obj;
+		}
+
+		public void RegisterOnRequestDelegate(string key, OnRequestDelegate item)
+		{
+			_LateBoundContextItems[key] = item;
+		}
+
+		public static void Unload()
+		{
+			currentContext = null;
+		}
+
+		public static GraffitiContext Create(HttpContext context)
+		{
+			GraffitiContext gContext = new GraffitiContext(context);
+
+			// Allow plugins to modify the GraffitiContext after it is loaded
+			Events.Instance().ExecuteLoadGraffitiContext(gContext);
+
+			return gContext;
 		}
 	}
 
 
 	public class ApplicationToolboxContext : VelocityContext
 	{
-
 	}
 
 	public class RequestToolboxContext : VelocityContext
 	{
-
 	}
 
 	public class PageTemplateToolboxContext : VelocityContext
@@ -195,5 +189,4 @@ namespace Graffiti.Core
 			Put("settings", SiteSettings.Get());
 		}
 	}
-
 }

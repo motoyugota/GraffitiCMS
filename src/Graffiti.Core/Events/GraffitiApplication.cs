@@ -50,7 +50,7 @@ namespace Graffiti.Core
 		private static object UrlRoutingAddObject = new object();
 
 		/// <summary>
-		/// Wires up an event to the ASP.Net BeginRequest Event
+		///     Wires up an event to the ASP.Net BeginRequest Event
 		/// </summary>
 		public event EventHandler BeginRequest
 		{
@@ -59,7 +59,7 @@ namespace Graffiti.Core
 		}
 
 		/// <summary>
-		/// Wires up an event to the ASP.Net EndRequest Event
+		///     Wires up an event to the ASP.Net EndRequest Event
 		/// </summary>
 		public event EventHandler EndRequest
 		{
@@ -75,7 +75,7 @@ namespace Graffiti.Core
 		}
 
 		/// <summary>
-		/// Wires up an event for adding Url Routes
+		///     Wires up an event for adding Url Routes
 		/// </summary>
 		public event UrlRoutingEventHandler UrlRoutingAdd
 		{
@@ -85,7 +85,7 @@ namespace Graffiti.Core
 
 
 		/// <summary>
-		/// Executes the BeginRequest Event
+		///     Executes the BeginRequest Event
 		/// </summary>
 		/// <param name="sender"></param>
 		/// <param name="e"></param>
@@ -95,19 +95,16 @@ namespace Graffiti.Core
 		}
 
 		/// <summary>
-		/// Executes the EndRequest event
+		///     Executes the EndRequest event
 		/// </summary>
-		/// <param name="sender"></param>
-		/// <param name="e"></param>
 		public void ExecuteEndRequest(object sender, EventArgs e)
 		{
 			ExecuteGenericHandler(EndRequestObject, sender, e);
 		}
 
 		/// <summary>
-		/// Executes the UrlRoutingAdd Event
+		///     Executes the UrlRoutingAdd Event
 		/// </summary>
-		/// <param name="routeTable"></param>
 		public void ExecuteUrlRoutingAdd(RouteCollection routes)
 		{
 			UrlRoutingEventHandler handler = Events[UrlRoutingAddObject] as UrlRoutingEventHandler;
@@ -124,7 +121,7 @@ namespace Graffiti.Core
 		private static object LoadGraffitiContextObject = new object();
 
 		/// <summary>
-		/// Wires up an event to execute after the GraffitiContext is loaded at the beginning of a request
+		///     Wires up an event to execute after the GraffitiContext is loaded at the beginning of a request
 		/// </summary>
 		public event GraffitiContextEventHandler LoadGraffitiContext
 		{
@@ -133,9 +130,8 @@ namespace Graffiti.Core
 		}
 
 		/// <summary>
-		/// Executes the LoadGraffitiContext event
+		///     Executes the LoadGraffitiContext event
 		/// </summary>
-		/// <param name="item"></param>
 		internal void ExecuteLoadGraffitiContext(GraffitiContext context)
 		{
 			GraffitiContextEventHandler re = Events[LoadGraffitiContextObject] as GraffitiContextEventHandler;
@@ -150,12 +146,12 @@ namespace Graffiti.Core
 		#region RSS
 
 		private static object RssNamespaceObject = new object();
-        private static object RssChannelObject = new object();
+		private static object RssChannelObject = new object();
 		private static object RssItemObject = new object();
 
 
 		/// <summary>
-		/// Wires up an event to execute after the core RSS namespaces have been added to the feed
+		///     Wires up an event to execute after the core RSS namespaces have been added to the feed
 		/// </summary>
 		public event RssEventHandler RssNamespace
 		{
@@ -163,16 +159,17 @@ namespace Graffiti.Core
 			remove { Events.RemoveHandler(RssNamespaceObject, value); }
 		}
 
-        /// <summary>
-        /// Wires up an event to execute after the RSS channel has been added to the feed
-        /// </summary>
-        public event RssEventHandler RssChannel {
-            add { Events.AddHandler(RssChannelObject, value); }
-            remove { Events.RemoveHandler(RssChannelObject, value); }
-        }
+		/// <summary>
+		///     Wires up an event to execute after the RSS channel has been added to the feed
+		/// </summary>
+		public event RssEventHandler RssChannel
+		{
+			add { Events.AddHandler(RssChannelObject, value); }
+			remove { Events.RemoveHandler(RssChannelObject, value); }
+		}
 
 		/// <summary>
-		/// Wires up an event to execute when a new RSSItem is added to a feed
+		///     Wires up an event to execute when a new RSSItem is added to a feed
 		/// </summary>
 		public event RssPostEventHandler RssItem
 		{
@@ -181,9 +178,8 @@ namespace Graffiti.Core
 		}
 
 		/// <summary>
-		/// Executes the RssNamespace event
+		///     Executes the RssNamespace event
 		/// </summary>
-		/// <param name="item"></param>
 		internal void ExecuteRssNamespace(XmlTextWriter writer)
 		{
 			RssEventHandler re = Events[RssNamespaceObject] as RssEventHandler;
@@ -193,21 +189,21 @@ namespace Graffiti.Core
 			}
 		}
 
-        /// <summary>
-        /// Executes the RssChannel event
-        /// </summary>
-        /// <param name="item"></param>
-        internal void ExecuteRssChannel(XmlTextWriter writer) {
-            RssEventHandler re = Events[RssChannelObject] as RssEventHandler;
-            if (re != null) {
-                re(writer, EventArgs.Empty);
-            }
-        }
+		/// <summary>
+		///     Executes the RssChannel event
+		/// </summary>
+		internal void ExecuteRssChannel(XmlTextWriter writer)
+		{
+			RssEventHandler re = Events[RssChannelObject] as RssEventHandler;
+			if (re != null)
+			{
+				re(writer, EventArgs.Empty);
+			}
+		}
 
 		/// <summary>
-		/// Executes the RssItem event
+		///     Executes the RssItem event
 		/// </summary>
-		/// <param name="item"></param>
 		internal void ExecuteRssItem(XmlTextWriter writer, Post post)
 		{
 			RssPostEventHandler re = Events[RssItemObject] as RssPostEventHandler;
@@ -225,7 +221,7 @@ namespace Graffiti.Core
 		private static object renderPostBodyObject = new object();
 
 		/// <summary>
-		/// Wires up an event to add content to the HTML Head section of the document
+		///     Wires up an event to add content to the HTML Head section of the document
 		/// </summary>
 		public event RenderContentEventHandler RenderHtmlHeader
 		{
@@ -234,7 +230,7 @@ namespace Graffiti.Core
 		}
 
 		/// <summary>
-		/// Wires up an event to append content to the post body
+		///     Wires up an event to append content to the post body
 		/// </summary>
 		public event RenderPostBodyEventHandler RenderPostBody
 		{
@@ -243,7 +239,7 @@ namespace Graffiti.Core
 		}
 
 		/// <summary>
-		/// Executes the RenderHeader event
+		///     Executes the RenderHeader event
 		/// </summary>
 		/// <param name="sb">StringBuilder containing the current header content</param>
 		internal void ExecuteRenderHtmlHeader(StringBuilder sb)
@@ -256,7 +252,7 @@ namespace Graffiti.Core
 		}
 
 		/// <summary>
-		/// Executes the RenderPostBody event
+		///     Executes the RenderPostBody event
 		/// </summary>
 		/// <param name="sb">StringBuilder containing the current content for Post.Body</param>
 		/// <param name="post">Current Post</param>
@@ -280,7 +276,7 @@ namespace Graffiti.Core
 		private static object AfterUserUpdateObject = new object();
 
 		/// <summary>
-		/// Wires up an event to execute as soon as the user is known
+		///     Wires up an event to execute as soon as the user is known
 		/// </summary>
 		public event UserEventHandler UserIsKnown
 		{
@@ -289,7 +285,7 @@ namespace Graffiti.Core
 		}
 
 		/// <summary>
-		/// Wires up an event to execute after a new user is created
+		///     Wires up an event to execute after a new user is created
 		/// </summary>
 		public event UserEventHandler AfterNewUser
 		{
@@ -298,7 +294,7 @@ namespace Graffiti.Core
 		}
 
 		/// <summary>
-		/// Wires up an event to execute before a IGraffitiUser is updated.
+		///     Wires up an event to execute before a IGraffitiUser is updated.
 		/// </summary>
 		public event UserEventHandler BeforeUserUpdate
 		{
@@ -307,7 +303,7 @@ namespace Graffiti.Core
 		}
 
 		/// <summary>
-		/// Wires up an event to execute after an IGraffitiUser is updated
+		///     Wires up an event to execute after an IGraffitiUser is updated
 		/// </summary>
 		public event UserEventHandler AfterUserUpdate
 		{
@@ -316,7 +312,7 @@ namespace Graffiti.Core
 		}
 
 		/// <summary>
-		/// Executes the user is known event.
+		///     Executes the user is known event.
 		/// </summary>
 		/// <param name="user"></param>
 		public void ExecuteUserIsKnown(IGraffitiUser user)
@@ -330,7 +326,7 @@ namespace Graffiti.Core
 		//}
 
 		/// <summary>
-		/// Executes the AfterNewUser Event
+		///     Executes the AfterNewUser Event
 		/// </summary>
 		/// <param name="user"></param>
 		internal void ExecuteAfterNewUser(IGraffitiUser user)
@@ -339,7 +335,7 @@ namespace Graffiti.Core
 		}
 
 		/// <summary>
-		/// Executes the BeforeUserUpdate Event
+		///     Executes the BeforeUserUpdate Event
 		/// </summary>
 		/// <param name="user"></param>
 		internal void ExecuteUserBeforeUserUpdate(IGraffitiUser user)
@@ -348,7 +344,7 @@ namespace Graffiti.Core
 		}
 
 		/// <summary>
-		/// Executes the AfterUserUpdate event
+		///     Executes the AfterUserUpdate event
 		/// </summary>
 		/// <param name="user"></param>
 		internal void ExecuteAfterUserUpdated(IGraffitiUser user)
@@ -381,7 +377,7 @@ namespace Graffiti.Core
 		private static object AfterDestroyObject = new object();
 
 		/// <summary>
-		/// Wires up an event for the DataBuddy BeforeValidate Event
+		///     Wires up an event for the DataBuddy BeforeValidate Event
 		/// </summary>
 		public event DataObjectEventHandler BeforeValidate
 		{
@@ -390,7 +386,7 @@ namespace Graffiti.Core
 		}
 
 		/// <summary>
-		/// Wires up an event for the DataBuddy BeforeInsert Event
+		///     Wires up an event for the DataBuddy BeforeInsert Event
 		/// </summary>
 		public event DataObjectEventHandler BeforeInsert
 		{
@@ -399,7 +395,7 @@ namespace Graffiti.Core
 		}
 
 		/// <summary>
-		/// Wires up an event for the DataBuddy BeforeUpdate Event
+		///     Wires up an event for the DataBuddy BeforeUpdate Event
 		/// </summary>
 		public event DataObjectEventHandler BeforeUpdate
 		{
@@ -408,7 +404,7 @@ namespace Graffiti.Core
 		}
 
 		/// <summary>
-		/// Wires up an event for the DataBuddy AfterCommit Event
+		///     Wires up an event for the DataBuddy AfterCommit Event
 		/// </summary>
 		public event DataObjectEventHandler AfterCommit
 		{
@@ -417,7 +413,7 @@ namespace Graffiti.Core
 		}
 
 		/// <summary>
-		/// Wires up an event for the DataBuddy AfterInsert Event
+		///     Wires up an event for the DataBuddy AfterInsert Event
 		/// </summary>
 		public event DataObjectEventHandler AfterInsert
 		{
@@ -426,7 +422,7 @@ namespace Graffiti.Core
 		}
 
 		/// <summary>
-		/// Wires up an event for the DataBuddy AfterUpdate Event
+		///     Wires up an event for the DataBuddy AfterUpdate Event
 		/// </summary>
 		public event DataObjectEventHandler AfterUpdate
 		{
@@ -435,7 +431,7 @@ namespace Graffiti.Core
 		}
 
 		/// <summary>
-		/// Wires up an event for the DataBuddy BeforeRemove Event
+		///     Wires up an event for the DataBuddy BeforeRemove Event
 		/// </summary>
 		public event DataObjectEventHandler BeforeRemove
 		{
@@ -444,7 +440,7 @@ namespace Graffiti.Core
 		}
 
 		/// <summary>
-		/// Wires up an event for the DataBuddy AfterRemove Event
+		///     Wires up an event for the DataBuddy AfterRemove Event
 		/// </summary>
 		public event DataObjectEventHandler AfterRemove
 		{
@@ -453,7 +449,7 @@ namespace Graffiti.Core
 		}
 
 		/// <summary>
-		/// Wires up an event for the DataBuddy BeforeDestroy Event
+		///     Wires up an event for the DataBuddy BeforeDestroy Event
 		/// </summary>
 		public event DataObjectEventHandler BeforeDestroy
 		{
@@ -462,7 +458,7 @@ namespace Graffiti.Core
 		}
 
 		/// <summary>
-		/// Wires up an event for the DataBuddy AfterDestroy Event
+		///     Wires up an event for the DataBuddy AfterDestroy Event
 		/// </summary>
 		public event DataObjectEventHandler AfterDestroy
 		{
@@ -480,7 +476,7 @@ namespace Graffiti.Core
 		}
 
 		/// <summary>
-		/// Executes the BeforeValidate Vent
+		///     Executes the BeforeValidate Vent
 		/// </summary>
 		internal void ExecuteBeforeValidateEvent(DataBuddyBase dbb)
 		{
@@ -488,7 +484,7 @@ namespace Graffiti.Core
 		}
 
 		/// <summary>
-		/// Executes the BeforeInsert Vent
+		///     Executes the BeforeInsert Vent
 		/// </summary>
 		internal void ExecuteBeforeInsertEvent(DataBuddyBase dbb)
 		{
@@ -496,7 +492,7 @@ namespace Graffiti.Core
 		}
 
 		/// <summary>
-		/// Executes the BeforeUpdate Vent
+		///     Executes the BeforeUpdate Vent
 		/// </summary>
 		internal void ExecuteBeforeUpdateEvent(DataBuddyBase dbb)
 		{
@@ -504,7 +500,7 @@ namespace Graffiti.Core
 		}
 
 		/// <summary>
-		/// Executes the AfterCommit Vent
+		///     Executes the AfterCommit Vent
 		/// </summary>
 		internal void ExecuteAfterCommitEvent(DataBuddyBase dbb)
 		{
@@ -512,7 +508,7 @@ namespace Graffiti.Core
 		}
 
 		/// <summary>
-		/// Executes the AfterInsert Vent
+		///     Executes the AfterInsert Vent
 		/// </summary>
 		internal void ExecuteAfterInsertEvent(DataBuddyBase dbb)
 		{
@@ -520,7 +516,7 @@ namespace Graffiti.Core
 		}
 
 		/// <summary>
-		/// Executes the AfterUpdate Vent
+		///     Executes the AfterUpdate Vent
 		/// </summary>
 		internal void ExecuteAfterUpdateEvent(DataBuddyBase dbb)
 		{
@@ -528,7 +524,7 @@ namespace Graffiti.Core
 		}
 
 		/// <summary>
-		/// Executes the BeforeRemove Vent
+		///     Executes the BeforeRemove Vent
 		/// </summary>
 		internal void ExecuteBeforeRemoveEvent(DataBuddyBase dbb)
 		{
@@ -536,7 +532,7 @@ namespace Graffiti.Core
 		}
 
 		/// <summary>
-		/// Executes the AfterRemove Vent
+		///     Executes the AfterRemove Vent
 		/// </summary>
 		internal void ExecuteAfterRemoveEvent(DataBuddyBase dbb)
 		{
@@ -544,7 +540,7 @@ namespace Graffiti.Core
 		}
 
 		/// <summary>
-		/// Executes the BeforeDestroy Vent
+		///     Executes the BeforeDestroy Vent
 		/// </summary>
 		internal void ExecuteBeforeDestroyEvent(DataBuddyBase dbb)
 		{
@@ -552,7 +548,7 @@ namespace Graffiti.Core
 		}
 
 		/// <summary>
-		/// Executes the AfterDestroy Vent
+		///     Executes the AfterDestroy Vent
 		/// </summary>
 		internal void ExecuteAfterDestroyEvent(DataBuddyBase dbb)
 		{
@@ -560,6 +556,5 @@ namespace Graffiti.Core
 		}
 
 		#endregion
-
 	}
 }

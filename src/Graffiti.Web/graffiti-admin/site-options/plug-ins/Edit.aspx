@@ -3,40 +3,39 @@
 </asp:Content>
 <asp:Content ID="Content2" ContentPlaceHolderID="MainRegion" Runat="Server">
 
-<div id = "messages_form">
+	<div id = "messages_form">
     
     
-    <h1><asp:Literal ID = "PageTitle" runat="Server" /></h1> 
-    <Z:Breadcrumbs runat="server" SectionName="PlugInsEdit" />
-    <Z:StatusMessage runat="Server" ID = "Message"  Type="Success"/>
+		<h1><asp:Literal ID = "PageTitle" runat="Server" /></h1> 
+		<Z:Breadcrumbs runat="server" SectionName="PlugInsEdit" />
+		<Z:StatusMessage runat="Server" ID = "Message"  Type="Success"/>
     
-    <div id="post_form_container" class="FormBlock abc">
+		<div id="post_form_container" class="FormBlock abc">
     
-        <asp:Literal runat="Server" ID = "FormRegion" />
+			<asp:Literal runat="Server" ID = "FormRegion" />
     
-    </div>
+		</div>
     
-<div class="submit">
-    <div id="buttons">
-        <asp:Button ID="Publish_Button" runat="Server" Style="font-weight:bold" Text = "Update" OnClick="EditWidget_Click" TabIndex="81" />
-        <asp:HyperLink ID ="Cancel_Edit" Text = "(Cancel)" NavigateUrl="~/graffiti-admin/site-options/plug-ins/" runat="Server" />
-    </div>
-</div>    
+		<div class="submit">
+			<div id="buttons">
+				<asp:Button ID="Publish_Button" runat="Server" Style="font-weight: bold" Text = "Update" OnClick="EditWidget_Click" TabIndex="81" />
+				<asp:HyperLink ID ="Cancel_Edit" Text = "(Cancel)" NavigateUrl="~/graffiti-admin/site-options/plug-ins/" runat="Server" />
+			</div>
+		</div>    
     
- </div>
+	</div>
 
 </asp:Content>
 <asp:Content ID="Content3" ContentPlaceHolderID="SideBarRegion" Runat="Server">
-    <div id="sidebar"><div class="gutter">
-    <div class="box">
-        <h3>About This Page</h3>
-        <p>The editing expereince is managed by each individual plugin, so it may vary. For plugin specific questions, please consult the plugin author.</p>
-    </div>
-    <div class="box">    
-        <h3>Plugin Editing Tip</h3>
-        <p>Some plugins may not require any editing.</p>
-    </div>
-    <div style="clear: both;"></div>
-    </div></div>
+	<div id="sidebar"><div class="gutter">
+		                  <div class="box">
+			                  <h3>About This Page</h3>
+			                  <p>The editing expereince is managed by each individual plugin, so it may vary. For plugin specific questions, please consult the plugin author.</p>
+		                  </div>
+		                  <div class="box">    
+			                  <h3>Plugin Editing Tip</h3>
+			                  <p>Some plugins may not require any editing.</p>
+		                  </div>
+		                  <div style="clear: both;"></div>
+	                  </div></div>
 </asp:Content>
-
