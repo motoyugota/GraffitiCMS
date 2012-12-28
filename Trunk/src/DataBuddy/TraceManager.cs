@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Configuration;
 using System.Data.Common;
 using System.Diagnostics;
@@ -12,10 +11,10 @@ namespace DataBuddy
 {
 	public class TraceManager : ITrace
 	{
+		private const string DATABUDDY_ENABLE_TRACING = "DataBuddy::EnableTracing";
 		private static ITrace _Instance;
 		private static readonly object _traceLocker = new object();
-		private static bool _tracingEnabled = false;
-		private const string DATABUDDY_ENABLE_TRACING = "DataBuddy::EnableTracing";
+		private static bool _tracingEnabled;
 
 		#region Constructors
 
@@ -23,7 +22,7 @@ namespace DataBuddy
 		{
 			bool tracingEnabled = false;
 
-			if( bool.TryParse( ConfigurationManager.AppSettings[DATABUDDY_ENABLE_TRACING], out tracingEnabled ) )
+			if (bool.TryParse(ConfigurationManager.AppSettings[DATABUDDY_ENABLE_TRACING], out tracingEnabled))
 			{
 				_tracingEnabled = tracingEnabled;
 			}
@@ -50,15 +49,16 @@ namespace DataBuddy
 		{
 			AssemblyName asmName = Assembly.GetExecutingAssembly().GetName();
 			string logFileName = "DataBuddy.log"; //DateTime.Now.ToString("yyyyMMdd") + ".log";
-			string currentPath = ( string.IsNullOrEmpty(HttpRuntime.AppDomainAppPath) )
-				? Environment.CurrentDirectory
-				: HttpRuntime.AppDomainAppPath;
+			string currentPath = (string.IsNullOrEmpty(HttpRuntime.AppDomainAppPath))
+				                     ? Environment.CurrentDirectory
+				                     : HttpRuntime.AppDomainAppPath;
 
 			// enable tracing for this process.  Get the same name as this process with ".log" as the end.
 			string logFilePath = Path.Combine(currentPath, logFileName);
 
-			FileStream fs = new FileStream(logFilePath, FileMode.OpenOrCreate | FileMode.Append, FileAccess.Write, FileShare.ReadWrite);
-			StreamWriter sw = new StreamWriter(fs, System.Text.Encoding.UTF8);
+			FileStream fs = new FileStream(logFilePath, FileMode.OpenOrCreate | FileMode.Append, FileAccess.Write,
+			                               FileShare.ReadWrite);
+			StreamWriter sw = new StreamWriter(fs, Encoding.UTF8);
 
 			TextWriterTraceListener txtListener = new TextWriterTraceListener(sw, "txt_listener");
 
@@ -88,11 +88,11 @@ namespace DataBuddy
 			Trace.WriteLine(Environment.OSVersion);
 
 			HttpContext httpContext = HttpContext.Current;
-			if ( httpContext != null )
+			if (httpContext != null)
 			{
 				Trace.Write("Executing User: ");
-				
-				if ( httpContext.User != null )
+
+				if (httpContext.User != null)
 					Trace.WriteLine(httpContext.User.Identity.Name);
 				else
 					Trace.WriteLine(Environment.UserName);
@@ -115,11 +115,11 @@ namespace DataBuddy
 		{
 			get
 			{
-				lock ( _traceLocker )
+				lock (_traceLocker)
 				{
-					if ( _Instance == null )
+					if (_Instance == null)
 					{
-						_Instance = (_tracingEnabled) ? (ITrace)(new TraceManager()) : (ITrace)(new TraceEmpty());
+						_Instance = (_tracingEnabled) ? (new TraceManager()) : (ITrace) (new TraceEmpty());
 					}
 
 					return _Instance;
@@ -133,7 +133,7 @@ namespace DataBuddy
 
 		private string GetCurrentDateTimeString()
 		{
-			return DateTime.Now.ToString( "yyyy-MM-dd hh:mm:ss.ffffff" ) + " - ";
+			return DateTime.Now.ToString("yyyy-MM-dd hh:mm:ss.ffffff") + " - ";
 		}
 
 		#endregion
@@ -154,28 +154,30 @@ namespace DataBuddy
 			string sql = cmd.CommandText;
 			StringBuilder sb = new StringBuilder();
 
-			sb.Append( GetCurrentDateTimeString() )
-				.Append("Marker: ")
-				.Append(marker.ToString("D"))
-				.Append(", Current SQL hash: ")
-				.AppendLine(sql.GetHashCode().ToString())
-				.Append("\tStatement: ")
-				.AppendLine(sql);
-			if ( cmd.Parameters.Count > 0 )
+			sb.Append(GetCurrentDateTimeString())
+			  .Append("Marker: ")
+			  .Append(marker.ToString("D"))
+			  .Append(", Current SQL hash: ")
+			  .AppendLine(sql.GetHashCode().ToString())
+			  .Append("\tStatement: ")
+			  .AppendLine(sql);
+			if (cmd.Parameters.Count > 0)
 			{
 				sb.AppendLine("\tParameters:");
-				foreach( DbParameter p in cmd.Parameters )
+				foreach (DbParameter p in cmd.Parameters)
 				{
 					try
 					{
-						object o = ( p.Value is DBNull ) ? (object)"NULL" : (
-							(p.Value == null) ? (object)"null" : p.Value
-							);
+						object o = (p.Value is DBNull)
+							           ? "NULL"
+							           : (
+								             (p.Value == null) ? "null" : p.Value
+							             );
 						sb.AppendLine(string.Format("\t\tName = {0}, Type = {1}, Value = {2}", p.ParameterName, p.DbType, p.Value));
 					}
 					catch (Exception e)
 					{
-						Trace.WriteLine( string.Format("Error thrown: {0}{1}SQL statement: {2}", e.ToString(), Environment.NewLine, sql) );
+						Trace.WriteLine(string.Format("Error thrown: {0}{1}SQL statement: {2}", e, Environment.NewLine, sql));
 					}
 				}
 			}
@@ -185,15 +187,15 @@ namespace DataBuddy
 		public void Write(Guid marker, string data)
 		{
 			StringBuilder sb = new StringBuilder();
-			sb.Append( GetCurrentDateTimeString() )
-				.Append("Marker: ")
-				.Append(marker.ToString("D"))
-				.Append(", Data: ")
-				.Append(data);
+			sb.Append(GetCurrentDateTimeString())
+			  .Append("Marker: ")
+			  .Append(marker.ToString("D"))
+			  .Append(", Data: ")
+			  .Append(data);
 			Trace.WriteLine(sb.ToString());
 		}
 
-		public void Write(Guid marker, string format, params object [] data)
+		public void Write(Guid marker, string format, params object[] data)
 		{
 			Write(marker, string.Format(format, data));
 		}
@@ -204,7 +206,7 @@ namespace DataBuddy
 
 		public void Separator()
 		{
-			Trace.WriteLine(new System.String('*', 76));
+			Trace.WriteLine(new String('*', 76));
 		}
 
 		#endregion

@@ -1,9 +1,7 @@
 <%@ Page Language="C#" MasterPageFile="~/graffiti-admin/common/AdminModal.master" Title="Delete Role" Inherits="Graffiti.Core.AdminControlPanelPage" %>
-<%@ Import Namespace="Graffiti.Core" %>
-<%@ Import Namespace="System.Collections.Generic" %>
 <script runat="Server">
-        
-	void Page_Load(object sender, EventArgs e)
+
+	private void Page_Load(object sender, EventArgs e)
 	{
 		if (!GraffitiUsers.IsAdmin(GraffitiUsers.Current))
 			throw new Exception("Invalid permissions");
@@ -15,8 +13,8 @@
 		if (!string.IsNullOrEmpty(roleName))
 			GraffitiUsers.DeleteRole(HttpUtility.HtmlDecode(HttpUtility.UrlDecode(roleName)));
 
-		ClientScript.RegisterStartupScript(this.GetType(), "close-and-refresh",
-			 "window.parent.location.href = '" + VirtualPathUtility.ToAbsolute("~/graffiti-admin/user-management/roles") + "';", true);
+		ClientScript.RegisterStartupScript(GetType(), "close-and-refresh",
+		                                   "window.parent.location.href = '" + VirtualPathUtility.ToAbsolute("~/graffiti-admin/user-management/roles") + "';", true);
 	}
 
 </script>

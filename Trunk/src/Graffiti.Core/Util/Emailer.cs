@@ -1,90 +1,86 @@
+using System.Net;
 using System.Net.Mail;
 using System.Web;
 
 namespace Graffiti.Core
 {
-    public static class Emailer
-    {
-        
+	public static class Emailer
+	{
+		public static bool Send(EmailTemplate template)
+		{
+			Events.Instance().ExecuteBeforeEmailSent(template);
 
-        public static bool Send(EmailTemplate template)
-        {
-            Events.Instance().ExecuteBeforeEmailSent(template);
+			string fileText = Util.GetFileText(HttpContext.Current.Server.MapPath("~/__utility/emails/" + template.TemplateName));
+			fileText = TemplateEngine.Evaluate(fileText, template.Context);
 
-            string fileText = Util.GetFileText(HttpContext.Current.Server.MapPath("~/__utility/emails/" + template.TemplateName));
-            fileText = TemplateEngine.Evaluate(fileText, template.Context);
+			using (MailMessage mm = new MailMessage(template.From ?? SiteSettings.Get().EmailFrom, template.To))
+			{
+				mm.Subject = template.Subject;
+				mm.IsBodyHtml = template.IsHTML;
+				mm.Body = fileText;
+				mm.Headers.Add("Reply-To", template.ReplyTo ?? template.From ?? SiteSettings.Get().EmailFrom);
+				SendMailMessage(mm);
+			}
 
-            using (MailMessage mm = new MailMessage(template.From ?? SiteSettings.Get().EmailFrom, template.To))
-            {
-                mm.Subject = template.Subject;
-                mm.IsBodyHtml = template.IsHTML;
-                mm.Body = fileText;
-                mm.Headers.Add("Reply-To", template.ReplyTo ?? template.From ?? SiteSettings.Get().EmailFrom);
-                SendMailMessage(mm);
-            }
+			Events.Instance().ExecuteAfterEmailSent(template);
 
-            Events.Instance().ExecuteAfterEmailSent(template);
+			return true;
+		}
 
-            return true;
+		public static bool SendMailMessage(MailMessage mm)
+		{
+			using (mm)
+			{
+				SiteSettings settings = SiteSettings.Get();
 
-        }
+				SmtpClient client = new SmtpClient();
+				client.Host = settings.EmailServer;
 
-        public static bool SendMailMessage(MailMessage mm)
-        {
-            using (mm)
-            {
-                SiteSettings settings = SiteSettings.Get();
+				if (settings.EmailServerRequiresAuthentication)
+					client.Credentials = new NetworkCredential(settings.EmailUser, settings.EmailPassword);
 
-                SmtpClient client = new SmtpClient();
-                client.Host = settings.EmailServer;
+				if (settings.EmailRequiresSSL)
+					client.EnableSsl = true;
 
-                if (settings.EmailServerRequiresAuthentication)
-                    client.Credentials = new System.Net.NetworkCredential(settings.EmailUser, settings.EmailPassword);
+				if (settings.EmailPort > 0)
+					client.Port = settings.EmailPort;
 
-                if(settings.EmailRequiresSSL)
-                    client.EnableSsl = true;
+				client.Send(mm);
+			}
+			return true;
+		}
 
-                if (settings.EmailPort > 0)
-                    client.Port = settings.EmailPort;
+		public static bool Send(string templateFile, string emailTo, string subject, PageTemplateToolboxContext cntxt)
+		{
+			string fileText =
+				Util.GetFileText(HttpContext.Current.Server.MapPath("~/__utility/emails/" + templateFile));
 
-                client.Send(mm);
+			fileText = TemplateEngine.Evaluate(fileText, cntxt);
 
-                
-            }
-            return true;
-        }
+			SiteSettings settings = SiteSettings.Get();
 
-        public static bool Send(string templateFile, string emailTo, string subject, PageTemplateToolboxContext cntxt)
-        {
-            string fileText =
-                Util.GetFileText(HttpContext.Current.Server.MapPath("~/__utility/emails/" + templateFile));
+			using (MailMessage mm = new MailMessage(settings.EmailFrom, emailTo))
+			{
+				mm.Subject = subject;
+				mm.IsBodyHtml = true;
+				mm.Body = fileText;
 
-            fileText = TemplateEngine.Evaluate(fileText, cntxt);
+				SmtpClient client = new SmtpClient();
+				client.Host = settings.EmailServer;
 
-            SiteSettings settings = SiteSettings.Get();
+				if (settings.EmailServerRequiresAuthentication)
+					client.Credentials = new NetworkCredential(settings.EmailUser, settings.EmailPassword);
 
-            using (MailMessage mm = new MailMessage(settings.EmailFrom, emailTo))
-            {
-                mm.Subject = subject;
-                mm.IsBodyHtml = true;
-                mm.Body = fileText;
+				if (settings.EmailRequiresSSL)
+					client.EnableSsl = true;
 
-                SmtpClient client = new SmtpClient();
-                client.Host = settings.EmailServer;
+				if (settings.EmailPort > 0)
+					client.Port = settings.EmailPort;
 
-                if(settings.EmailServerRequiresAuthentication)
-                    client.Credentials = new System.Net.NetworkCredential(settings.EmailUser, settings.EmailPassword);
+				client.Send(mm);
+			}
 
-                if (settings.EmailRequiresSSL)
-                    client.EnableSsl = true;
-
-                if (settings.EmailPort > 0)
-                    client.Port = settings.EmailPort;
-
-                client.Send(mm);
-            }
-
-            return true;
-        }
-    }
+			return true;
+		}
+	}
 }

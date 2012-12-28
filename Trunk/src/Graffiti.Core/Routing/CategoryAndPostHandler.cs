@@ -1,6 +1,5 @@
 using System;
 using System.Web;
-using System.Web.Compilation;
 using System.Web.Routing;
 
 namespace Graffiti.Core
@@ -9,9 +8,15 @@ namespace Graffiti.Core
 	{
 		public IHttpHandler GetHttpHandler(RequestContext requestContext)
 		{
-			string param1 = requestContext.RouteData.Values["param1"] != null ? requestContext.RouteData.Values["param1"].ToString() : null;
-			string param2 = requestContext.RouteData.Values["param2"] != null ? requestContext.RouteData.Values["param2"].ToString() : null;
-			string param3 = requestContext.RouteData.Values["param3"] != null ? requestContext.RouteData.Values["param3"].ToString() : null;
+			string param1 = requestContext.RouteData.Values["param1"] != null
+				                ? requestContext.RouteData.Values["param1"].ToString()
+				                : null;
+			string param2 = requestContext.RouteData.Values["param2"] != null
+				                ? requestContext.RouteData.Values["param2"].ToString()
+				                : null;
+			string param3 = requestContext.RouteData.Values["param3"] != null
+				                ? requestContext.RouteData.Values["param3"].ToString()
+				                : null;
 
 			if (!String.IsNullOrEmpty(param3))
 			{

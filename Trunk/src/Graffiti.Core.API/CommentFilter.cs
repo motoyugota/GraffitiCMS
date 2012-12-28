@@ -1,214 +1,169 @@
 using System;
-using System.Collections.Generic;
 using System.Collections.Specialized;
 using DataBuddy;
 
 namespace Graffiti.Core.API
 {
-    /// <summary>
-    /// Helper to managed converting querystring parameters to a Comment Query
-    /// </summary>
-    public class CommentFilter
-    {
-        private string _author = string.Empty;
-        private int _categoryId = 0;
-        private bool _isDeleted = false;
-        private TrueFalseIgnore _isPublished = TrueFalseIgnore.Ignore;
-        private int _pageIndex = 1;
-        private int _pageSize = 10;
-        private string _ipAddress;
-        private string _name;
-        private int _spamScore;
-
-        
-        private CommentFilter()
-        {
-        }
+	/// <summary>
+	///     Helper to managed converting querystring parameters to a Comment Query
+	/// </summary>
+	public class CommentFilter
+	{
+		private string _author = string.Empty;
+		private TrueFalseIgnore _isPublished = TrueFalseIgnore.Ignore;
+		private int _pageIndex = 1;
+		private int _pageSize = 10;
 
 
-        // parse querystring into filter
-        public static CommentFilter FromQueryString(NameValueCollection queryString)
-        {
-            CommentFilter postFilter = new CommentFilter();
-
-            string id = queryString[QueryStringKey.Id];
-            if(!string.IsNullOrEmpty(id))
-            {
-                postFilter.Id = Int32.Parse(id);
-                return postFilter;
-            }
-
-            // parse and set author filter
-            string author = queryString[QueryStringKey.Author];
-            if (!string.IsNullOrEmpty(author))
-                postFilter.Author = author;
-
-            // parse and set category filter
-            int postId;
-            string cid = queryString[QueryStringKey.PostId];
-            if ((!string.IsNullOrEmpty(cid)) && (int.TryParse(cid, out postId)))
-                postFilter.PostId = postId;
+		private CommentFilter()
+		{
+		}
 
 
-            string sc = queryString[QueryStringKey.Spam];
-            if (sc != null)
-                postFilter.SpamScore = Int32.Parse(sc);
+		// parse querystring into filter
+		public static CommentFilter FromQueryString(NameValueCollection queryString)
+		{
+			CommentFilter postFilter = new CommentFilter();
 
-            postFilter.IPAddress = queryString[QueryStringKey.IPAddress];
-            postFilter.Name = queryString[QueryStringKey.Name];
+			string id = queryString[QueryStringKey.Id];
+			if (!string.IsNullOrEmpty(id))
+			{
+				postFilter.Id = Int32.Parse(id);
+				return postFilter;
+			}
 
-          
+			// parse and set author filter
+			string author = queryString[QueryStringKey.Author];
+			if (!string.IsNullOrEmpty(author))
+				postFilter.Author = author;
 
-            // parse and set deleted filter
-            bool isDeleted = false;
-            string d = queryString[QueryStringKey.IsDeleted];
-            if ((!string.IsNullOrEmpty(d)) && (bool.TryParse(d, out isDeleted)))
-                postFilter.IsDeleted = isDeleted;
-
-            bool isPublished = false;
-            string ip = queryString[QueryStringKey.IsPublished];
-            if ((!string.IsNullOrEmpty(ip)) && (bool.TryParse(ip, out isPublished)))
-                postFilter.IsPublished = isPublished ? TrueFalseIgnore.True : TrueFalseIgnore.False;
-
-            // parse and set page index filter
-            int pageIndex;
-            string pi = queryString[QueryStringKey.PageIndex];
-            if ((!string.IsNullOrEmpty(pi)) && (int.TryParse(pi, out pageIndex)))
-                postFilter.PageIndex = pageIndex;
-
-            // parse and set page size filter
-            int pageSize;
-            string ps = queryString[QueryStringKey.PageSize];
-            if ((!string.IsNullOrEmpty(ps)) && (int.TryParse(ps, out pageSize)))
-                postFilter.PageSize = pageSize;
-
-            return postFilter;
-        }
+			// parse and set category filter
+			int postId;
+			string cid = queryString[QueryStringKey.PostId];
+			if ((!string.IsNullOrEmpty(cid)) && (int.TryParse(cid, out postId)))
+				postFilter.PostId = postId;
 
 
-        // generate query object from filter
-        public Query ToQuery()
-        {
-            Query query = Comment.CreateQuery();
+			string sc = queryString[QueryStringKey.Spam];
+			if (sc != null)
+				postFilter.SpamScore = Int32.Parse(sc);
 
-            if (Id <= 0)
-            {
-                if (!string.IsNullOrEmpty(Author))
-                    query.AndWhere(Post.Columns.UserName, Author);
-
-                if (PostId > 0)
-                {
-                        query.AndWhere(Comment.Columns.PostId, PostId);
-                }
-
-                if (SpamScore > 0)
-                    query.AndWhere(Comment.Columns.SpamScore, SpamScore, Comparison.GreaterOrEquals);
-
-                if (!string.IsNullOrEmpty(IPAddress))
-                    query.AndWhere(Comment.Columns.IPAddress, IPAddress);
-
-                if (!string.IsNullOrEmpty(Name))
-                    query.AndWhere(Comment.Columns.Name, Name);
+			postFilter.IPAddress = queryString[QueryStringKey.IPAddress];
+			postFilter.Name = queryString[QueryStringKey.Name];
 
 
-                query.AndWhere(Comment.Columns.IsDeleted, IsDeleted);
+			// parse and set deleted filter
+			bool isDeleted = false;
+			string d = queryString[QueryStringKey.IsDeleted];
+			if ((!string.IsNullOrEmpty(d)) && (bool.TryParse(d, out isDeleted)))
+				postFilter.IsDeleted = isDeleted;
 
-                if (IsPublished != TrueFalseIgnore.Ignore)
-                    query.AndWhere(Comment.Columns.IsPublished, IsPublished == TrueFalseIgnore.True ? true : false);
+			bool isPublished = false;
+			string ip = queryString[QueryStringKey.IsPublished];
+			if ((!string.IsNullOrEmpty(ip)) && (bool.TryParse(ip, out isPublished)))
+				postFilter.IsPublished = isPublished ? TrueFalseIgnore.True : TrueFalseIgnore.False;
 
-                query.PageIndex = PageIndex;
-                query.PageSize = PageSize;
+			// parse and set page index filter
+			int pageIndex;
+			string pi = queryString[QueryStringKey.PageIndex];
+			if ((!string.IsNullOrEmpty(pi)) && (int.TryParse(pi, out pageIndex)))
+				postFilter.PageIndex = pageIndex;
 
-                query.OrderByDesc(Comment.Columns.Published);
-            }
-            else
-            {
-                query.AndWhere(Comment.Columns.Id, Id);
-            }
+			// parse and set page size filter
+			int pageSize;
+			string ps = queryString[QueryStringKey.PageSize];
+			if ((!string.IsNullOrEmpty(ps)) && (int.TryParse(ps, out pageSize)))
+				postFilter.PageSize = pageSize;
 
-            return query;
-        }
+			return postFilter;
+		}
 
-        #region Properties...
-        public string Author
-        {
-            get { return _author; }
-            set { _author = value; }
-        }
 
-        public string Name
-        {
-            get { return _name; }
-            set { _name = value; }
-        }
+		// generate query object from filter
+		public Query ToQuery()
+		{
+			Query query = Comment.CreateQuery();
 
-        public string IPAddress
-        {
-            get { return _ipAddress; }
-            set { _ipAddress = value; }
-        }
+			if (Id <= 0)
+			{
+				if (!string.IsNullOrEmpty(Author))
+					query.AndWhere(Post.Columns.UserName, Author);
 
-        public int PostId
-        {
-            get { return _categoryId; }
-            set { _categoryId = value; }
-        }
+				if (PostId > 0)
+				{
+					query.AndWhere(Comment.Columns.PostId, PostId);
+				}
 
-        public int SpamScore
-        {
-            get { return _spamScore; }
-            set { _spamScore = value; }
-        }
+				if (SpamScore > 0)
+					query.AndWhere(Comment.Columns.SpamScore, SpamScore, Comparison.GreaterOrEquals);
 
-        public bool IsDeleted
-        {
-            get { return _isDeleted; }
-            set { _isDeleted = value; }
-        }
+				if (!string.IsNullOrEmpty(IPAddress))
+					query.AndWhere(Comment.Columns.IPAddress, IPAddress);
 
-        public TrueFalseIgnore IsPublished
-        {
-            get { return _isPublished; }
-            set { _isPublished = value; }
-        }
+				if (!string.IsNullOrEmpty(Name))
+					query.AndWhere(Comment.Columns.Name, Name);
 
-        public int PageIndex
-        {
-            get { return _pageIndex; }
-            set { _pageIndex = value; }
-        }
 
-        public int PageSize
-        {
-            get { return _pageSize; }
-            set { _pageSize = value; }
-        }
+				query.AndWhere(Comment.Columns.IsDeleted, IsDeleted);
 
-        private int _id;
+				if (IsPublished != TrueFalseIgnore.Ignore)
+					query.AndWhere(Comment.Columns.IsPublished, IsPublished == TrueFalseIgnore.True ? true : false);
 
-        public int Id
-        {
-            get { return _id; }
-            set { _id = value; }
-        }
+				query.PageIndex = PageIndex;
+				query.PageSize = PageSize;
 
-        private DateTime _startDate;
+				query.OrderByDesc(Comment.Columns.Published);
+			}
+			else
+			{
+				query.AndWhere(Comment.Columns.Id, Id);
+			}
 
-        public DateTime StartDate
-        {
-            get { return _startDate; }
-            set { _startDate = value; }
-        }
+			return query;
+		}
 
-        private DateTime _endDate;
+		#region Properties...
 
-        public DateTime EndDate
-        {
-            get { return _endDate; }
-            set { _endDate = value; }
-        }
-	
+		public string Author
+		{
+			get { return _author; }
+			set { _author = value; }
+		}
 
-        #endregion
-    }
+		public string Name { get; set; }
+
+		public string IPAddress { get; set; }
+
+		public int PostId { get; set; }
+
+		public int SpamScore { get; set; }
+
+		public bool IsDeleted { get; set; }
+
+		public TrueFalseIgnore IsPublished
+		{
+			get { return _isPublished; }
+			set { _isPublished = value; }
+		}
+
+		public int PageIndex
+		{
+			get { return _pageIndex; }
+			set { _pageIndex = value; }
+		}
+
+		public int PageSize
+		{
+			get { return _pageSize; }
+			set { _pageSize = value; }
+		}
+
+		public int Id { get; set; }
+
+		public DateTime StartDate { get; set; }
+
+		public DateTime EndDate { get; set; }
+
+		#endregion
+	}
 }

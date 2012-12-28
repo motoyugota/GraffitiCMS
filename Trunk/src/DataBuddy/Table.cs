@@ -2,56 +2,41 @@ using System.Collections.Generic;
 
 namespace DataBuddy
 {
-    public class Table
-    {
-        private string _name;
-        private string _typeName;
-        private List<Column> _columns = new List<Column>();
+	public class Table
+	{
+		private List<Column> _columns = new List<Column>();
+		private string _name;
+		private string _typeName;
 
-        public Table(string name, string typeName)
-        {
-            _name = name;
-            _typeName = typeName;
-            
-        }
+		public Table(string name, string typeName)
+		{
+			_name = name;
+			_typeName = typeName;
+		}
 
-        private bool  _isReadOnly;
+		public bool IsReadOnly { get; set; }
 
-        public bool  IsReadOnly
-        {
-            get { return _isReadOnly; }
-            set { _isReadOnly = value; }
-        }
-	
 
-        public string TableName
-        {
-            get { return _name; }
-        }
+		public string TableName
+		{
+			get { return _name; }
+		}
 
-        public string TypeName
-        {
-            get { return _typeName; }
-        }
+		public string TypeName
+		{
+			get { return _typeName; }
+		}
 
-        public List<Column> Columns
-        {
-            get { return _columns; }
-        }
+		public List<Column> Columns
+		{
+			get { return _columns; }
+		}
 
-        private string  _primaryKeyName;
+		public string PrimaryKey { get; set; }
 
-        public string  PrimaryKey
-        {
-            get { return _primaryKeyName; }
-            set { _primaryKeyName = value; }
-        }
-
-        public bool HasPrimaryKey
-        {
-            get { return !string.IsNullOrEmpty(PrimaryKey); }
-        }
-	
-        
-    }
+		public bool HasPrimaryKey
+		{
+			get { return !string.IsNullOrEmpty(PrimaryKey); }
+		}
+	}
 }

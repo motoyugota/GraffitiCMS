@@ -1,8 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
-using System.Data;
-using System.Data.SqlClient;
 using System.IO;
 using System.Web;
 using DataBuddy;
@@ -10,12 +8,10 @@ using Graffiti.Core;
 
 namespace Graffiti.Web
 {
-
 	public class graffiti_admin_ajax : IHttpHandler
 	{
 		public void ProcessRequest(HttpContext context)
 		{
-
 			if (context.Request.RequestType != "POST" || !context.Request.IsAuthenticated)
 				return;
 
@@ -50,7 +46,9 @@ namespace Graffiti.Web
 					if (RolePermissionManager.GetPermissions(c1.Post.CategoryId, GraffitiUsers.Current).Publish)
 					{
 						Comment.Delete(context.Request.Form["commentid"]);
-						context.Response.Write("The comment was deleted. <a href=\"javascript:void(0);\" onclick=\"Comments.unDelete('" + new Urls().AdminAjax + "'," + context.Request.Form["commentid"] + "); return false;\">Undo?</a>");
+						context.Response.Write("The comment was deleted. <a href=\"javascript:void(0);\" onclick=\"Comments.unDelete('" +
+						                       new Urls().AdminAjax + "'," + context.Request.Form["commentid"] +
+						                       "); return false;\">Undo?</a>");
 					}
 					break;
 
@@ -94,7 +92,9 @@ namespace Graffiti.Web
 							//Post.Delete(context.Request.Form["postid"]);
 							//ZCache.RemoveByPattern("Posts-");
 							//ZCache.RemoveCache("Post-" + context.Request.Form["postid"]);
-							context.Response.Write("The post was deleted. <a href=\"javascript:void(0);\" onclick=\"Posts.unDeletePost('" + new Urls().AdminAjax + "'," + context.Request.Form["postid"] + "); return false;\">Undo?</a>");
+							context.Response.Write("The post was deleted. <a href=\"javascript:void(0);\" onclick=\"Posts.unDeletePost('" +
+							                       new Urls().AdminAjax + "'," + context.Request.Form["postid"] +
+							                       "); return false;\">Undo?</a>");
 						}
 					}
 					catch (Exception ex)
@@ -120,7 +120,7 @@ namespace Graffiti.Web
 
 				case "createdWidget":
 					string widgetID = context.Request.Form["id"];
-					List<WidgetDescription> the_widgets = Widgets.GetAvailableWidgets();
+					var the_widgets = Widgets.GetAvailableWidgets();
 					Widget widget = null;
 					foreach (WidgetDescription wia in the_widgets)
 					{
@@ -224,7 +224,6 @@ namespace Graffiti.Web
 							NavigationSettings.Add(item);
 							context.Response.Write("Success");
 						}
-
 					}
 					catch (Exception exp)
 					{
@@ -236,8 +235,8 @@ namespace Graffiti.Web
 				case "reOrderPosts":
 					try
 					{
-						Dictionary<int, Post> posts = new Dictionary<int, Post>();
-						DataBuddy.Query query = Post.CreateQuery();
+						var posts = new Dictionary<int, Post>();
+						Query query = Post.CreateQuery();
 						query.AndWhere(Post.Columns.CategoryId, int.Parse(context.Request.QueryString["id"]));
 						foreach (Post post in PostCollection.FetchByQuery(query))
 						{
@@ -270,8 +269,8 @@ namespace Graffiti.Web
 				case "reOrderHomePosts":
 					try
 					{
-						Dictionary<int, Post> posts = new Dictionary<int, Post>();
-						DataBuddy.Query query = Post.CreateQuery();
+						var posts = new Dictionary<int, Post>();
+						Query query = Post.CreateQuery();
 						query.AndWhere(Post.Columns.IsHome, true);
 						foreach (Post post in PostCollection.FetchByQuery(query))
 						{
@@ -374,17 +373,17 @@ namespace Graffiti.Web
 
 					break;
 
-                case "removeFeedData":
-                    try
-                    {
-                        FeedManager.RemoveFeedData();
-                        context.Response.Write("Success");
-                    }
-                    catch (Exception ex)
-                    {
-                        context.Response.Write(ex.Message);
-                    }
-                    break;
+				case "removeFeedData":
+					try
+					{
+						FeedManager.RemoveFeedData();
+						context.Response.Write("Success");
+					}
+					catch (Exception ex)
+					{
+						context.Response.Write(ex.Message);
+					}
+					break;
 
 				case "buildCategoryPages":
 
@@ -409,7 +408,6 @@ namespace Graffiti.Web
 
 					try
 					{
-
 						Query q = Post.CreateQuery();
 						q.PageIndex = Int32.Parse(context.Request.Form["p"]);
 						q.PageSize = 20;
@@ -418,7 +416,6 @@ namespace Graffiti.Web
 						PostCollection pc = PostCollection.FetchByQuery(q);
 						if (pc.Count > 0)
 						{
-
 							foreach (Post postToWrite in pc)
 							{
 								postToWrite.WritePages();
@@ -427,7 +424,6 @@ namespace Graffiti.Web
 									if (!string.IsNullOrEmpty(tagName))
 										Tag.WritePage(tagName);
 								}
-
 							}
 
 							context.Response.Write("Next");
@@ -436,14 +432,12 @@ namespace Graffiti.Web
 						{
 							context.Response.Write("Success");
 						}
-
 					}
 					catch (Exception ex)
 					{
 						context.Response.Write(ex.Message);
 						return;
 					}
-
 
 
 					break;
@@ -453,9 +447,9 @@ namespace Graffiti.Web
 					try
 					{
 						Post newPost = new Post();
-						newPost.Title = HttpContext.Current.Server.HtmlDecode(context.Request.Form["subject"].ToString());
+						newPost.Title = HttpContext.Current.Server.HtmlDecode(context.Request.Form["subject"]);
 
-						string postName = HttpContext.Current.Server.HtmlDecode(context.Request.Form["name"].ToString());
+						string postName = HttpContext.Current.Server.HtmlDecode(context.Request.Form["name"]);
 
 						PostCollection pc = new PostCollection();
 
@@ -469,25 +463,24 @@ namespace Graffiti.Web
 						if (pc.Count > 0)
 						{
 							newPost.Name = "[RENAME ME - " + Guid.NewGuid().ToString().Substring(0, 7) + "]";
-							newPost.Status = (int)PostStatus.Draft;
+							newPost.Status = (int) PostStatus.Draft;
 						}
 						else if (String.IsNullOrEmpty(postName))
 						{
 							newPost.Name = "[RENAME ME - " + Guid.NewGuid().ToString().Substring(0, 7) + "]";
-							newPost.Status = (int)PostStatus.Draft;
+							newPost.Status = (int) PostStatus.Draft;
 						}
 						else
 						{
 							newPost.Name = postName;
-							newPost.Status = (int)PostStatus.Publish;
+							newPost.Status = (int) PostStatus.Publish;
 						}
 
 						if (String.IsNullOrEmpty(newPost.Title))
 							newPost.Title = newPost.Name;
 
 
-
-						newPost.PostBody = HttpContext.Current.Server.HtmlDecode(context.Request.Form["body"].ToString());
+						newPost.PostBody = HttpContext.Current.Server.HtmlDecode(context.Request.Form["body"]);
 						newPost.CreatedOn = Convert.ToDateTime(context.Request.Form["createdon"]);
 						newPost.CreatedBy = context.Request.Form["author"];
 						newPost.ModifiedBy = context.Request.Form["author"];
@@ -519,37 +512,37 @@ namespace Graffiti.Web
 							case "CS2007Database":
 
 								CS2007Database db = new CS2007Database();
-								temp = (IMigrateFrom)db;
+								temp = db;
 
 								break;
 							case "Wordpress":
 
 								Wordpress wp = new Wordpress();
-								temp = (IMigrateFrom)wp;
+								temp = wp;
 
 								break;
 
 							case "BlogML":
 
 								BlogML bml = new BlogML();
-								temp = (IMigrateFrom)bml;
+								temp = bml;
 
 								break;
 
 							case "CS21Database":
 								CS21Database csDb = new CS21Database();
-								temp = (IMigrateFrom)csDb;
+								temp = csDb;
 
 								break;
 
 							case "dasBlog":
 								dasBlog dasb = new dasBlog();
-								temp = (IMigrateFrom)dasb;
+								temp = dasb;
 
 								break;
 						}
 
-						List<MigratorComment> comments = temp.GetComments(postid);
+						var comments = temp.GetComments(postid);
 
 						foreach (MigratorComment cmnt in comments)
 						{
@@ -576,14 +569,13 @@ namespace Graffiti.Web
 							ctemp.Save();
 						}
 
-						if (newPost.Status == (int)PostStatus.Publish)
+						if (newPost.Status == (int) PostStatus.Publish)
 							context.Response.Write("Success" + context.Request.Form["panel"]);
 						else
 							context.Response.Write("Warning" + context.Request.Form["panel"]);
 					}
 					catch (Exception ex)
 					{
-
 						context.Response.Write(context.Request.Form["panel"] + ":" + ex.Message);
 					}
 
@@ -627,17 +619,12 @@ namespace Graffiti.Web
 						context.Response.Write(ex.Message);
 					}
 					break;
-
 			}
-
 		}
 
 		public bool IsReusable
 		{
-			get
-			{
-				return false;
-			}
+			get { return false; }
 		}
 	}
 

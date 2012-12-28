@@ -1,13 +1,12 @@
 using System;
 using System.Collections.Generic;
 using System.Security;
-using System.Web.UI;
 using System.Web.UI.WebControls;
 using Graffiti.Core;
 
 public partial class graffiti_admin_people_Default : ControlPanelPage
 {
-	IGraffitiUser user = null;
+	private IGraffitiUser user;
 
 	protected void Page_Load(object sender, EventArgs e)
 	{
@@ -18,7 +17,6 @@ public partial class graffiti_admin_people_Default : ControlPanelPage
 
 		if (Request.QueryString["user"] != null)
 		{
-
 			if (!IsPostBack)
 			{
 				user = GraffitiUsers.GetUser(Request.QueryString["user"]);
@@ -38,12 +36,15 @@ public partial class graffiti_admin_people_Default : ControlPanelPage
 				}
 				PageText.Text = "Update " + user.ProperName + "'s profile.";
 				AdminUserLinks.Visible = true;
-				PasswordLink.NavigateUrl = string.Format("~/graffiti-admin/user-management/users/changepassword.aspx?user={0}", Request.QueryString["user"]);
+				PasswordLink.NavigateUrl = string.Format("~/graffiti-admin/user-management/users/changepassword.aspx?user={0}",
+				                                         Request.QueryString["user"]);
 				if (GraffitiUsers.CanRenameUsers && GraffitiUsers.IsAdmin(GraffitiUsers.Current))
 				{
 					AdminUserLinksDelim.Visible = true;
 					RenameLink.Visible = true;
-					RenameLink.NavigateUrl = string.Format("javascript:Telligent_Modal.Open('RenameUser.aspx?user={0}', 400, 200, null);", Request.QueryString["user"]);
+					RenameLink.NavigateUrl =
+						string.Format("javascript:Telligent_Modal.Open('RenameUser.aspx?user={0}', 400, 200, null);",
+						              Request.QueryString["user"]);
 				}
 				txtExistingUserName.Text = Server.HtmlDecode(user.Name);
 				txtProperName.Text = Server.HtmlDecode(user.ProperName);
@@ -51,8 +52,8 @@ public partial class graffiti_admin_people_Default : ControlPanelPage
 				txtAvatar.Text = user.Avatar;
 				Editor.Text = user.Bio;
 				txtWebsite.Text = string.IsNullOrEmpty(user.WebSite)
-											 ? new Macros().FullUrl(new Urls().Home)
-											 : Server.HtmlEncode(user.WebSite);
+					                  ? new Macros().FullUrl(new Urls().Home)
+					                  : Server.HtmlEncode(user.WebSite);
 
 				bool isAdmin = GraffitiUsers.IsUserInRole(GraffitiUsers.Current.Name, GraffitiUsers.AdminRole);
 
@@ -69,18 +70,14 @@ public partial class graffiti_admin_people_Default : ControlPanelPage
 					RolePermissionsCollection newrp = new RolePermissionsCollection();
 					newrp.AddRange(rp);
 
-					RolePermissions temp = newrp.Find(delegate(RolePermissions r)
-																	{
-																		return r.RoleName == GraffitiUsers.EveryoneRole;
-																	});
+					RolePermissions temp = newrp.Find(delegate(RolePermissions r) { return r.RoleName == GraffitiUsers.EveryoneRole; });
 
 					if (temp != null)
 						newrp.Remove(temp);
 
-					newrp.Sort(delegate(RolePermissions rp1, RolePermissions rp2)
-					{
-						return Comparer<string>.Default.Compare(rp1.RoleName, rp2.RoleName);
-					});
+					newrp.Sort(
+						delegate(RolePermissions rp1, RolePermissions rp2)
+							{ return Comparer<string>.Default.Compare(rp1.RoleName, rp2.RoleName); });
 
 					Roles.DataSource = newrp;
 					Roles.DataBind();
@@ -104,7 +101,6 @@ public partial class graffiti_admin_people_Default : ControlPanelPage
 		}
 		else
 		{
-
 			if (!GraffitiUsers.IsUserInRole(currentUser.Name, GraffitiUsers.AdminRole))
 				Response.Redirect("?user=" + currentUser.Name);
 
@@ -112,13 +108,13 @@ public partial class graffiti_admin_people_Default : ControlPanelPage
 			user_edit_form.Visible = false;
 			User_List.Visible = true;
 
-			List<IGraffitiUser> users = GraffitiUsers.GetUsers("*");
+			var users = GraffitiUsers.GetUsers("*");
 
 			User_List.DataSource = users;
 			User_List.DataBind();
 
 			// filter out everyone if they are not a content publisher for licensing
-			List<IGraffitiUser> filteredUsers = new List<IGraffitiUser>();
+			var filteredUsers = new List<IGraffitiUser>();
 			filteredUsers.AddRange(users);
 
 			bool isEveryonePublisher = RolePermissionManager.IsEveryoneAContentPublisher();
@@ -183,7 +179,7 @@ public partial class graffiti_admin_people_Default : ControlPanelPage
 
 				GraffitiUsers.AddUserToRole(user.Name, GraffitiUsers.EveryoneRole);
 
-				if (chkAdmin.Checked == true)
+				if (chkAdmin.Checked)
 					GraffitiUsers.AddUserToRole(user.Name, GraffitiUsers.AdminRole);
 
 				foreach (DataListItem dli in Roles.Items)
@@ -199,8 +195,6 @@ public partial class graffiti_admin_people_Default : ControlPanelPage
 
 			Message.Text = "The user <strong>" + user.ProperName + "</strong> was updated.";
 			Message.Type = StatusType.Success;
-
-
 		}
 		catch (Exception ex)
 		{
@@ -209,7 +203,7 @@ public partial class graffiti_admin_people_Default : ControlPanelPage
 				exMessage = "This username (or email) already exists.";
 
 			Message.Text = "A user with the name of " + txtExistingUserName.Text + " could not be updated.<br />" +
-								exMessage;
+			               exMessage;
 			Message.Type = StatusType.Error;
 		}
 	}
@@ -218,10 +212,10 @@ public partial class graffiti_admin_people_Default : ControlPanelPage
 	{
 		try
 		{
-			GraffitiUsers.CreateUser(Server.HtmlEncode(txtUserName.Text.Trim()), txtPassword.Text.Trim(), txtEmail.Text.Trim(), GraffitiUsers.EveryoneRole);
+			GraffitiUsers.CreateUser(Server.HtmlEncode(txtUserName.Text.Trim()), txtPassword.Text.Trim(), txtEmail.Text.Trim(),
+			                         GraffitiUsers.EveryoneRole);
 
 			Response.Redirect("~/graffiti-admin/user-management/users/?user=" + txtUserName.Text + "&new=true");
-
 		}
 		catch (Exception ex)
 		{
@@ -230,7 +224,7 @@ public partial class graffiti_admin_people_Default : ControlPanelPage
 				exMessage = "This user (or email) already exists.";
 
 			Message.Text = "A name or email with the name of " + txtUserName.Text + " could not be created.<br />" +
-								exMessage;
+			               exMessage;
 			Message.Type = StatusType.Error;
 		}
 	}
@@ -242,5 +236,4 @@ public partial class graffiti_admin_people_Default : ControlPanelPage
 
 		return false;
 	}
-
 }

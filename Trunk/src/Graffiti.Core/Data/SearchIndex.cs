@@ -1,5 +1,4 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.RegularExpressions;
@@ -9,33 +8,60 @@ using Lucene.Net.Analysis;
 using Lucene.Net.Analysis.Standard;
 using Lucene.Net.Documents;
 using Lucene.Net.Index;
-using Lucene.Net.QueryParsers;
 using Lucene.Net.Search;
-using Lucene.Net.Highlight;
+using Lucene.Net.Search.Highlight;
+using Lucene.Net.Search.Similar;
 using Lucene.Net.Store;
+using Lucene.Net.Util;
 using LQ = Lucene.Net.QueryParsers;
+using Version = Lucene.Net.Util.Version;
 
 namespace Graffiti.Core
 {
+	public static class SearchFields
+	{
+		public const string Title = "title";
+		public const string Body = "body";
+		public const string Tag = "tag";
+	}
+
 	/// <summary>
-	/// Provides an in memory search index for all the posts in a Graffiti Site.
+	///     Provides an in memory search index for all the posts in a Graffiti Site.
 	/// </summary>
 	public class SearchIndex
 	{
-		#region static
-
 		private static readonly Regex _andRegex = new Regex(@"\sAND\s", RegexOptions.IgnoreCase);
 		private static readonly Regex _orRegex = new Regex(@"\sOR\s", RegexOptions.IgnoreCase);
 		private static readonly Regex _notRegex = new Regex(@"\sNOT\s", RegexOptions.IgnoreCase);
-		private static readonly Regex _escape = new Regex("([" + "\\+,\\-,\\&,\\|,\\!,\\(,\\),\\{,\\},\\[,\\],\\^,\\\",\\~,\\*,\\?,\\:,\\\\" + "])", RegexOptions.Compiled);
+
+		private static readonly string[] specialLuceneCharacters =
+			{
+				@"\", "+", "-", "&&", "||", "!", "(", ")", "{", "}", "[",
+				"]", "^", "\"", "~", "*", "?", ":"
+			};
 
 
-		#endregion
+		private readonly Analyzer _analyzer;
 
-		#region private
-		ReaderWriterLock lck = new ReaderWriterLock();
-		RAMDirectory rd = null;
-		#endregion
+		private ReaderWriterLock lck = new ReaderWriterLock();
+		private RAMDirectory rd;
+
+		public SearchIndex()
+		{
+			_analyzer = new StandardAnalyzer(Version.LUCENE_30);
+			// ToDo: SnowballAnalyzer
+		}
+
+		protected virtual int ReaderTimeOut
+		{
+			get { return 15000; }
+		}
+
+		protected virtual int WriterTimeOut
+		{
+			get { return 30000; }
+		}
+
 
 		private static List<Post> ItemsToIndex()
 		{
@@ -64,9 +90,12 @@ namespace Graffiti.Core
 				doc.Add(new Field("tag", tag, Field.Store.YES, Field.Index.ANALYZED));
 			}
 			doc.Add(new Field("author", t.CreatedBy, Field.Store.YES, Field.Index.NOT_ANALYZED));
-			doc.Add(new Field("date", DateTools.DateToString(t.Published, DateTools.Resolution.HOUR), Field.Store.YES, Field.Index.NOT_ANALYZED));
-			doc.Add(new Field("createddate", DateTools.DateToString(t.CreatedOn, DateTools.Resolution.HOUR), Field.Store.YES, Field.Index.NOT_ANALYZED));
-			doc.Add(new Field("modifieddate", DateTools.DateToString(t.ModifiedOn, DateTools.Resolution.HOUR), Field.Store.YES, Field.Index.NOT_ANALYZED));
+			doc.Add(new Field("date", DateTools.DateToString(t.Published, DateTools.Resolution.HOUR), Field.Store.YES,
+			                  Field.Index.NOT_ANALYZED));
+			doc.Add(new Field("createddate", DateTools.DateToString(t.CreatedOn, DateTools.Resolution.HOUR), Field.Store.YES,
+			                  Field.Index.NOT_ANALYZED));
+			doc.Add(new Field("modifieddate", DateTools.DateToString(t.ModifiedOn, DateTools.Resolution.HOUR), Field.Store.YES,
+			                  Field.Index.NOT_ANALYZED));
 			doc.Add(new Field("name", t.Name, Field.Store.YES, Field.Index.NOT_ANALYZED));
 			doc.Add(new Field("image", t.ImageUrl ?? string.Empty, Field.Store.YES, Field.Index.NOT_ANALYZED));
 			doc.Add(new Field("commentcount", t.CommentCount.ToString(), Field.Store.YES, Field.Index.NOT_ANALYZED));
@@ -76,150 +105,49 @@ namespace Graffiti.Core
 			return doc;
 		}
 
-		private static Post CreateFromDocument(Document doc, Analyzer analyzer, Highlighter hl)
+		private Post CreatePostFromDocument(Document doc, Highlighter hl)
 		{
-			Post p = new Post();
-			p.Id = Int32.Parse(doc.GetField("postid").StringValue());
-			p.UserName = doc.GetField("username").StringValue();
-			p.CreatedBy = doc.GetField("createdby").StringValue();
-			p.ModifiedBy = doc.GetField("modifiedby").StringValue();
-			p.Title = doc.GetField("title").StringValue();
-			p.CategoryId = Int32.Parse(doc.GetField("categoryid").StringValue());
-			p.CreatedBy = doc.GetField("author").StringValue();
-			p.Published = DateTools.StringToDate(doc.GetField("date").StringValue());
-			p.CreatedOn = DateTools.StringToDate(doc.GetField("createddate").StringValue());
-			p.ModifiedOn = DateTools.StringToDate(doc.GetField("modifieddate").StringValue());
-			p.Name = doc.GetField("name").StringValue();
-			p.PostBody = (analyzer == null || hl == null) ? doc.GetField("rawbody").StringValue() : BestMatch(doc.GetField("body").StringValue(), "body", analyzer, hl);
-			p.ExtendedBody = "<!--hidden-->";
-			p.CommentCount = Int32.Parse(doc.GetField("commentcount").StringValue());
-			p.PendingCommentCount = Int32.Parse(doc.GetField("pendingcommentcount").StringValue());
-			p.ImageUrl = doc.GetField("image").StringValue();
-			p.PropertyKeys = doc.GetField("propertykeys").StringValue();
-			p.PropertyValues = doc.GetField("propertyvalues").StringValue();
+			var post = new Post
+				           {
+					           Id = Int32.Parse(doc.GetField("postid").StringValue),
+					           UserName = doc.GetField("username").StringValue,
+					           CreatedBy = doc.GetField("author").StringValue,
+					           //CreatedBy = doc.GetField("createdby").StringValue,
+					           ModifiedBy = doc.GetField("modifiedby").StringValue,
+					           Title = doc.GetField("title").StringValue,
+					           CategoryId = Int32.Parse(doc.GetField("categoryid").StringValue),
+					           Published = DateTools.StringToDate(doc.GetField("date").StringValue),
+					           CreatedOn = DateTools.StringToDate(doc.GetField("createddate").StringValue),
+					           ModifiedOn = DateTools.StringToDate(doc.GetField("modifieddate").StringValue),
+					           Name = doc.GetField("name").StringValue,
+					           PostBody =
+						           (_analyzer == null || hl == null)
+							           ? doc.GetField("rawbody").StringValue
+							           : BestMatch(doc.GetField("body").StringValue, "body", _analyzer, hl),
+					           ExtendedBody = "<!--hidden-->",
+					           CommentCount = Int32.Parse(doc.GetField("commentcount").StringValue),
+					           PendingCommentCount = Int32.Parse(doc.GetField("pendingcommentcount").StringValue),
+					           ImageUrl = doc.GetField("image").StringValue,
+					           PropertyKeys = doc.GetField("propertykeys").StringValue,
+					           PropertyValues = doc.GetField("propertyvalues").StringValue,
+				           };
 
 
-			string[] sa = doc.GetValues("tag");
+			var sa = doc.GetValues("tag");
 			if (sa != null)
-				p.TagList = string.Join(",", sa);
+				post.TagList = string.Join(",", sa);
 
-			p.DeserializeCustomFields();
+			post.DeserializeCustomFields();
 
-			return p;
-
+			return post;
 		}
 
-		private static QueryParser GetQueryParser(Analyzer a)
+		private LQ.QueryParser GetQueryParser()
 		{
-			return new MultiFieldQueryParser(new string[] { "body", "title" }, a);
-		}
-
-
-		#region Virtual
-
-		/// <summary>
-		/// 
-		/// </summary>
-		/// <param name="sq">The query to base our sort on</param>
-		/// <returns></returns>
-		protected virtual Sort GetSort(SearchQuery sq)
-		{
-			return new Sort();
-		}
-
-		protected virtual Query GetFilterQuery(SearchQuery sq)
-		{
-			return null;
-		}
-
-		protected virtual Analyzer GetAnalyzer()
-		{
-			return new StandardAnalyzer();
-		}
-
-		protected virtual int ReaderTimeOut { get { return 15000; } }
-		protected virtual int WriterTimeOut { get { return 30000; } }
-
-		#endregion
-
-		#region Internal Implementation
-
-		protected virtual SearchResultSet<Post> Search(SearchQuery sq, bool reSearch)
-		{
-			DateTime dt = DateTime.Now;
-			string _sq = sq.QueryText;
-			IndexSearcher searcher = null;
-			if (rd == null)
-			{
-				BuildIndex();
-			}
-
-			lck.AcquireReaderLock(ReaderTimeOut);
-			try
-			{
-				Analyzer analyzer = GetAnalyzer();
-
-				_sq = _andRegex.Replace(_sq, " AND ");
-				_sq = _orRegex.Replace(_sq, " OR ");
-
-				QueryParser parser = GetQueryParser(analyzer);
-				parser.SetDefaultOperator(QueryParser.AND_OPERATOR);
-				Query q = parser.Parse(_sq);
-				searcher = new IndexSearcher(rd);
-
-				Query filterQuery = GetFilterQuery(sq);
-				LFilter theFilter = null;
-				if (filterQuery != null)
-					theFilter = new LFilter(filterQuery);
-
-				Hits hits = searcher.Search(q, theFilter, GetSort(sq));
-
-				SearchResultSet<Post> searchResults = new SearchResultSet<Post>();
-
-				searchResults.TotalRecords = hits.Length();
-				TimeSpan ts = (DateTime.Now - dt);
-				searchResults.SearchDuration = ts.Milliseconds;
-
-				SimpleHTMLFormatter html = new SimpleHTMLFormatter(":openhighlight", ":closehighlight"); //use placeholders instead of html to allow later htmlencode
-				Highlighter highlighter = new Highlighter(html, new QueryScorer(q));
-
-				int start = (sq.PageIndex - 1) * sq.PageSize;
-				int end = sq.PageIndex * sq.PageSize;
-
-				if (start > hits.Length())
-					start = hits.Length();
-
-				if (end > hits.Length())
-					end = hits.Length();
-
-				for (int i = start; i < end; i++)
-				{
-					Document doc = hits.Doc(i);
-					searchResults.Add(CreateFromDocument(doc, analyzer, highlighter));
-				}
-
-				return searchResults;
-			}
-			catch (Lucene.Net.QueryParsers.ParseException)
-			{
-				if (reSearch)
-				{
-					sq.QueryText = _escape.Replace(sq.QueryText, "\\$1");
-					Search(sq, false);
-				}
-				else
-					throw;
-			}
-			finally
-			{
-				if (searcher != null)
-					searcher.Close();
-
-
-				lck.ReleaseReaderLock();
-			}
-
-			return null;
+			var parser = new LQ.MultiFieldQueryParser(Version.LUCENE_30,
+			                                          new[] {SearchFields.Body, SearchFields.Title, SearchFields.Tag}, _analyzer);
+			parser.DefaultOperator = LQ.QueryParser.Operator.AND;
+			return parser;
 		}
 
 
@@ -227,21 +155,28 @@ namespace Graffiti.Core
 		{
 			try
 			{
-                //decode text to prevent fragmenting escape chars or char refs
-                text = HttpUtility.HtmlDecode(text);
-                TokenStream tokenStream = analyzer.TokenStream(fieldName, new StringReader(text));
-                //encode for html validity, replace temporary highlight tags
-                return HttpUtility.HtmlEncode(hl.GetBestFragments(tokenStream, text, 2, "...")).Replace(":openhighlight", "<span style=\"BACKGROUND-COLOR: Yellow\">").Replace(":closehighlight", "</span>");
+				//decode text to prevent fragmenting escape chars or char refs
+				text = HttpUtility.HtmlDecode(text);
+				TokenStream tokenStream = analyzer.TokenStream(fieldName, new StringReader(text));
+				//encode for html validity, replace temporary highlight tags
+				return
+					HttpUtility.HtmlEncode(hl.GetBestFragments(tokenStream, text, 2, "..."))
+					           .Replace(":openhighlight", "<span style=\"BACKGROUND-COLOR: Yellow\">")
+					           .Replace(":closehighlight", "</span>");
 			}
 			catch
 			{
-                return RemoveHtml(text.Replace(":openhighlight", "").Replace(":closehighlight", ""), 250);
+				return RemoveHtml(text.Replace(":openhighlight", "").Replace(":closehighlight", ""), 250);
 			}
-
 		}
 
+		private void EnsureIndexExists()
+		{
+			if (rd == null)
+				BuildIndex();
+		}
 
-		void BuildIndex()
+		private void BuildIndex()
 		{
 			IndexWriter writer = null;
 			lck.AcquireWriterLock(WriterTimeOut);
@@ -250,118 +185,181 @@ namespace Graffiti.Core
 				if (rd == null)
 				{
 					rd = new RAMDirectory();
-					writer = new IndexWriter(rd, GetAnalyzer(), true, IndexWriter.MaxFieldLength.LIMITED);
+					writer = new IndexWriter(rd, _analyzer, true, IndexWriter.MaxFieldLength.LIMITED);
 
-					foreach (Post post in ItemsToIndex())
+					foreach (var post in ItemsToIndex())
 					{
 						writer.AddDocument(CreateDocument(post));
 					}
-
 				}
 			}
 			finally
 			{
 				if (writer != null)
-					writer.Close();
+					writer.Dispose();
 
 				lck.ReleaseWriterLock();
 			}
-
 		}
-
-		#endregion
 
 		#region Public Methods
 
 		public int TotalDocuments()
 		{
-			IndexWriter writer = null;
+			EnsureIndexExists();
+			IndexSearcher searcher = null;
+
 			lck.AcquireReaderLock(ReaderTimeOut);
 			try
 			{
-				if (rd == null)
-					return -1;
+				var query = new MatchAllDocsQuery();
+				searcher = new IndexSearcher(rd);
 
-				writer = new IndexWriter(rd, GetAnalyzer(), false);
-				int count = writer.DocCount();
-				return count;
+				TopDocs hits = searcher.Search(query, 1);
+				return hits.TotalHits;
 			}
 			finally
 			{
-				if (writer != null)
-					writer.Close();
+				if (searcher != null)
+					searcher.Dispose();
 
 				lck.ReleaseReaderLock();
 			}
 		}
 
 		/// <summary>
-		/// For objects matching your query
+		///     For objects matching your query
 		/// </summary>
-		/// <param name="sq"></param>
-		/// <returns></returns>
-		public SearchResultSet<Post> Search(SearchQuery sq)
+		public SearchResultSet<Post> Search(SearchQuery searchQuery)
 		{
-			return Search(sq, true);
-		}
+			var searchResults = new SearchResultSet<Post>();
 
-		public List<Post> Similar(int postid, int itemsToReturn)
-		{
-			List<Post> TList = new List<Post>();
+			if (String.IsNullOrWhiteSpace(searchQuery.QueryText))
+				return searchResults;
 
-			int docId = -1;
-
+			DateTime dt = DateTime.Now;
+			string queryText = searchQuery.QueryText;
 			IndexSearcher searcher = null;
-			IndexReader reader = null;
 
-			if (rd == null)
+			EnsureIndexExists();
+
+			var parser = GetQueryParser();
+			foreach (var specialCharacter in specialLuceneCharacters)
 			{
-				BuildIndex();
+				if (queryText.Contains(specialCharacter))
+					queryText = queryText.Replace(specialCharacter, @"\" + specialCharacter);
 			}
+			queryText = _andRegex.Replace(queryText, " AND ");
+			queryText = _orRegex.Replace(queryText, " OR ");
+
+			var query = parser.Parse(queryText);
+			if (String.IsNullOrWhiteSpace(query.ToString()))
+				return searchResults;
 
 			lck.AcquireReaderLock(ReaderTimeOut);
 			try
 			{
-				Analyzer analyzer = GetAnalyzer();
-				QueryParser parser = GetQueryParser(analyzer);
-				parser.SetDefaultOperator(QueryParser.AND_OPERATOR);
-
-				Query q = parser.Parse("postid:" + postid);
-
 				searcher = new IndexSearcher(rd);
+				TopDocs hits = searcher.Search(query, searchQuery.MaxResults);
 
-				Hits hits = searcher.Search(q);
-				if (hits != null && hits.Length() > 0)
-					docId = hits.Id(0);
+				searchResults.TotalRecords = hits.TotalHits;
+				TimeSpan ts = (DateTime.Now - dt);
+				searchResults.SearchDuration = ts.Milliseconds;
 
-				if (docId > -1)
+				if (hits.ScoreDocs.Length <= 0)
+					return searchResults;
+
+				var formatter = new SimpleHTMLFormatter(":openhighlight", ":closehighlight");
+				//use placeholders instead of html to allow later htmlencode
+				var highlighter = new Highlighter(formatter, new QueryScorer(query));
+
+				int start = (searchQuery.PageIndex - 1)*searchQuery.PageSize;
+				int end = searchQuery.PageIndex*searchQuery.PageSize;
+
+				if (start > hits.ScoreDocs.Length)
+					start = hits.ScoreDocs.Length;
+
+				if (end > hits.ScoreDocs.Length)
+					end = hits.ScoreDocs.Length;
+
+				for (int i = start; i < end; i++)
 				{
-					reader = IndexReader.Open(rd);
-
-					TermFreqVector tfv = reader.GetTermFreqVector(docId, "exact");
-					BooleanQuery booleanQuery = new BooleanQuery();
-					for (int j = 0; j < tfv.Size(); j++)
-					{
-						TermQuery tq = new TermQuery(new Term("exact", tfv.GetTerms()[j]));
-						booleanQuery.Add(tq, BooleanClause.Occur.SHOULD);
-					}
-
-					Hits similarhits = searcher.Search(booleanQuery, Sort.RELEVANCE);
-
-					for (int i = 0; i < similarhits.Length(); i++)
-					{
-						Document doc = similarhits.Doc(i);
-						if (similarhits.Id(i) != docId)
-						{
-							TList.Add(CreateFromDocument(doc, analyzer, null));
-						}
-
-						if (TList.Count >= itemsToReturn)
-							break;
-
-					}
+					var doc = searcher.Doc(hits.ScoreDocs[i].Doc);
+					searchResults.Add(CreatePostFromDocument(doc, highlighter));
 				}
 
+				return searchResults;
+			}
+			catch (LQ.ParseException)
+			{
+				// Used to retry here... but now we escape query up-front
+				throw;
+			}
+			finally
+			{
+				if (searcher != null)
+					searcher.Dispose();
+
+				lck.ReleaseReaderLock();
+			}
+		}
+
+		private static Query GetIdSearchQuery(int id)
+		{
+			return new TermQuery(new Term("postid", NumericUtils.IntToPrefixCoded(id)));
+		}
+
+		public List<Post> Similar(int postid, int itemsToReturn)
+		{
+			var list = new List<Post>();
+
+			if (postid <= 0)
+				return list;
+
+			IndexSearcher searcher = null;
+			IndexReader reader = null;
+
+			EnsureIndexExists();
+
+			var query = GetIdSearchQuery(postid);
+
+			lck.AcquireReaderLock(ReaderTimeOut);
+			try
+			{
+				searcher = new IndexSearcher(rd);
+
+				// Get Original document
+				TopDocs hits = searcher.Search(query, itemsToReturn);
+				if (hits == null || hits.ScoreDocs.Length <= 0)
+					return list;
+
+				int docNum = hits.ScoreDocs[0].Doc;
+				if (docNum > -1)
+				{
+					LQ.QueryParser parser = GetQueryParser();
+					reader = IndexReader.Open(rd, true);
+
+					var mlt = new MoreLikeThis(reader);
+					mlt.Analyzer = _analyzer;
+					mlt.SetFieldNames(new[] {SearchFields.Title, SearchFields.Body, SearchFields.Tag});
+					mlt.MinDocFreq = 5;
+					mlt.MinTermFreq = 2;
+					mlt.Boost = true;
+					var moreResultsQuery = mlt.Like(docNum);
+
+					TopDocs similarhits = searcher.Search(moreResultsQuery, itemsToReturn);
+
+					for (int i = 0; i < similarhits.ScoreDocs.Length; i++)
+					{
+						Document doc = searcher.Doc(similarhits.ScoreDocs[i].Doc);
+						var post = CreatePostFromDocument(doc, null);
+						if (postid != post.Id)
+							list.Add(post);
+
+						if (list.Count >= itemsToReturn)
+							break;
+					}
+				}
 			}
 			catch (Exception)
 			{
@@ -369,21 +367,20 @@ namespace Graffiti.Core
 			finally
 			{
 				if (searcher != null)
-					searcher.Close();
+					searcher.Dispose();
 
 				if (reader != null)
-					reader.Close();
+					reader.Dispose();
 
 				lck.ReleaseReaderLock();
 			}
 
 
-
-			return TList;
+			return list;
 		}
 
 		/// <summary>
-		/// Clears all results from the current index. During the next search the index will be rebuilt.
+		///     Clears all results from the current index. During the next search the index will be rebuilt.
 		/// </summary>
 		public void Clear()
 		{
@@ -392,7 +389,7 @@ namespace Graffiti.Core
 			{
 				if (rd != null)
 				{
-					rd.Close();
+					rd.Dispose();
 					rd = null;
 				}
 			}
@@ -403,7 +400,7 @@ namespace Graffiti.Core
 		}
 
 		/// <summary>
-		/// Clears the current index and then resuilds it.
+		///     Clears the current index and then resuilds it.
 		/// </summary>
 		public void Reset()
 		{
@@ -412,7 +409,7 @@ namespace Graffiti.Core
 			{
 				if (rd != null)
 				{
-					rd.Close();
+					rd.Dispose();
 					rd = null;
 				}
 
@@ -427,6 +424,12 @@ namespace Graffiti.Core
 		#endregion
 
 		#region Helpers
+
+		protected static Regex htmlRegex = new Regex("<[^>]+>|\\&nbsp\\;|\\&lt\\;|\\&rt\\;",
+		                                             RegexOptions.IgnoreCase | RegexOptions.Compiled);
+
+		protected static Regex spacer = new Regex(@"\s{2,}");
+		private static Regex isWhitespace = new Regex("[^\\w&;#]", RegexOptions.Singleline | RegexOptions.Compiled);
 
 		protected static string RemoveHtml(string html, int charLimit)
 		{
@@ -457,62 +460,38 @@ namespace Graffiti.Core
 				return text.Substring(0, match.Index);
 		}
 
-		protected static Regex htmlRegex = new Regex("<[^>]+>|\\&nbsp\\;|\\&lt\\;|\\&rt\\;", RegexOptions.IgnoreCase | RegexOptions.Compiled);
-		protected static Regex spacer = new Regex(@"\s{2,}");
-		private static Regex isWhitespace = new Regex("[^\\w&;#]", RegexOptions.Singleline | RegexOptions.Compiled);
-
-
 		#endregion
-
-
 	}
 
 	public class SearchQuery
 	{
-		private int _pageSize;
-		private int _pageIndex;
-		private string _queryText;
-		private SearchSort _sort = SearchSort.Relevance;
-
-		/// <summary>
-		/// The number of records to return per page.
-		/// </summary>
-		public int PageSize
+		public SearchQuery()
 		{
-			get { return _pageSize; }
-			set { _pageSize = value; }
+			Sort = SearchSort.Relevance;
+			MaxResults = 999;
 		}
 
+		/// <summary>
+		///     The number of records to return per page.
+		/// </summary>
+		public int PageSize { get; set; }
 
 		/// <summary>
-		/// Current Page
+		///     Current Page
 		/// </summary>
-		public int PageIndex
-		{
-			get { return _pageIndex; }
-			set { _pageIndex = value; }
-		}
-
+		public int PageIndex { get; set; }
 
 		/// <summary>
-		/// What are we searching for
+		///     What are we searching for
 		/// </summary>
-		public string QueryText
-		{
-			get { return _queryText; }
-			set { _queryText = value; }
-		}
-
+		public string QueryText { get; set; }
 
 		/// <summary>
-		/// What/how are we sorting
+		///     What/how are we sorting
 		/// </summary>
-		public SearchSort Sort
-		{
-			get { return _sort; }
-			set { _sort = value; }
-		}
+		public SearchSort Sort { get; set; }
 
+		public int MaxResults { get; set; }
 	}
 
 	public enum SearchSort
@@ -520,91 +499,32 @@ namespace Graffiti.Core
 		Ascending,
 		Descending,
 		Index,
-		Relevance
-
-	}
-
-	internal class LFilter : Filter
-	{
-		internal LFilter(Query q)
-		{
-			_query = q;
-		}
-
-		private Query _query = null;
-
-		public override BitArray Bits(IndexReader reader)
-		{
-			BitArray bits = new BitArray((reader.MaxDoc() % 64 == 0 ? reader.MaxDoc() / 64 : reader.MaxDoc() / 64 + 1) * 64);
-			new IndexSearcher(reader).Search(_query, new LHitCollector(bits));
-			return bits;
-
-		}
-	}
-
-	internal class LHitCollector : HitCollector
-	{
-		internal LHitCollector(BitArray bits)
-		{
-			_bits = bits;
-		}
-
-		private BitArray _bits = null;
-
-		public override void Collect(int doc, float score)
-		{
-			_bits.Set(doc, true);
-		}
+		Relevance,
 	}
 
 	public class SearchResultSet<T> : List<T> where T : class, new()
 	{
-		private int _pageSize;
-		private int _pageIndex;
-		private int _totalRecords;
-		private int _SearchDuration;
-
 		/// <summary>
-		/// Current page, this value is returned via the SearchQuery
+		///     Current page, this value is returned via the SearchQuery
 		/// </summary>
-		public int PageSize
-		{
-			get { return _pageSize; }
-			set { _pageSize = value; }
-		}
+		public int PageSize { get; set; }
 
 
 		/// <summary>
-		/// Current page index, this value is returned via the SearchQuery
+		///     Current page index, this value is returned via the SearchQuery
 		/// </summary>
-		public int PageIndex
-		{
-			get { return _pageIndex; }
-			set { _pageIndex = value; }
-		}
+		public int PageIndex { get; set; }
 
 
 		/// <summary>
-		/// Total number of records matching the SearchQuery
+		///     Total number of records matching the SearchQuery
 		/// </summary>
-		public int TotalRecords
-		{
-			get { return _totalRecords; }
-			set { _totalRecords = value; }
-		}
+		public int TotalRecords { get; set; }
 
 
 		/// <summary>
-		/// Number of milliseconds the search took to complete.
+		///     Number of milliseconds the search took to complete.
 		/// </summary>
-		public int SearchDuration
-		{
-			get { return _SearchDuration; }
-			set { _SearchDuration = value; }
-		}
-
-
-
-
+		public int SearchDuration { get; set; }
 	}
 }

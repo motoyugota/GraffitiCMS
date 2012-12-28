@@ -1,3 +1,6 @@
 <%@ WebHandler Language="C#" Class="ajax01" %>
-public class ajax01 : Graffiti.Web.ajax
-{}
+using Graffiti.Web;
+
+public class ajax01 : ajax
+{
+}

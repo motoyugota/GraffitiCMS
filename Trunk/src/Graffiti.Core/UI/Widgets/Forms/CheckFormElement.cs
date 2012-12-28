@@ -4,13 +4,10 @@ using System.Text;
 namespace Graffiti.Core
 {
 	/// <summary>
-	/// Enables adding checkboxes to a dyanmic form.
+	///     Enables adding checkboxes to a dyanmic form.
 	/// </summary>
 	public class CheckFormElement : FormElement
 	{
-		internal bool DefaultValue { get; private set; }
-		internal bool IsNew { get; private set; }
-
 		public CheckFormElement(string name, string desc, string tip, bool defaultValue)
 			: this(name, desc, tip, defaultValue, false)
 		{
@@ -22,6 +19,9 @@ namespace Graffiti.Core
 			DefaultValue = defaultValue;
 			IsNew = isNew;
 		}
+
+		internal bool DefaultValue { get; private set; }
+		internal bool IsNew { get; private set; }
 
 
 		public override void Write(StringBuilder sb, NameValueCollection nvc)
@@ -41,8 +41,8 @@ namespace Graffiti.Core
 
 			sb.Append("</h2>");
 			sb.AppendFormat("<input type=\"checkbox\" id=\"{0}\" name=\"{0}\" {2} /> {1}",
-								 Name, Description,
-								 isChecked ? "checked = \"checked\" " : null);
+			                Name, Description,
+			                isChecked ? "checked = \"checked\" " : null);
 			sb.Append(SafeToolTip(true));
 			sb.Append("\n");
 		}

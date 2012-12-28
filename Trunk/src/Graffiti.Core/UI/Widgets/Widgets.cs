@@ -9,12 +9,15 @@ using DataBuddy;
 namespace Graffiti.Core
 {
 	/// <summary>
-	/// Widgets are stored in the Graffit ObjectStore. The Widgets class is responsible for convering ObjectStore 
-	/// instances into an instance of Widget, reading widgets from assemblies, and managing their state.
+	///     Widgets are stored in the Graffit ObjectStore. The Widgets class is responsible for convering ObjectStore
+	///     instances into an instance of Widget, reading widgets from assemblies, and managing their state.
 	/// </summary>
 	public static class Widgets
 	{
 		private static readonly string cacheKey = "Graffit.Core.Widgets.Cache";
+		private static bool _isLoaded;
+		private static readonly object lockedOnly = new object();
+		private static List<WidgetDescription> _widgets = new List<WidgetDescription>();
 
 		public static void Reset()
 		{
@@ -22,7 +25,7 @@ namespace Graffiti.Core
 		}
 
 		/// <summary>
-		/// Deletes a widget.
+		///     Deletes a widget.
 		/// </summary>
 		/// <param name="id"></param>
 		public static void Delete(string id)
@@ -42,13 +45,12 @@ namespace Graffiti.Core
 		}
 
 		/// <summary>
-		/// Gets all the widgets from the ObjectStore (match ContentType = "xml/widget"
+		///     Gets all the widgets from the ObjectStore (match ContentType = "xml/widget"
 		/// </summary>
 		/// <returns></returns>
 		public static List<Widget> FetchAll()
 		{
-
-			List<Widget> the_Widgets = ZCache.Get<List<Widget>>(cacheKey);
+			var the_Widgets = ZCache.Get<List<Widget>>(cacheKey);
 			if (the_Widgets == null)
 			{
 				ObjectStoreCollection osc = new ObjectStoreCollection();
@@ -67,14 +69,14 @@ namespace Graffiti.Core
 							the_Widgets.Add(widget);
 						else
 							Log.Warn("Widgets",
-											 "The widget of type {0} (Widget Id:{1}, ObjetStore id: {2}) could not be loaded. Please check with the widget developer for help",
-											 os.Type, os.Name, os.Id);
+							         "The widget of type {0} (Widget Id:{1}, ObjetStore id: {2}) could not be loaded. Please check with the widget developer for help",
+							         os.Type, os.Name, os.Id);
 					}
 					catch (Exception ex)
 					{
 						Log.Error("Widget",
-										  "An exception was raised invoking the following widget type {0}. Exception: {1} Details: {2}",
-										  os.Type, ex.Message, ex.StackTrace);
+						          "An exception was raised invoking the following widget type {0}. Exception: {1} Details: {2}",
+						          os.Type, ex.Message, ex.StackTrace);
 					}
 				}
 
@@ -85,41 +87,38 @@ namespace Graffiti.Core
 
 
 		/// <summary>
-		/// Returns all Widgets for a given location. They are also sorted by O
+		///     Returns all Widgets for a given location. They are also sorted by O
 		/// </summary>
 		/// <param name="location"></param>
 		/// <returns></returns>
 		public static List<Widget> FetchByLocation(WidgetLocation location)
 		{
-			List<Widget> filtered_widgets = new List<Widget>();
+			var filtered_widgets = new List<Widget>();
 			foreach (Widget widget in FetchAll())
 				if (widget.Location == location)
 					filtered_widgets.Add(widget);
 
 			filtered_widgets.Sort(
-									  delegate(Widget wi1, Widget wi2)
-									  {
-										  return Comparer<int>.Default.Compare(wi1.Order, wi2.Order);
-									  });
+				delegate(Widget wi1, Widget wi2) { return Comparer<int>.Default.Compare(wi1.Order, wi2.Order); });
 
 			return filtered_widgets;
 		}
 
 
 		/// <summary>
-		/// Stores the results of a re-order in the the ObjectStore
+		///     Stores the results of a re-order in the the ObjectStore
 		/// </summary>
 		/// <param name="id">The idea of the element (lbar, rbar,qbar). This value will be used as the delimiter in the list paramater</param>
-		/// <param name="list">A serialized delimited list of widget ids. It should use the pattern &id[]=Guid&id[]Guid</param>
+		/// <param name="list">A serialized delimited list of widget ids. It should use the pattern &amp;id[]=Guid&amp;id[]Guid</param>
 		public static void ReOrder(string id, string list)
 		{
-			string[] saList = list.Split(new string[] { "&" }, StringSplitOptions.RemoveEmptyEntries);
+			var saList = list.Split(new[] {"&"}, StringSplitOptions.RemoveEmptyEntries);
 
 			WidgetLocation wl = WidgetLocation.Right;
 			if (id == "qbar") wl = WidgetLocation.Queue;
 			if (id == "lbar") wl = WidgetLocation.Left;
 
-			List<Widget> the_Widgets = FetchAll();
+			var the_Widgets = FetchAll();
 			int i = 0;
 
 			foreach (string wid in saList)
@@ -142,13 +141,13 @@ namespace Graffiti.Core
 		}
 
 		/// <summary>
-		/// Fetches a single Widget
+		///     Fetches a single Widget
 		/// </summary>
 		/// <param name="id"></param>
 		/// <returns></returns>
 		public static Widget Fetch(Guid id)
 		{
-			List<Widget> the_Widgets = FetchAll();
+			var the_Widgets = FetchAll();
 			foreach (Widget widget in the_Widgets)
 			{
 				if (widget.Id == id)
@@ -162,7 +161,7 @@ namespace Graffiti.Core
 
 		public static Widget FetchByTitle(string title)
 		{
-			List<Widget> the_Widgets = FetchAll();
+			var the_Widgets = FetchAll();
 			foreach (Widget widget in the_Widgets)
 			{
 				if (widget.Title == title)
@@ -175,7 +174,7 @@ namespace Graffiti.Core
 		}
 
 		/// <summary>
-		/// Creates an empty Widget for the given type
+		///     Creates an empty Widget for the given type
 		/// </summary>
 		/// <param name="type"></param>
 		/// <returns></returns>
@@ -183,7 +182,7 @@ namespace Graffiti.Core
 		{
 			Widget widget = Activator.CreateInstance(type) as Widget;
 			widget.Id = Guid.NewGuid();
-			widget.Order = Widgets.FetchByLocation(WidgetLocation.Queue).Count + 1;
+			widget.Order = FetchByLocation(WidgetLocation.Queue).Count + 1;
 
 			// Get default values if any were configured.
 			NameValueCollection defaultValues = widget.GetDefaults();
@@ -216,7 +215,7 @@ namespace Graffiti.Core
 		}
 
 		/// <summary>
-		/// Saves the widget. It must first be convered to the ObjectStore instance.
+		///     Saves the widget. It must first be convered to the ObjectStore instance.
 		/// </summary>
 		/// <param name="widget"></param>
 		public static void Save(Widget widget)
@@ -224,12 +223,8 @@ namespace Graffiti.Core
 			Save(widget, true);
 		}
 
-		private static bool _isLoaded = false;
-		private static readonly object lockedOnly = new object();
-		private static List<WidgetDescription> _widgets = new List<WidgetDescription>();
-
 		/// <summary>
-		/// Returns all of the known/avaialble widgets based on their WidgetInfo
+		///     Returns all of the known/avaialble widgets based on their WidgetInfo
 		/// </summary>
 		/// <returns></returns>
 		public static List<WidgetDescription> GetAvailableWidgets()
@@ -246,8 +241,7 @@ namespace Graffiti.Core
 				{
 					if (!_isLoaded)
 					{
-
-						string[] assemblies = Directory.GetFileSystemEntries(HttpRuntime.BinDirectory, "*.dll");
+						var assemblies = Directory.GetFileSystemEntries(HttpRuntime.BinDirectory, "*.dll");
 						for (int i = 0; i < assemblies.Length; i++)
 						{
 							try
@@ -255,7 +249,7 @@ namespace Graffiti.Core
 								Assembly asm = Assembly.LoadFrom(assemblies[i]);
 								foreach (Type type in asm.GetTypes())
 								{
-									if (type.IsClass && type.IsSubclassOf(typeof(Widget)))
+									if (type.IsClass && type.IsSubclassOf(typeof (Widget)))
 									{
 										try
 										{
@@ -269,16 +263,14 @@ namespace Graffiti.Core
 								}
 
 								_widgets.Sort(
-									 delegate(WidgetDescription wi1, WidgetDescription wi2)
-									 {
-										 return Comparer<string>.Default.Compare(wi1.Name, wi2.Name);
-									 });
+									delegate(WidgetDescription wi1, WidgetDescription wi2)
+										{ return Comparer<string>.Default.Compare(wi1.Name, wi2.Name); });
 							}
 							catch (ReflectionTypeLoadException rtle)
 							{
 								if (assemblies[i].IndexOf("DataBuddy") == -1 && assemblies[i].IndexOf("RssToolkit") == -1)
 									Log.Warn("Widget", "Failed to load assembly {0}. Reason: {1}",
-												assemblies[i], rtle.Message);
+									         assemblies[i], rtle.Message);
 							}
 
 							catch (Exception exAssembly)
@@ -295,7 +287,7 @@ namespace Graffiti.Core
 
 		private static void ProcessWidgetInfoAttributes(Type type)
 		{
-			object[] attributes = type.GetCustomAttributes(typeof(WidgetInfoAttribute), false);
+			var attributes = type.GetCustomAttributes(typeof (WidgetInfoAttribute), false);
 			if (attributes != null && attributes.Length > 0)
 			{
 				WidgetInfoAttribute wia = attributes[0] as WidgetInfoAttribute;

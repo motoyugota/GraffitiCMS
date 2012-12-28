@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Specialized;
-using System.Security;
 using System.Text;
 using System.Web;
 using RssToolkit.Rss;
@@ -10,9 +9,9 @@ namespace Graffiti.Core
 	[WidgetInfo("3ec475ab-cd5c-47f6-8e37-e7752a46cc5a", "Twitter", "Twitter messages")]
 	public class TwitterWidget : WidgetFeed
 	{
+		private int _itemsToDisplay = 3;
 		public string UserName { get; set; }
 
-		private int _itemsToDisplay = 3;
 		public int ItemsToDisplay
 		{
 			get { return _itemsToDisplay; }
@@ -21,7 +20,24 @@ namespace Graffiti.Core
 
 		public override string FeedUrl
 		{
-            get { return "https://api.twitter.com/1/statuses/user_timeline.rss?screen_name=" + UserName; }
+			get { return "https://api.twitter.com/1/statuses/user_timeline.rss?screen_name=" + UserName; }
+		}
+
+		public override string Title
+		{
+			get
+			{
+				if (string.IsNullOrEmpty(base.Title))
+					base.Title = "My Tweets";
+
+				return base.Title;
+			}
+			set { base.Title = value; }
+		}
+
+		public override string Name
+		{
+			get { return "Twitter"; }
 		}
 
 		public override string RenderData()
@@ -32,7 +48,7 @@ namespace Graffiti.Core
 			{
 				try
 				{
-					RssChannel channel = this.Document();
+					RssChannel channel = Document();
 					if (channel != null && channel.Items != null)
 					{
 						int min = Math.Min(channel.Items.Count, ItemsToDisplay);
@@ -41,8 +57,10 @@ namespace Graffiti.Core
 							string desc = channel.Items[i].Description;
 							int index = desc.IndexOf(":");
 
-              sb.Append("<li class=\"tweet\">" + Util.FormatLinks(HttpUtility.HtmlEncode(HttpUtility.HtmlDecode(((index > -1) ? desc.Substring(index + 1).Trim() : desc)))) + "</li>");
-
+							sb.Append("<li class=\"tweet\">" +
+							          Util.FormatLinks(
+								          HttpUtility.HtmlEncode(HttpUtility.HtmlDecode(((index > -1) ? desc.Substring(index + 1).Trim() : desc)))) +
+							          "</li>");
 						}
 					}
 
@@ -56,35 +74,13 @@ namespace Graffiti.Core
 			return sb.ToString();
 		}
 
-		public override string Title
-		{
-			get
-			{
-				if (string.IsNullOrEmpty(base.Title))
-					base.Title = "My Tweets";
-
-				return base.Title;
-			}
-			set
-			{
-				base.Title = value;
-			}
-		}
-
-		public override string Name
-		{
-			get
-			{
-				return "Twitter";
-			}
-		}
-
 		protected override FormElementCollection AddFormElements()
 		{
 			FormElementCollection fec = new FormElementCollection();
 			fec.Add(AddTitleElement());
 			fec.Add(new TextFormElement("username", "UserName", "(your twitter username)"));
-			ListFormElement lfe = new ListFormElement("itemsToDisplay", "Number of Tweets", "(how many tweets do you want to display?)");
+			ListFormElement lfe = new ListFormElement("itemsToDisplay", "Number of Tweets",
+			                                          "(how many tweets do you want to display?)");
 			lfe.Add(new ListItemFormElement("1", "1"));
 			lfe.Add(new ListItemFormElement("3", "3", true));
 			lfe.Add(new ListItemFormElement("5", "5"));
@@ -129,6 +125,5 @@ namespace Graffiti.Core
 
 			return statusType;
 		}
-
 	}
 }

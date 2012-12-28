@@ -1,11 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
-using System.Data;
 using System.Web;
 using System.Web.UI.WebControls;
-using Graffiti.Core;
 using DataBuddy;
+using Graffiti.Core;
 using Telligent.Glow;
 
 public partial class graffiti_admin_posts_write_Default : ControlPanelPage
@@ -26,7 +25,7 @@ public partial class graffiti_admin_posts_write_Default : ControlPanelPage
 
 		if (!IsPostBack)
 		{
-			Telligent.Glow.ClientScripts.RegisterScriptsForDateTimeSelector(this);
+			ClientScripts.RegisterScriptsForDateTimeSelector(this);
 			Util.CanWriteRedirect(Context);
 
 			SetDefaultFormValues(isAdmin);
@@ -42,7 +41,9 @@ public partial class graffiti_admin_posts_write_Default : ControlPanelPage
 					}
 					else
 					{
-						SetMessage("Your post was saved. However, since you do not have permission to publish new content, it will need to be approved before it is viewable.", StatusType.Success);
+						SetMessage(
+							"Your post was saved. However, since you do not have permission to publish new content, it will need to be approved before it is viewable.",
+							StatusType.Success);
 					}
 					FormWrapper.Visible = false;
 				}
@@ -58,7 +59,7 @@ public partial class graffiti_admin_posts_write_Default : ControlPanelPage
 
 				if (vsc.Count > 0)
 				{
-					List<Post> the_Posts = new List<Post>();
+					var the_Posts = new List<Post>();
 					foreach (VersionStore vs in vsc)
 					{
 						the_Posts.Add(ObjectManager.ConvertToObject<Post>(vs.Data));
@@ -70,16 +71,16 @@ public partial class graffiti_admin_posts_write_Default : ControlPanelPage
 
 
 					string versionHtml =
-						 "<div style=\"width: 280px; overflow: hidden; padding: 6px 0; border-bottom: 1px solid #ccc;\"><b>Revision {0}</b> ({1})<div>by {2}</div><div style=\"font-style: italic;\">{3}</div></div>";
+						"<div style=\"width: 280px; overflow: hidden; padding: 6px 0; border-bottom: 1px solid #ccc;\"><b>Revision {0}</b> ({1})<div>by {2}</div><div style=\"font-style: italic;\">{3}</div></div>";
 					string versionText = "Revision {0}";
 					foreach (Post px in the_Posts)
 					{
 						VersionHistory.Items.Add(
-							 new DropDownListItem(
-								  string.Format(versionHtml, px.Version, px.ModifiedOn.ToString("dd-MMM-yyyy"), GraffitiUsers.GetUser(px.ModifiedBy).ProperName, px.Notes),
-								  string.Format(versionText, px.Version), px.Version.ToString()));
+							new DropDownListItem(
+								string.Format(versionHtml, px.Version, px.ModifiedOn.ToString("dd-MMM-yyyy"),
+								              GraffitiUsers.GetUser(px.ModifiedBy).ProperName, px.Notes),
+								string.Format(versionText, px.Version), px.Version.ToString()));
 					}
-
 
 
 					int versionToEdit = Int32.Parse(Request.QueryString["v"] ?? "-1");
@@ -94,15 +95,14 @@ public partial class graffiti_admin_posts_write_Default : ControlPanelPage
 								// add logic to change category if it was deleted here
 								CategoryCollection cats = new CategoryController().GetCachedCategories();
 								Category temp = cats.Find(
-																delegate(Category c)
-																{
-																	return c.Id == post.CategoryId;
-																});
+									delegate(Category c) { return c.Id == post.CategoryId; });
 
 								if (temp == null && post.CategoryId != 1)
 								{
 									post.CategoryId = uncategorized.Id;
-									SetMessage("The category ID on this post revision could not be located. It has been marked as Uncategorized. ", StatusType.Warning);
+									SetMessage(
+										"The category ID on this post revision could not be located. It has been marked as Uncategorized. ",
+										StatusType.Warning);
 								}
 
 								break;
@@ -117,9 +117,9 @@ public partial class graffiti_admin_posts_write_Default : ControlPanelPage
 					VersionHistoryArea.Visible = true;
 					VersionHistory.SelectedValue = post.Version.ToString();
 					VersionHistory.Attributes["onchange"] = "window.location = '" +
-																		 VirtualPathUtility.ToAbsolute("~/graffiti-admin/posts/write/") +
-																		 "?id=" + Request.QueryString["id"] +
-																		 "&v=' + this.options[this.selectedIndex].value;";
+					                                        VirtualPathUtility.ToAbsolute("~/graffiti-admin/posts/write/") +
+					                                        "?id=" + Request.QueryString["id"] +
+					                                        "&v=' + this.options[this.selectedIndex].value;";
 				}
 
 
@@ -146,15 +146,17 @@ public partial class graffiti_admin_posts_write_Default : ControlPanelPage
 					if (li != null)
 						CategoryList.SelectedIndex = CategoryList.Items.IndexOf(li);
 					else
-						CategoryList.SelectedIndex = CategoryList.Items.IndexOf(CategoryList.Items.FindByValue(uncategorized.Id.ToString()));
+						CategoryList.SelectedIndex =
+							CategoryList.Items.IndexOf(CategoryList.Items.FindByValue(uncategorized.Id.ToString()));
 
 					li = PublishStatus.Items.FindByValue(post.Status.ToString());
-					if (li != null && post.Status != (int)PostStatus.PendingApproval && post.Status != (int)PostStatus.RequiresChanges)
+					if (li != null && post.Status != (int) PostStatus.PendingApproval &&
+					    post.Status != (int) PostStatus.RequiresChanges)
 						PublishStatus.SelectedIndex = PublishStatus.Items.IndexOf(li);
-					else if (post.Status == (int)PostStatus.PendingApproval || post.Status == (int)PostStatus.RequiresChanges)
+					else if (post.Status == (int) PostStatus.PendingApproval || post.Status == (int) PostStatus.RequiresChanges)
 					{
 						// turn published on if it is in req changes
-						ListItem li2 = PublishStatus.Items.FindByValue(Convert.ToString((int)PostStatus.Publish));
+						ListItem li2 = PublishStatus.Items.FindByValue(Convert.ToString((int) PostStatus.Publish));
 						if (li2 != null)
 							PublishStatus.SelectedIndex = PublishStatus.Items.IndexOf(li2);
 					}
@@ -165,13 +167,14 @@ public partial class graffiti_admin_posts_write_Default : ControlPanelPage
 					}
 					else if (post.Version != currentVersionNumber && isOriginalPublished)
 					{
-						SetMessage("The post your are editing has been published. However, the revision you are editing has not been published.", StatusType.Warning);
+						SetMessage(
+							"The post your are editing has been published. However, the revision you are editing has not been published.",
+							StatusType.Warning);
 					}
 					else if (!isOriginalPublished)
 					{
 						SetMessage("You are editing an unpublished revision of this post.", StatusType.Warning);
 					}
-
 				}
 				else
 				{
@@ -193,8 +196,13 @@ public partial class graffiti_admin_posts_write_Default : ControlPanelPage
 			NavigationConfirmation.RegisterControlForCancel(Publish_Button);
 
 			Page.ClientScript.RegisterStartupScript(GetType(),
-				 "Writer-Page-StartUp",
-				 "$(document).ready(function() { var eBody = $('#extended_body')[0]; " + (!string.IsNullOrEmpty(txtContent_extend.Text) ? "eBody.style.position = 'static'; eBody.style.visibility = 'visible';" : "eBody.style.position = 'absolute'; eBody.style.visibility = 'hidden';") + "categoryChanged($('#" + CategoryList.ClientID + "')[0]); Publish_Status_Change();});", true);
+			                                        "Writer-Page-StartUp",
+			                                        "$(document).ready(function() { var eBody = $('#extended_body')[0]; " +
+			                                        (!string.IsNullOrEmpty(txtContent_extend.Text)
+				                                         ? "eBody.style.position = 'static'; eBody.style.visibility = 'visible';"
+				                                         : "eBody.style.position = 'absolute'; eBody.style.visibility = 'hidden';") +
+			                                        "categoryChanged($('#" + CategoryList.ClientID +
+			                                        "')[0]); Publish_Status_Change();});", true);
 
 			Page.ClientScript.RegisterHiddenField("dateChangeFlag", "false");
 		}
@@ -231,7 +239,8 @@ public partial class graffiti_admin_posts_write_Default : ControlPanelPage
 		featuresiteRegion.Visible = isAdmin;
 		featuredCategoryRegion.Visible = isAdmin;
 
-		if (isAdmin || RolePermissionManager.GetPermissions(Int32.Parse(CategoryList.SelectedValue), GraffitiUsers.Current).Publish)
+		if (isAdmin ||
+		    RolePermissionManager.GetPermissions(Int32.Parse(CategoryList.SelectedValue), GraffitiUsers.Current).Publish)
 			PublishStatus.Items.Add(new ListItem("Published", "1"));
 
 		PublishStatus.Items.Add(new ListItem("Draft", "2"));
@@ -249,7 +258,6 @@ public partial class graffiti_admin_posts_write_Default : ControlPanelPage
 	{
 		if (!IsPostBack || Request.Form[CategoryList.UniqueID] != CategoryList.SelectedValue)
 		{
-
 			CategoryCollection categories = cc.GetTopLevelCachedCategories();
 
 			CategoryList.Items.Clear();
@@ -348,7 +356,8 @@ public partial class graffiti_admin_posts_write_Default : ControlPanelPage
 			p.ModifiedOn = DateTime.Now.AddHours(SiteSettings.Get().TimeZoneOffSet);
 
 			p.PostBody = postBody;
-            if (string.IsNullOrEmpty(extenedBody) || extenedBody == "<p></p>" || extenedBody == "<p>&nbsp;</p>" || extenedBody == "<br />\r\n")
+			if (string.IsNullOrEmpty(extenedBody) || extenedBody == "<p></p>" || extenedBody == "<p>&nbsp;</p>" ||
+			    extenedBody == "<br />\r\n")
 			{
 				p.ExtendedBody = null;
 			}
@@ -368,7 +377,7 @@ public partial class graffiti_admin_posts_write_Default : ControlPanelPage
 			p.MetaKeywords = Server.HtmlEncode(txtKeywords.Text.Trim());
 			p.MetaDescription = Server.HtmlEncode(txtMetaScription.Text.Trim());
 			p.IsHome = HomeSortOverride.Checked;
-			p.PostStatus = (PostStatus)Enum.Parse(typeof(PostStatus), Request.Form[PublishStatus.UniqueID]);
+			p.PostStatus = (PostStatus) Enum.Parse(typeof (PostStatus), Request.Form[PublishStatus.UniqueID]);
 
 			CustomFormSettings cfs = CustomFormSettings.Get(c);
 			if (cfs.HasFields)
@@ -377,8 +386,8 @@ public partial class graffiti_admin_posts_write_Default : ControlPanelPage
 				{
 					if (cf.FieldType == FieldType.CheckBox && Request.Form[cf.Id.ToString()] == null)
 						p[cf.Name] = null; // false.ToString();
-                    else if (cf.FieldType == FieldType.DateTime && Request.Form[cf.Id.ToString()].IndexOf("_") > -1)
-                        p[cf.Name] = null;
+					else if (cf.FieldType == FieldType.DateTime && Request.Form[cf.Id.ToString()].IndexOf("_") > -1)
+						p[cf.Name] = null;
 					else
 						p[cf.Name] = Request.Form[cf.Id.ToString()];
 				}
@@ -392,9 +401,11 @@ public partial class graffiti_admin_posts_write_Default : ControlPanelPage
 
 			PostRevisionManager.CommitPost(p, user, FeaturedSite.Checked, FeaturedCategory.Checked);
 
-            string CatQuery = (Request.QueryString["category"] == null) ? null : (p.Status == 1) ? "&category=" + p.CategoryId : "&category=" + Request.QueryString["category"];
-            string AuthQuery = (Request.QueryString["author"] == null) ? null : "&author=" + Request.QueryString["author"];
-            Response.Redirect("~/graffiti-admin/posts/" + "?id=" + p.Id + "&status=" + p.Status + CatQuery + AuthQuery);
+			string CatQuery = (Request.QueryString["category"] == null)
+				                  ? null
+				                  : (p.Status == 1) ? "&category=" + p.CategoryId : "&category=" + Request.QueryString["category"];
+			string AuthQuery = (Request.QueryString["author"] == null) ? null : "&author=" + Request.QueryString["author"];
+			Response.Redirect("~/graffiti-admin/posts/" + "?id=" + p.Id + "&status=" + p.Status + CatQuery + AuthQuery);
 		}
 		catch (Exception ex)
 		{

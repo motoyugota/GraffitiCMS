@@ -1,9 +1,8 @@
 <%@ Page Language="C#" MasterPageFile="~/graffiti-admin/common/AdminMasterPage.master" Title="Welcome to Graffiti" Inherits="Graffiti.Core.ControlPanelPage" %>
 <%@ Import Namespace="RssToolkit.Rss" %>
+<%@ Import Namespace="DataBuddy" %>
 <%@ Register TagPrefix="reports" TagName="postview" Src="~/graffiti-admin/reporting/dashboardpostview.ascx" %>
 <%@ Register TagPrefix="reports" TagName="popularview" Src="~/graffiti-admin/reporting/dashboardpopularview.ascx" %>
-<%@ Import Namespace="System.Collections.Generic" %>
-<%@ Import Namespace="DataBuddy" %>
 <asp:Content ContentPlaceHolderID="HeaderRegion" runat="Server">
 	<script type="text/javascript" src="reporting/swfobject.js"></script>
 </asp:Content>
@@ -52,13 +51,13 @@
 						<tr>
 							<td style="padding-left: 15px;">
 								<li><a href="<%# ResolveUrl("~/graffiti-admin/posts/write/?id=" + Eval("Id")) %>">
-									<%# Eval("Title") %></a>, published by
+									    <%# Eval("Title") %></a>, published by
 									<%# Eval("User.ProperName") %></li>
 							</td>
 						</tr>
 					</ItemTemplate>
 					<FooterTemplate>
-						</table>
+					</table>
 					</FooterTemplate>
 				</Z:Repeater>
 			</div>
@@ -73,14 +72,14 @@
 					<tr id="comment<%# Eval("ID") %>">
 						<td style="width: 255px; padding-left: 15px;">
 							<li><a href="<%# ResolveUrl("~/graffiti-admin/comments/?id=" + Eval("Id")) %>">
-								<%# Eval("Post.Name") %></a>, posted by
+								    <%# Eval("Post.Name") %></a>, posted by
 								<%# Eval("Name") %></li>
 						</td>
 						<td>
-							<a href="javascript:void(0);" onclick="approveComment('<%# Eval("Id") %>'); return false;">
+							<a href="javascript:void(0);" onclick=" approveComment('<%# Eval("Id") %>'); return false; ">
 								Approve</a>
 							<asp:Label ID="pipe2" runat="server" Text=" | " />
-							<a href="javascript:void(0);" onclick="deleteComment('<%# Eval("Id") %>'); return false;">
+							<a href="javascript:void(0);" onclick=" deleteComment('<%# Eval("Id") %>'); return false; ">
 								Delete</a>
 						</td>
 					</tr>
@@ -107,8 +106,8 @@
 				</HeaderTemplate>
 				<FooterTemplate></ul></FooterTemplate>
 				<ItemTemplate>
-					<li style="list-style-type: none; margin-bottom: 3px;"><a target="_blank" href="<%# Eval("Link") %>"><%#DateTime.Parse(Eval("PubDate").ToString()).ToString("MMM d yyyy")%></a><br />
-					    <%# Eval("Description") %></li>
+					<li style="list-style-type: none; margin-bottom: 3px;"><a target="_blank" href="<%# Eval("Link") %>"><%#DateTime.Parse(Eval("PubDate").ToString()).ToString("MMM d yyyy") %></a><br />
+						<%# Eval("Description") %></li>
 				</ItemTemplate>
 				<NoneTemplate>Sorry, no news was found.</NoneTemplate>
 			</Z:Repeater>
@@ -121,8 +120,8 @@
 				<FooterTemplate></ul></FooterTemplate>
 				<ItemTemplate>
 					<li style="list-style-type: none; margin-bottom: 3px;"><a target="_blank" href="<%# Eval("Link") %>">
-						<%# Eval("Title") %></a><br />
-						<%# Util.RemoveHtml(Eval("Description") as string, 200)%>...</li>
+						                                                       <%# Eval("Title") %></a><br />
+						<%# Util.RemoveHtml(Eval("Description") as string, 200) %>...</li>
 				</ItemTemplate>
 				<NoneTemplate>Sorry, no extensions were found.</NoneTemplate>
 			</Z:Repeater>
@@ -157,23 +156,23 @@
 			if (GraffitiUsers.IsAdmin(GraffitiUsers.Current))
 				GetWaitingApprovals();
 
-            // Marketplace recent items feed
-            string marketplaceFeed = ConfigurationManager.AppSettings["Graffiti:Marketplace:RssUrl"];
-            if (!string.IsNullOrEmpty(marketplaceFeed))
-            {
-                GraffitiExtensions.DataSource = GetFeedItems(marketplaceFeed);
-                GraffitiExtensions.DataBind();
-            }
+			// Marketplace recent items feed
+			string marketplaceFeed = ConfigurationManager.AppSettings["Graffiti:Marketplace:RssUrl"];
+			if (!string.IsNullOrEmpty(marketplaceFeed))
+			{
+				GraffitiExtensions.DataSource = GetFeedItems(marketplaceFeed);
+				GraffitiExtensions.DataBind();
+			}
 
-            // Marketplace recent items feed
-            string newsFeed = ConfigurationManager.AppSettings["Graffiti:Admin:NewsRssUrl"];
-            if (!string.IsNullOrEmpty(newsFeed))
-            {
-                GraffitiNews.DataSource = GetFeedItems(newsFeed);
-                GraffitiNews.DataBind();
-            }
+			// Marketplace recent items feed
+			string newsFeed = ConfigurationManager.AppSettings["Graffiti:Admin:NewsRssUrl"];
+			if (!string.IsNullOrEmpty(newsFeed))
+			{
+				GraffitiNews.DataSource = GetFeedItems(newsFeed);
+				GraffitiNews.DataBind();
+			}
 
-		    if (SiteSettings.UrlRoutingSupported)
+			if (SiteSettings.UrlRoutingSupported)
 			{
 				if (SiteSettings.Get().GenerateFolders)
 				{
@@ -192,29 +191,26 @@
 		}
 	}
 
-    private List<RssItem> GetFeedItems(string url)
-    {
-        Feed feed = FeedManager.GetFeed(url, false);
-        List<RssItem> items = new List<RssItem>();
-        if (feed != null && feed.Document != null && feed.Document.Channel != null && feed.Document.Channel.Items.Count > 0)
-        {
-            for (int i = 0; i < Math.Min(3, feed.Document.Channel.Items.Count); i++)
-            {
-                items.Add(feed.Document.Channel.Items[i]);
-            }
-        }
-        return items;
-    }
-		
+	private List<RssItem> GetFeedItems(string url)
+	{
+		Feed feed = FeedManager.GetFeed(url, false);
+		var items = new List<RssItem>();
+		if (feed != null && feed.Document != null && feed.Document.Channel != null && feed.Document.Channel.Items.Count > 0)
+		{
+			for (int i = 0; i < Math.Min(3, feed.Document.Channel.Items.Count); i++)
+			{
+				items.Add(feed.Document.Channel.Items[i]);
+			}
+		}
+		return items;
+	}
+
 	private void GetTotals()
 	{
-		List<PostCount> counts = Post.GetPostCounts(0, GraffitiUsers.Current.Name);
+		var counts = Post.GetPostCounts(0, GraffitiUsers.Current.Name);
 
 		PostCount published = counts.Find(
-		  delegate(PostCount p)
-		  {
-			  return p.PostStatus == PostStatus.Publish;
-		  });
+			delegate(PostCount p) { return p.PostStatus == PostStatus.Publish; });
 
 		if (published != null)
 		{
@@ -263,7 +259,7 @@
 
 		Query q = Post.CreateQuery();
 		q.AndWhere(Post.Columns.IsDeleted, false);
-		q.AndWhere(Post.Columns.Status, (int)PostStatus.PendingApproval);
+		q.AndWhere(Post.Columns.Status, (int) PostStatus.PendingApproval);
 
 		PostCollection pc = new PostCollection();
 		pc.LoadAndCloseReader(q.ExecuteReader());

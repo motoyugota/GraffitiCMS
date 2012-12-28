@@ -1,18 +1,14 @@
-using System;
 using System.Web;
-using DataBuddy;
 
 namespace Graffiti.Core
 {
 	public class PostPage : TemplatedThemePage
 	{
 		private string viewName;
+
 		protected override string ViewName
 		{
-			get
-			{
-				return ViewLookUp(".view", "post.view");
-			}
+			get { return ViewLookUp(".view", "post.view"); }
 		}
 
 		protected override string ViewLookUp(string baseName, string defaultViewName)
@@ -50,7 +46,7 @@ namespace Graffiti.Core
 				if (ViewExists(category.Parent.LinkName + baseName))
 					return category.Parent.LinkName + baseName;
 			}
-			// return CategoryName.layout.view for child posts, but not CategoryName.view
+				// return CategoryName.layout.view for child posts, but not CategoryName.view
 			else if (ViewExists(CategoryName + baseName) && baseName != ".view")
 				return CategoryName + baseName;
 
@@ -68,7 +64,6 @@ namespace Graffiti.Core
 
 		protected override void LoadContent(GraffitiContext graffitiContext)
 		{
-
 			graffitiContext["where"] = "post";
 
 			Post post = Post.GetCachedPost(PostId);
@@ -77,7 +72,9 @@ namespace Graffiti.Core
 			{
 				RedirectTo(new Urls().Home);
 			}
-			else if (PostName != null && CategoryName != null && (!Util.AreEqualIgnoreCase(PostName, post.Name) || !Util.AreEqualIgnoreCase(CategoryName, post.Category.LinkName)))
+			else if (PostName != null && CategoryName != null &&
+			         (!Util.AreEqualIgnoreCase(PostName, post.Name) ||
+			          !Util.AreEqualIgnoreCase(CategoryName, post.Category.LinkName)))
 			{
 				RedirectTo(post.Url);
 			}

@@ -1,6 +1,4 @@
 using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Web.UI;
 using System.Web.UI.WebControls;
 using Telligent.DynamicConfiguration.Components;
@@ -13,43 +11,33 @@ namespace Graffiti.Core
 		{
 			base.OnLoad(e);
 
-			this.ToolbarSet = "Simple";
-			this.Width = new Unit(600);
+			ToolbarSet = "Simple";
+			Width = new Unit(600);
 
-			if (!string.IsNullOrEmpty(this.ConfigurationProperty.Attributes["width"]))
-				this.Width = Unit.Parse(this.ConfigurationProperty.Attributes["width"]);
+			if (!string.IsNullOrEmpty(ConfigurationProperty.Attributes["width"]))
+				Width = Unit.Parse(ConfigurationProperty.Attributes["width"]);
 
-			if (!string.IsNullOrEmpty(this.ConfigurationProperty.Attributes["height"]))
-				this.Height = Unit.Parse(this.ConfigurationProperty.Attributes["height"]);
+			if (!string.IsNullOrEmpty(ConfigurationProperty.Attributes["height"]))
+				Height = Unit.Parse(ConfigurationProperty.Attributes["height"]);
 		}
 
 		#region IPropertyControl Members
 
-		private Property _configurationProperty = null;
-		public Property ConfigurationProperty
-		{
-			get { return _configurationProperty; }
-			set { _configurationProperty = value; }
-		}
+		public Property ConfigurationProperty { get; set; }
 
-		private ConfigurationDataBase _configurationData = null;
-		public ConfigurationDataBase ConfigurationData
-		{
-			get { return _configurationData; }
-			set { _configurationData = value; }
-		}
+		public ConfigurationDataBase ConfigurationData { get; set; }
 
 		public void SetConfigurationPropertyValue(object value)
 		{
-			this.Text = value == null ? string.Empty : value.ToString();
+			Text = value == null ? string.Empty : value.ToString();
 		}
 
 		public object GetConfigurationPropertyValue()
 		{
-			if (string.IsNullOrEmpty(this.Text))
+			if (string.IsNullOrEmpty(Text))
 				return string.Empty;
 			else
-				return this.Text;
+				return Text;
 		}
 
 		public event ConfigurationPropertyChanged ConfigurationValueChanged

@@ -6,126 +6,119 @@ using RssToolkit.Rss;
 
 namespace Graffiti.Core
 {
-    [WidgetInfo("77400518-6bbc-40cf-97af-4346386e3f3e","Syndication Feed", "Displays the recent items from a RSS or Atom feed")]
-    public class GenericFeedWidget : WidgetFeed
-    {
-        private int _itemsToDisplay = 3;
+	[WidgetInfo("77400518-6bbc-40cf-97af-4346386e3f3e", "Syndication Feed",
+		"Displays the recent items from a RSS or Atom feed")]
+	public class GenericFeedWidget : WidgetFeed
+	{
+		public string FeedUri = null;
+		private int _itemsToDisplay = 3;
 
-        public int ItemsToDisplay
-        {
-            get { return _itemsToDisplay; }
-            set { _itemsToDisplay = value; }
-        }
+		public int ItemsToDisplay
+		{
+			get { return _itemsToDisplay; }
+			set { _itemsToDisplay = value; }
+		}
 
-        public string FeedUri = null;
-	
 
-        public override string FeedUrl
-        {
-            get { return FeedUri; }
-        }
+		public override string FeedUrl
+		{
+			get { return FeedUri; }
+		}
 
-        public override string RenderData()
-        {
-            if (string.IsNullOrEmpty(FeedUrl))
-                return string.Empty;
+		public override string Title
+		{
+			get
+			{
+				if (string.IsNullOrEmpty(base.Title))
+					base.Title = "Syndication Feed";
 
-            StringBuilder sb = new StringBuilder("<ul>");
-            
-            try
-            {
-                RssChannel channel = this.Document();
-                if (channel != null && channel.Items != null)
-                {
-                    int min = Math.Min(channel.Items.Count, ItemsToDisplay);
-                    for (int i = 0; i < min; i++)
-                    {
-                        sb.AppendFormat("<li><a href=\"{0}\">{1}</a></li>", channel.Items[i].Link,
-                                        HttpUtility.HtmlEncode(channel.Items[i].Title));
-                    }
-                }
-            }
-            catch (Exception)
-            {
-            }
-            sb.Append("</ul>\n");
+				return base.Title;
+			}
+			set { base.Title = value; }
+		}
 
-            return sb.ToString();
-        }
+		public override string Name
+		{
+			get { return Title; }
+		}
 
-        public override string Title
-        {
-            get
-            {
-                if (string.IsNullOrEmpty(base.Title))
-                    base.Title = "Syndication Feed";
+		public override string RenderData()
+		{
+			if (string.IsNullOrEmpty(FeedUrl))
+				return string.Empty;
 
-                return base.Title;
-            }
-            set
-            {
-                base.Title = value;
-            }
-        }
+			StringBuilder sb = new StringBuilder("<ul>");
 
-        public override string Name
-        {
-            get
-            {
-                return Title;
-            }
-        }
+			try
+			{
+				RssChannel channel = Document();
+				if (channel != null && channel.Items != null)
+				{
+					int min = Math.Min(channel.Items.Count, ItemsToDisplay);
+					for (int i = 0; i < min; i++)
+					{
+						sb.AppendFormat("<li><a href=\"{0}\">{1}</a></li>", channel.Items[i].Link,
+						                HttpUtility.HtmlEncode(channel.Items[i].Title));
+					}
+				}
+			}
+			catch (Exception)
+			{
+			}
+			sb.Append("</ul>\n");
 
-        protected override FormElementCollection AddFormElements()
-        {
-            FormElementCollection fec = new FormElementCollection();
-            fec.Add(AddTitleElement());
+			return sb.ToString();
+		}
 
-            fec.Add(new TextFormElement("FeedUri", "Feed", "The Url of the feed you wish to display"));
-            ListFormElement lfe = new ListFormElement("itemsToDisplay", "Number of Posts", "(how many posts do you want to display?)");
-            lfe.Add(new ListItemFormElement("1","1"));
-            lfe.Add(new ListItemFormElement("3", "3", true));
-            lfe.Add(new ListItemFormElement("5", "5"));
-            lfe.Add(new ListItemFormElement("7", "7"));
-            fec.Add(lfe);
+		protected override FormElementCollection AddFormElements()
+		{
+			FormElementCollection fec = new FormElementCollection();
+			fec.Add(AddTitleElement());
 
-            return fec;
-        }
+			fec.Add(new TextFormElement("FeedUri", "Feed", "The Url of the feed you wish to display"));
+			ListFormElement lfe = new ListFormElement("itemsToDisplay", "Number of Posts",
+			                                          "(how many posts do you want to display?)");
+			lfe.Add(new ListItemFormElement("1", "1"));
+			lfe.Add(new ListItemFormElement("3", "3", true));
+			lfe.Add(new ListItemFormElement("5", "5"));
+			lfe.Add(new ListItemFormElement("7", "7"));
+			fec.Add(lfe);
 
-        protected override NameValueCollection DataAsNameValueCollection()
-        {
-            NameValueCollection nvc =  base.DataAsNameValueCollection();
-            nvc["FeedUri"] = FeedUri;
-            nvc["itemsToDisplay"] = ItemsToDisplay.ToString();
+			return fec;
+		}
 
-            
+		protected override NameValueCollection DataAsNameValueCollection()
+		{
+			NameValueCollection nvc = base.DataAsNameValueCollection();
+			nvc["FeedUri"] = FeedUri;
+			nvc["itemsToDisplay"] = ItemsToDisplay.ToString();
 
-            return nvc;
-        }
 
-        public override StatusType SetValues(HttpContext context, NameValueCollection nvc)
-        {
-            StatusType statusType = base.SetValues(context, nvc);
-            if(statusType == StatusType.Success)
-            {
-					if (!string.IsNullOrEmpty(nvc["itemsToDisplay"]))
-						ItemsToDisplay = Int32.Parse(nvc["itemsToDisplay"]);
+			return nvc;
+		}
 
-                FeedUri = nvc["FeedUri"];
+		public override StatusType SetValues(HttpContext context, NameValueCollection nvc)
+		{
+			StatusType statusType = base.SetValues(context, nvc);
+			if (statusType == StatusType.Success)
+			{
+				if (!string.IsNullOrEmpty(nvc["itemsToDisplay"]))
+					ItemsToDisplay = Int32.Parse(nvc["itemsToDisplay"]);
 
-                try
-                {
-                    RegisterForSyndication();
-                }
-                catch(Exception ex)
-                {
-                    statusType = StatusType.Error;
-                    SetMessage(context,ex.Message);
-                }
-            }
+				FeedUri = nvc["FeedUri"];
 
-            return statusType;
-        }
-	
-    }
+				try
+				{
+					RegisterForSyndication();
+				}
+				catch (Exception ex)
+				{
+					statusType = StatusType.Error;
+					SetMessage(context, ex.Message);
+				}
+			}
+
+			return statusType;
+		}
+	}
 }

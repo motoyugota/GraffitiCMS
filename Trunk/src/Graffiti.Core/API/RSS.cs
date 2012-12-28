@@ -9,279 +9,289 @@ using DataBuddy;
 
 namespace Graffiti.Core
 {
-    public class RSS : Page
-    {
-        public int CategoryID = -1;
-        public string CategoryName = null;
-        public string TagName = null;
-        protected DateTime lastModified = DateTime.Now;
-        protected Macros macros = new Macros();
+	public class RSS : Page
+	{
+		public int CategoryID = -1;
+		public string CategoryName = null;
+		public string TagName = null;
+		protected DateTime lastModified = DateTime.Now;
+		protected Macros macros = new Macros();
 
-        protected override void OnLoad(EventArgs e)
-        {
-            Initialize();
+		protected override void OnLoad(EventArgs e)
+		{
+			Initialize();
 
-            SiteSettings settings = SiteSettings.Get();
+			SiteSettings settings = SiteSettings.Get();
 
-            string baseUrl = SiteSettings.BaseUrl;            
+			string baseUrl = SiteSettings.BaseUrl;
 
-            if (string.IsNullOrEmpty(TagName))
-            {
-                Category category = null;
-                if (CategoryID > -1)
-                    category = new CategoryController().GetCachedCategory(CategoryID, false);
+			if (string.IsNullOrEmpty(TagName))
+			{
+				Category category = null;
+				if (CategoryID > -1)
+					category = new CategoryController().GetCachedCategory(CategoryID, false);
 
-                if (category == null)
-                {
-                    if (!string.IsNullOrEmpty(settings.ExternalFeedUrl) &&
-                        Request.UserAgent.IndexOf("FeedBurner", StringComparison.InvariantCultureIgnoreCase) == -1)
-                    {
-                        Context.Response.RedirectLocation = settings.ExternalFeedUrl;
-                        Context.Response.StatusCode = 301;
-                        Context.Response.End();
-                    }
-                }
-                else if (!string.IsNullOrEmpty(category.FeedUrlOverride) &&
-                         Request.UserAgent.IndexOf("FeedBurner", StringComparison.InvariantCultureIgnoreCase) == -1)
-                {
-                    Context.Response.RedirectLocation = category.FeedUrlOverride;
-                    Context.Response.StatusCode = 301;
-                    Context.Response.End();
-                }
-                else if (CategoryName != null && !Util.AreEqualIgnoreCase(CategoryName, category.LinkName))
-                {
-                    Context.Response.RedirectLocation = new Uri(Context.Request.Url, category.Url).ToString();
-                    Context.Response.StatusCode = 301;
-                    Context.Response.End();
-                }
+				if (category == null)
+				{
+					if (!string.IsNullOrEmpty(settings.ExternalFeedUrl) &&
+					    Request.UserAgent.IndexOf("FeedBurner", StringComparison.InvariantCultureIgnoreCase) == -1)
+					{
+						Context.Response.RedirectLocation = settings.ExternalFeedUrl;
+						Context.Response.StatusCode = 301;
+						Context.Response.End();
+					}
+				}
+				else if (!string.IsNullOrEmpty(category.FeedUrlOverride) &&
+				         Request.UserAgent.IndexOf("FeedBurner", StringComparison.InvariantCultureIgnoreCase) == -1)
+				{
+					Context.Response.RedirectLocation = category.FeedUrlOverride;
+					Context.Response.StatusCode = 301;
+					Context.Response.End();
+				}
+				else if (CategoryName != null && !Util.AreEqualIgnoreCase(CategoryName, category.LinkName))
+				{
+					Context.Response.RedirectLocation = new Uri(Context.Request.Url, category.Url).ToString();
+					Context.Response.StatusCode = 301;
+					Context.Response.End();
+				}
 
-                string cacheKey = CategoryID > -1
-                                      ? "Posts-Index-" + Util.PageSize + "-" + CategoryID.ToString()
-                                      : string.Format("Posts-Categories-P:{0}-C:{1}-T:{2}-PS:{3}", 1, CategoryID,
-                                                      SortOrderType.Descending, Util.PageSize);
+				string cacheKey = CategoryID > -1
+					                  ? "Posts-Index-" + Util.PageSize + "-" + CategoryID.ToString()
+					                  : string.Format("Posts-Categories-P:{0}-C:{1}-T:{2}-PS:{3}", 1, CategoryID,
+					                                  SortOrderType.Descending, Util.PageSize);
 
-                PostCollection pc = ZCache.Get<PostCollection>(cacheKey);
+				PostCollection pc = ZCache.Get<PostCollection>(cacheKey);
 
-                if (pc == null)
-                {
-                    Query q = PostCollection.DefaultQuery();
-                    q.Top = Util.PageSize.ToString();
-                    
-                    if (SiteSettings.Get().IncludeChildPosts && macros.IsNotNull(category))
-                    {
-                        if (category.ParentId > 0)
-                            q.AndWhere(Post.Columns.CategoryId, CategoryID);
-                        else
-                        {
-                            List<int> ids = new List<int>(category.Children.Count + 1);
-                            foreach (Category child in category.Children)
-                                ids.Add(child.Id);
+				if (pc == null)
+				{
+					Query q = PostCollection.DefaultQuery();
+					q.Top = Util.PageSize.ToString();
 
-                            ids.Add(category.Id);
+					if (SiteSettings.Get().IncludeChildPosts && macros.IsNotNull(category))
+					{
+						if (category.ParentId > 0)
+							q.AndWhere(Post.Columns.CategoryId, CategoryID);
+						else
+						{
+							var ids = new List<int>(category.Children.Count + 1);
+							foreach (Category child in category.Children)
+								ids.Add(child.Id);
 
-                            q.AndInWhere(Post.Columns.CategoryId, ids.ToArray());
-                        }
-                    }
-                    else
-                    {
-                        if (CategoryID > 0)
-                            q.AndWhere(Post.Columns.CategoryId, CategoryID);
-                    }
+							ids.Add(category.Id);
 
-                    pc = new PostCollection();
-                    pc.LoadAndCloseReader(q.ExecuteReader());
+							q.AndInWhere(Post.Columns.CategoryId, ids.ToArray());
+						}
+					}
+					else
+					{
+						if (CategoryID > 0)
+							q.AndWhere(Post.Columns.CategoryId, CategoryID);
+					}
 
-                    PostCollection permissionsFiltered = new PostCollection();
+					pc = new PostCollection();
+					pc.LoadAndCloseReader(q.ExecuteReader());
 
-                    permissionsFiltered.AddRange(pc);
+					PostCollection permissionsFiltered = new PostCollection();
 
-                    foreach (Post p in pc)
-                    {
-                        if (!RolePermissionManager.GetPermissions(p.CategoryId, GraffitiUsers.Current).Read)
-                            permissionsFiltered.Remove(p);
-                    }
+					permissionsFiltered.AddRange(pc);
 
-                    ZCache.InsertCache(cacheKey, permissionsFiltered, 90);
-                    pc = permissionsFiltered;
-                }
+					foreach (Post p in pc)
+					{
+						if (!RolePermissionManager.GetPermissions(p.CategoryId, GraffitiUsers.Current).Read)
+							permissionsFiltered.Remove(p);
+					}
 
-                ValidateAndSetHeaders(pc, settings, Context);
+					ZCache.InsertCache(cacheKey, permissionsFiltered, 90);
+					pc = permissionsFiltered;
+				}
 
-                StringWriter sw = new StringWriter();
-                sw.WriteLine("<?xml version=\"1.0\" encoding=\"UTF-8\" ?>");
-                XmlTextWriter writer = new XmlTextWriter(sw);
+				ValidateAndSetHeaders(pc, settings, Context);
 
-                writer.WriteStartElement("rss");
-                writer.WriteAttributeString("version", "2.0");
-                writer.WriteAttributeString("xmlns:dc", "http://purl.org/dc/elements/1.1/");
-                writer.WriteAttributeString("xmlns:slash", "http://purl.org/rss/1.0/modules/slash/");
+				StringWriter sw = new StringWriter();
+				sw.WriteLine("<?xml version=\"1.0\" encoding=\"UTF-8\" ?>");
+				XmlTextWriter writer = new XmlTextWriter(sw);
 
-                // Allow plugins to add additional xml namespaces
-                Core.Events.Instance().ExecuteRssNamespace(writer);
+				writer.WriteStartElement("rss");
+				writer.WriteAttributeString("version", "2.0");
+				writer.WriteAttributeString("xmlns:dc", "http://purl.org/dc/elements/1.1/");
+				writer.WriteAttributeString("xmlns:slash", "http://purl.org/rss/1.0/modules/slash/");
 
-                writer.WriteStartElement("channel");
-                WriteChannel(writer, category, settings);
+				// Allow plugins to add additional xml namespaces
+				Core.Events.Instance().ExecuteRssNamespace(writer);
 
-                // Allow plugins to add additional xml to the <channel>
-                Core.Events.Instance().ExecuteRssChannel(writer);
+				writer.WriteStartElement("channel");
+				WriteChannel(writer, category, settings);
 
-                foreach (Post p in pc)
-                {
-                    writer.WriteStartElement("item");
-                    WriteItem(writer, p, settings, baseUrl);
+				// Allow plugins to add additional xml to the <channel>
+				Core.Events.Instance().ExecuteRssChannel(writer);
 
-                    // Allow plugins to add additional xml to the <item>
-                    Core.Events.Instance().ExecuteRssItem(writer, p);
+				foreach (Post p in pc)
+				{
+					writer.WriteStartElement("item");
+					WriteItem(writer, p, settings, baseUrl);
 
-                    writer.WriteEndElement(); // End Item
-                }
+					// Allow plugins to add additional xml to the <item>
+					Core.Events.Instance().ExecuteRssItem(writer, p);
 
-                writer.WriteEndElement(); // End Channel
-                writer.WriteEndElement(); // End Document
+					writer.WriteEndElement(); // End Item
+				}
 
-                // save XML into response
-                Context.Response.ContentEncoding = System.Text.Encoding.UTF8;
-                Context.Response.ContentType = "application/rss+xml";
-                Context.Response.Write(sw.ToString());
-            } 
-            else
-            {
-                PostCollection pc = GetTaggedPosts(TagName);
+				writer.WriteEndElement(); // End Channel
+				writer.WriteEndElement(); // End Document
 
-                ValidateAndSetHeaders(pc, settings, Context);
+				// save XML into response
+				Context.Response.ContentEncoding = Encoding.UTF8;
+				Context.Response.ContentType = "application/rss+xml";
+				Context.Response.Write(sw.ToString());
+			}
+			else
+			{
+				PostCollection pc = GetTaggedPosts(TagName);
 
-                StringWriter sw = new StringWriter();
-                sw.WriteLine("<?xml version=\"1.0\" encoding=\"UTF-8\" ?>");
-                XmlTextWriter writer = new XmlTextWriter(sw);
+				ValidateAndSetHeaders(pc, settings, Context);
 
-                writer.WriteStartElement("rss");
-                writer.WriteAttributeString("version", "2.0");
-                writer.WriteAttributeString("xmlns:dc", "http://purl.org/dc/elements/1.1/");
-                writer.WriteAttributeString("xmlns:slash", "http://purl.org/rss/1.0/modules/slash/");
+				StringWriter sw = new StringWriter();
+				sw.WriteLine("<?xml version=\"1.0\" encoding=\"UTF-8\" ?>");
+				XmlTextWriter writer = new XmlTextWriter(sw);
 
-                Core.Events.Instance().ExecuteRssNamespace(writer);
+				writer.WriteStartElement("rss");
+				writer.WriteAttributeString("version", "2.0");
+				writer.WriteAttributeString("xmlns:dc", "http://purl.org/dc/elements/1.1/");
+				writer.WriteAttributeString("xmlns:slash", "http://purl.org/rss/1.0/modules/slash/");
 
-                writer.WriteStartElement("channel");
-                WriteChannel(writer, TagName, settings);
+				Core.Events.Instance().ExecuteRssNamespace(writer);
 
-                // Allow plugins to add additional xml to the <channel>
-                Core.Events.Instance().ExecuteRssChannel(writer);
+				writer.WriteStartElement("channel");
+				WriteChannel(writer, TagName, settings);
 
-                foreach (Post p in pc) {
-                    writer.WriteStartElement("item");
-                    WriteItem(writer, p, settings, baseUrl);
+				// Allow plugins to add additional xml to the <channel>
+				Core.Events.Instance().ExecuteRssChannel(writer);
 
-                    Core.Events.Instance().ExecuteRssItem(writer, p);
+				foreach (Post p in pc)
+				{
+					writer.WriteStartElement("item");
+					WriteItem(writer, p, settings, baseUrl);
 
-                    writer.WriteEndElement(); // End Item
-                }
+					Core.Events.Instance().ExecuteRssItem(writer, p);
 
-                writer.WriteEndElement(); // End Channel
-                writer.WriteEndElement(); // End Document
+					writer.WriteEndElement(); // End Item
+				}
 
-                Context.Response.ContentEncoding = Encoding.UTF8;
-                Context.Response.ContentType = "application/rss+xml";
-                Context.Response.Write(sw.ToString());                
-            }
-        }
+				writer.WriteEndElement(); // End Channel
+				writer.WriteEndElement(); // End Document
 
-        protected PostCollection GetTaggedPosts(string tagName) {
-            PostCollection pc = ZCache.Get<PostCollection>("Tags-ForRSS-" + tagName);
-            if (pc == null) 
-            {
-                pc = Post.FetchPostsByTag(TagName);
+				Context.Response.ContentEncoding = Encoding.UTF8;
+				Context.Response.ContentType = "application/rss+xml";
+				Context.Response.Write(sw.ToString());
+			}
+		}
 
-                PostCollection permissionsFiltered = new PostCollection();
-                foreach (Post post in pc)
-                {
-                    permissionsFiltered.Add(post);
-                }
-                permissionsFiltered.AddRange(pc);
-                foreach (Post p in pc) {
-                    if (!RolePermissionManager.GetPermissions(p.Category.Id, GraffitiUsers.Current).Read)
-                        permissionsFiltered.Remove(p);
-                }            
-                pc.Clear();
-                int ctr = 0;
-                foreach (Post post in permissionsFiltered)
-                {
-                    if (ctr < Util.PageSize)
-                    {
-                        pc.Add(post);
-                        ctr++;
-                    }
-                }                
-                ZCache.InsertCache("Tags-ForRSS-" + tagName, pc, 120);
-            }
-            return pc;
-        }
+		protected PostCollection GetTaggedPosts(string tagName)
+		{
+			PostCollection pc = ZCache.Get<PostCollection>("Tags-ForRSS-" + tagName);
+			if (pc == null)
+			{
+				pc = Post.FetchPostsByTag(TagName);
 
-        protected void WriteChannel(XmlTextWriter writer, Category category, SiteSettings settings)
-        {
-            writer.WriteElementString("title", category == null ? settings.Title : string.Concat(settings.Title, ": ", category.Name));
-            writer.WriteElementString("link", macros.FullUrl(category == null ? new Urls().Home : category.Url));
-            writer.WriteElementString("description", category == null ? settings.TagLine : Util.Truncate(category.Body, 250));
-            writer.WriteElementString("generator", SiteSettings.VersionDescription);
-            writer.WriteElementString("lastBuildDate", lastModified.AddHours(-1 * settings.TimeZoneOffSet).ToUniversalTime().ToString("r"));
-        }
+				PostCollection permissionsFiltered = new PostCollection();
+				foreach (Post post in pc)
+				{
+					permissionsFiltered.Add(post);
+				}
+				permissionsFiltered.AddRange(pc);
+				foreach (Post p in pc)
+				{
+					if (!RolePermissionManager.GetPermissions(p.Category.Id, GraffitiUsers.Current).Read)
+						permissionsFiltered.Remove(p);
+				}
+				pc.Clear();
+				int ctr = 0;
+				foreach (Post post in permissionsFiltered)
+				{
+					if (ctr < Util.PageSize)
+					{
+						pc.Add(post);
+						ctr++;
+					}
+				}
+				ZCache.InsertCache("Tags-ForRSS-" + tagName, pc, 120);
+			}
+			return pc;
+		}
 
-        protected void WriteChannel(XmlTextWriter writer, string tag, SiteSettings settings) {
-            writer.WriteElementString("title", string.Concat(settings.Title, ": ", tag));
-            writer.WriteElementString("link", new Urls().Tags + tag.ToLower());
-            writer.WriteElementString("description", "Posts tagged with " + tag);
-            writer.WriteElementString("generator", SiteSettings.VersionDescription);
-        }
+		protected void WriteChannel(XmlTextWriter writer, Category category, SiteSettings settings)
+		{
+			writer.WriteElementString("title",
+			                          category == null ? settings.Title : string.Concat(settings.Title, ": ", category.Name));
+			writer.WriteElementString("link", macros.FullUrl(category == null ? new Urls().Home : category.Url));
+			writer.WriteElementString("description", category == null ? settings.TagLine : Util.Truncate(category.Body, 250));
+			writer.WriteElementString("generator", SiteSettings.VersionDescription);
+			writer.WriteElementString("lastBuildDate",
+			                          lastModified.AddHours(-1*settings.TimeZoneOffSet).ToUniversalTime().ToString("r"));
+		}
 
-        protected void ValidateAndSetHeaders(PostCollection pc, SiteSettings settings, HttpContext context) {
-            if (pc.Count > 0) {
-                string lastMod = context.Request.Headers["If-Modified-Since"];
-                if (lastMod != null) {
-                    if (lastMod == pc[0].Published.AddHours(-1 * settings.TimeZoneOffSet).ToUniversalTime().ToString("r")) {
-                        context.Response.StatusCode = 304;
-                        context.Response.Status = "304 Not Modified";
-                        context.Response.End();
-                    }
-                }
-                DateTime lastModified = pc[0].Published.AddHours(-1 * settings.TimeZoneOffSet);
-                context.Response.Clear();
-                context.Response.Cache.SetCacheability(HttpCacheability.Public);
-                context.Response.Cache.SetLastModified(lastModified);
-                context.Response.Cache.SetETag(lastModified.ToString());
-            }
-        }
+		protected void WriteChannel(XmlTextWriter writer, string tag, SiteSettings settings)
+		{
+			writer.WriteElementString("title", string.Concat(settings.Title, ": ", tag));
+			writer.WriteElementString("link", new Urls().Tags + tag.ToLower());
+			writer.WriteElementString("description", "Posts tagged with " + tag);
+			writer.WriteElementString("generator", SiteSettings.VersionDescription);
+		}
 
-        protected void WriteItem(XmlTextWriter writer, Post p, SiteSettings settings, string baseUrl)
-        {
-            string link = macros.FullUrl(p.Url);
-            writer.WriteElementString("title", HttpUtility.HtmlDecode(p.Title));
-            writer.WriteElementString("link", link);
-            writer.WriteElementString("pubDate", p.Published.AddHours(-1 * settings.TimeZoneOffSet).ToUniversalTime().ToString("r"));
+		protected void ValidateAndSetHeaders(PostCollection pc, SiteSettings settings, HttpContext context)
+		{
+			if (pc.Count > 0)
+			{
+				string lastMod = context.Request.Headers["If-Modified-Since"];
+				if (lastMod != null)
+				{
+					if (lastMod == pc[0].Published.AddHours(-1*settings.TimeZoneOffSet).ToUniversalTime().ToString("r"))
+					{
+						context.Response.StatusCode = 304;
+						context.Response.Status = "304 Not Modified";
+						context.Response.End();
+					}
+				}
+				DateTime lastModified = pc[0].Published.AddHours(-1*settings.TimeZoneOffSet);
+				context.Response.Clear();
+				context.Response.Cache.SetCacheability(HttpCacheability.Public);
+				context.Response.Cache.SetLastModified(lastModified);
+				context.Response.Cache.SetETag(lastModified.ToString());
+			}
+		}
 
-            writer.WriteStartElement("guid");
-            writer.WriteAttributeString("isPermaLink", "true");
-            writer.WriteString(link);
-            writer.WriteEndElement();
+		protected void WriteItem(XmlTextWriter writer, Post p, SiteSettings settings, string baseUrl)
+		{
+			string link = macros.FullUrl(p.Url);
+			writer.WriteElementString("title", HttpUtility.HtmlDecode(p.Title));
+			writer.WriteElementString("link", link);
+			writer.WriteElementString("pubDate", p.Published.AddHours(-1*settings.TimeZoneOffSet).ToUniversalTime().ToString("r"));
 
-            if (!string.IsNullOrEmpty(p.UserName) && !string.IsNullOrEmpty(p.User.ProperName))
-                writer.WriteElementString("dc:creator", p.User.ProperName);
+			writer.WriteStartElement("guid");
+			writer.WriteAttributeString("isPermaLink", "true");
+			writer.WriteString(link);
+			writer.WriteEndElement();
 
-            if (p.EnableComments)
-            {
-                writer.WriteElementString("slash:comments", p.CommentCount.ToString());
-            }
+			if (!string.IsNullOrEmpty(p.UserName) && !string.IsNullOrEmpty(p.User.ProperName))
+				writer.WriteElementString("dc:creator", p.User.ProperName);
 
-            writer.WriteStartElement("category");
-            writer.WriteAttributeString("domain", macros.FullUrl(p.Category.Url));
-            writer.WriteString(p.Category.Name);
-            writer.WriteEndElement();
+			if (p.EnableComments)
+			{
+				writer.WriteElementString("slash:comments", p.CommentCount.ToString());
+			}
 
-            writer.WriteElementString("description", Util.FullyQualifyRelativeUrls(p.RenderBody(PostRenderLocation.Feed), baseUrl));
-        }
+			writer.WriteStartElement("category");
+			writer.WriteAttributeString("domain", macros.FullUrl(p.Category.Url));
+			writer.WriteString(p.Category.Name);
+			writer.WriteEndElement();
+
+			writer.WriteElementString("description",
+			                          Util.FullyQualifyRelativeUrls(p.RenderBody(PostRenderLocation.Feed), baseUrl));
+		}
 
 
-        protected virtual void Initialize()
-        {
-            
-        }
-    }
+		protected virtual void Initialize()
+		{
+		}
+	}
 }

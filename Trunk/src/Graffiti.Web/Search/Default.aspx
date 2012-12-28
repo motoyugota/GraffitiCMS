@@ -1,69 +1,69 @@
 <%@ Page Language="C#" Inherits="Graffiti.Core.TemplatedThemePage" ClassName="GraffitiSearchPage" %>
 <script runat="Server">
-    
-        protected override string ViewLookUp(string baseName, string defaultViewName)
-        {
-            if (ViewExists("search" + baseName))
-                return "search" + baseName;
-            else
-                return base.ViewLookUp(baseName, defaultViewName);
 
-        }
+	protected override string ViewLookUp(string baseName, string defaultViewName)
+	{
+		if (ViewExists("search" + baseName))
+			return "search" + baseName;
+		else
+			return base.ViewLookUp(baseName, defaultViewName);
+	}
 
-        protected override void LoadContent(GraffitiContext graffitiContext)
-        {
-            base.LoadContent(graffitiContext);
+	protected override void LoadContent(GraffitiContext graffitiContext)
+	{
+		base.LoadContent(graffitiContext);
 
-            IsIndexable = false;
+		IsIndexable = false;
 
-            if (Request.QueryString["q"] == null)
-            {
-                Response.Redirect("~/");
-                Response.End();
-            }
-            else
-            {
-                graffitiContext["where"] = "search";
-                graffitiContext["title"] = "Search Results for '" + HttpUtility.HtmlEncode(Request.QueryString["q"]) + "'";
+		if (Request.QueryString["q"] == null)
+		{
+			Response.Redirect("~/");
+			Response.End();
+		}
+		else
+		{
+			graffitiContext["where"] = "search";
+			graffitiContext["title"] = "Search Results for '" + HttpUtility.HtmlEncode(Request.QueryString["q"]) + "'";
 
-                graffitiContext.RegisterOnRequestDelegate("posts", GetSearchResults);
-                
-                // GetSearchResults needs to be called so the pager works
-                GetSearchResults("posts", graffitiContext);
-            }
-        }
-    
-        protected object GetSearchResults(string key, GraffitiContext graffitiContext)
-        {
-            try
-            {
-                graffitiContext["where"] = "search";
-               
-                SearchIndex si = new SearchIndex();
+			graffitiContext.RegisterOnRequestDelegate("posts", GetSearchResults);
 
-                SearchQuery sq = new SearchQuery();
-                sq.PageSize = SiteSettings.Get().PageSize;
-                sq.PageIndex = PageIndex;
-                sq.QueryText = new Macros().SearchQuery;
+			// GetSearchResults needs to be called so the pager works
+			GetSearchResults("posts", graffitiContext);
+		}
+	}
 
-                SearchResultSet<Post> posts = si.Search(sq);
-                SearchResultSet<Post> filteredPosts = new SearchResultSet<Post>();
+	protected object GetSearchResults(string key, GraffitiContext graffitiContext)
+	{
+		try
+		{
+			graffitiContext["where"] = "search";
 
-                foreach (Post p in posts)
-                {
-                    if (RolePermissionManager.GetPermissions(p.CategoryId, GraffitiUsers.Current).Read)
-                        filteredPosts.Add(p);
-                }
+			SearchIndex si = new SearchIndex();
 
-                graffitiContext.TotalRecords = posts.TotalRecords;
-                graffitiContext.PageIndex = PageIndex;
-                graffitiContext.PageSize = SiteSettings.Get().PageSize;
+			SearchQuery sq = new SearchQuery();
+			sq.PageSize = SiteSettings.Get().PageSize;
+			sq.PageIndex = PageIndex;
+			sq.QueryText = new Macros().SearchQuery;
 
-                return filteredPosts;
-            }
-            catch (Exception)
-            {
-                return new PostCollection();
-            }
-        }
+			var posts = si.Search(sq);
+			var filteredPosts = new SearchResultSet<Post>();
+
+			foreach (Post p in posts)
+			{
+				if (RolePermissionManager.GetPermissions(p.CategoryId, GraffitiUsers.Current).Read)
+					filteredPosts.Add(p);
+			}
+
+			graffitiContext.TotalRecords = posts.TotalRecords;
+			graffitiContext.PageIndex = PageIndex;
+			graffitiContext.PageSize = SiteSettings.Get().PageSize;
+
+			return filteredPosts;
+		}
+		catch (Exception)
+		{
+			return new PostCollection();
+		}
+	}
+
 </script>
