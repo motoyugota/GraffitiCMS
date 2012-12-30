@@ -1,7 +1,7 @@
 using System.Collections.Specialized;
+using System.Configuration;
 using System.Text;
 using System.Web;
-using System.Web.UI;
 using System.Web.UI.WebControls;
 
 namespace Graffiti.Core
@@ -14,10 +14,10 @@ namespace Graffiti.Core
 
 		public override void Write(StringBuilder sb, NameValueCollection nvc)
 		{
-			GraffitiEditor.SetupScripts(HttpContext.Current.Handler as Page);
+			GraffitiEditor.SetupScripts(HttpContext.Current.Handler as System.Web.UI.Page);
 			GraffitiEditor editor = new GraffitiEditor();
 			editor.ToolbarSet = "Simple";
-			editor.Width = new Unit(95, UnitType.Percentage);
+            editor.Width = new Unit(95, UnitType.Percentage);
 			editor.Height = new Unit(200);
 			editor.Text = nvc[Name];
 			editor.ID = Name;

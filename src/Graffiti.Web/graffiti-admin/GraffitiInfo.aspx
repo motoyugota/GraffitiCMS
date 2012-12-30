@@ -1,5 +1,4 @@
 <%@ Page Language="C#" %>
-<%@ Import Namespace="DataBuddy" %>
 
 <% SiteSettings settings = SiteSettings.Get(); %>
 
@@ -7,21 +6,11 @@
 	<head>
 		<title>Graffiti CMS - System Information</title>
 		<style type="text/css">
-			html, body { background-color: #ffc; }
-
+			html, body { background-color: #ffc;}
 			h2 { border-bottom: solid 2px #666; }
-
-			table td {
-				vertical-align: top;
-				padding-bottom: 0.25em;
-			}
-
-			table { padding-bottom: 1em; }
-
-			.name {
-				font-weight: bold;
-				padding-right: 2em;
-			}
+			table td { vertical-align: top; padding-bottom: 0.25em;}
+			table { padding-bottom: 1em;}
+			.name { font-weight: bold; padding-right: 2em;}
 		</style>
 	</head>
 	<body>
@@ -87,41 +76,41 @@
 		</table>
 		<h2>Plugins</h2>
 		<dl>
-			<% foreach (EventDetails plugin in Graffiti.Core.Events.GetEvents())
-			   { %>
-				<dt class="name"><%= plugin.Event.Name %></dt>
-				<dd>
-					<table>
-						<tr>
-							<td class="name">Enabled</td>
-							<td><%= plugin.Enabled %></td>
-						</tr>
-						<tr>
-							<td class="name">Description </td>
-							<td><%= plugin.Event.Description %></td>
-						</tr>
-						<tr>
-							<td class="name">Plugin Type</td>
-							<td><%= plugin.EventType %></td>
-						</tr>
-					</table>
-				</dd>
-			<% } %>
-		</dl>
+		<% foreach(EventDetails plugin in Graffiti.Core.Events.GetEvents())
+		   { %>
+			<dt class="name"><%= plugin.Event.Name %></dt>
+			<dd>
+				<table>
+					<tr>
+						<td class="name">Enabled</td>
+						<td><%= plugin.Enabled %></td>
+					</tr>
+					<tr>
+						<td class="name">Description </td>
+						<td><%= plugin.Event.Description%></td>
+					</tr>
+					<tr>
+						<td class="name">Plugin Type</td>
+						<td><%= plugin.EventType %></td>
+					</tr>
+				</table>
+			</dd>
+		 <%} %>
+		 </dl>
 		 
 		<h2>Recent Events</h2>
-		<%
-			Query q = Log.CreateQuery();
+		<% 
+			DataBuddy.Query q = Log.CreateQuery();
 			q.PageSize = 10;
-			q.PageIndex = 1;
+			q.PageIndex = 1;	
 			q.OrderByDesc(Log.Columns.CreatedOn);
 
 			foreach (Log log in LogCollection.FetchByQuery(q))
-			{ %>
-			<dt class="name"><%= log.Title %></dt>
-		<dd><%= log.Type == 3 ? "Error" : log.Type == 2 ? "Warning" : "Information" %>
-		<dd><%= log.CreatedOn.ToString("dddd dd MMMM yyyy hh:mm:ss") %></dd>
-		<dd><%= log.Message %></dd>
-		<% } %>
-			</body>
+			{%>
+				<dt class="name"><%= log.Title %></dt>
+				<dd><%= log.Type == 3 ? "Error" : log.Type== 2 ? "Warning"  : "Information" %>
+				<dd><%= log.CreatedOn.ToString("dddd dd MMMM yyyy hh:mm:ss")%></dd>
+				<dd><%= log.Message %></dd>
+			<%} %>
+	</body>
 </html>

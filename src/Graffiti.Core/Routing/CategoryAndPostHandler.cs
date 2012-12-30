@@ -1,48 +1,53 @@
-using System;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Web;
 using System.Web.Routing;
+using Graffiti.Core.Services;
 
 namespace Graffiti.Core
 {
 	public class CategoryAndPostHandler : IRouteHandler
 	{
+	    private ICategoryService _categoryService;
+
+        public CategoryAndPostHandler(ICategoryService categoryService)
+        {
+            _categoryService = categoryService;            
+        }
+
 		public IHttpHandler GetHttpHandler(RequestContext requestContext)
 		{
-			string param1 = requestContext.RouteData.Values["param1"] != null
-				                ? requestContext.RouteData.Values["param1"].ToString()
-				                : null;
-			string param2 = requestContext.RouteData.Values["param2"] != null
-				                ? requestContext.RouteData.Values["param2"].ToString()
-				                : null;
-			string param3 = requestContext.RouteData.Values["param3"] != null
-				                ? requestContext.RouteData.Values["param3"].ToString()
-				                : null;
+			string path = requestContext.RouteData.Values["path"] != null ? requestContext.RouteData.Values["path"].ToString() : null;
+			string[] pathParts = GetPaths(path);
 
-			if (!String.IsNullOrEmpty(param3))
+			if (pathParts.Length > 2)
 			{
-				var post = GetPost(string.Format("{0}/{1}/{2}", param1, param2, param3));
+				// Assume it is a post if more than 2 levels deep for now
+				// ToDo: Needs to be reworked to support n-level categories
+				var post = GetPost(pathParts[pathParts.Length - 1]);
 				if (post != null)
 					return post;
 			}
-			else if (!String.IsNullOrEmpty(param2))
+			else if (pathParts.Length == 2)
 			{
 				// either a sub-category or post request
-				var category = GetCategory(string.Format("{0}/{1}", param1, param2));
+				var category = GetCategory(string.Format("{0}/{1}", pathParts[0], pathParts[1]));
 				if (category != null)
 					return category;
 
-				var post = GetPost(string.Format("{0}/{1}", param1, param2));
+				var post = GetPost(pathParts[1]);
 				if (post != null)
 					return post;
 			}
-			else if (!String.IsNullOrEmpty(param1))
+			else if (pathParts.Length == 1)
 			{
 				// either a category or post request
-				var category = GetCategory(param1);
+				var category = GetCategory(pathParts[0]);
 				if (category != null)
 					return category;
 
-				var post = GetPost(param1);
+				var post = GetPost(pathParts[0]);
 				if (post != null)
 					return post;
 			}
@@ -50,9 +55,55 @@ namespace Graffiti.Core
 			throw new HttpException(404, "Page not found");
 		}
 
+		public string[] GetPaths(string path)
+		{
+			string[] pathArray;
+
+			if (string.IsNullOrEmpty(path))
+				pathArray = new string[0];
+			else
+			{
+				pathArray = path.Split(new[] { '/' }, StringSplitOptions.RemoveEmptyEntries);
+
+				for (int i = 0; i < pathArray.Length; i++)
+				{
+					if (pathArray[i].IndexOfAny(new char[] { '<', '>', '"' }) > -1)
+						pathArray[i] = HttpUtility.HtmlEncode(pathArray[i]);
+				}
+			}
+
+			return pathArray;
+		}
+
+		// Not used yet, will be needed to support n-level categories
+		public List<Category> GetCategories(string path)
+		{
+			var categoryStack = new List<Category>() { _categoryService.FetchUnCategorizedCategory() };
+
+			string[] pathArray = GetPaths(path);
+			string lastCategoryPath = pathArray.LastOrDefault();
+
+			foreach (string linkName in pathArray)
+			{
+				if (string.IsNullOrEmpty(linkName))
+					continue;
+
+				Category parentCategory = categoryStack[categoryStack.Count - 1];
+				Category category = _categoryService.FetchCachedCategoryByLinkName(string.Format("{0}/{1}", parentCategory.LinkName, linkName), parentCategory.Id, true);
+
+				// If category cannot be found, we reached the end of the stack and remaining items must be content
+				if (category == null)
+					break;
+
+				categoryStack.Add(category);
+			}
+
+			return categoryStack;
+		}
+
 		public CategoryPage GetCategory(string param)
 		{
-			var category = new CategoryController().GetCachedCategoryByLinkName(param, true);
+			var category =_categoryService.FetchCachedCategoryByLinkName(param, true);
 
 			if (category != null)
 			{
@@ -79,7 +130,7 @@ namespace Graffiti.Core
 
 				postPage.PostId = post.Id;
 				postPage.CategoryID = post.CategoryId;
-				postPage.CategoryName = new CategoryController().GetCachedCategory(post.CategoryId, false).LinkName;
+				postPage.CategoryName = _categoryService.FetchCachedCategory(post.CategoryId, false).LinkName;
 				postPage.PostName = post.Name;
 				postPage.Name = post.Name;
 				postPage.MetaDescription = post.MetaDescription;

@@ -1,9 +1,10 @@
+
 namespace Graffiti.Core
 {
-	public enum WidgetLocation
-	{
-		Left,
-		Right,
-		Queue
-	}
+    public enum WidgetLocation
+    {
+        Left,
+        Right,
+        Queue
+    }
 }

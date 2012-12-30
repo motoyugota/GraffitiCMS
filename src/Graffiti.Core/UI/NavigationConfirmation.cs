@@ -3,10 +3,10 @@ using System.Web.UI.WebControls;
 
 namespace Graffiti.Core
 {
-	public static class NavigationConfirmation
-	{
-		private const string script =
-			@"  g_blnCheckUnload = true;
+    public static class NavigationConfirmation
+    {
+        private const string script =
+            @"  g_blnCheckUnload = true;
                 window.onbeforeunload=RunOnBeforeUnload;
                 function RunOnBeforeUnload()
                 {
@@ -20,14 +20,14 @@ namespace Graffiti.Core
                     g_blnCheckUnload  = false;
                 }";
 
-		public static void RegisterPage(Page page)
-		{
-			page.ClientScript.RegisterStartupScript(page.GetType(), "nav-reg", script, true);
-		}
+        public static void RegisterPage(Page page)
+        {
+            page.ClientScript.RegisterStartupScript(page.GetType(), "nav-reg", script, true);
+        }
 
-		public static void RegisterControlForCancel(WebControl control)
-		{
-			control.Attributes.Add("onclick", "bypassCheck();");
-		}
-	}
+        public static void RegisterControlForCancel(WebControl control)
+        {
+            control.Attributes.Add("onclick", "bypassCheck();");
+        }
+    }
 }

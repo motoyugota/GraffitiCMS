@@ -1,269 +1,285 @@
 using System;
+using System.Collections.Generic;
 using System.Web.UI.WebControls;
 using Graffiti.Core;
-using Repeater = Graffiti.Core.Repeater;
+using Graffiti.Core.Services;
+using Repeater=Graffiti.Core.Repeater;
+using System.Collections;
 
 public partial class graffiti_admin_categories_Default : ManagerControlPanelPage
-{
-	private CategoryCollection cats;
+    {
+        private CategoryCollection cats;
+        private int currentChildIndex = 0; // this will hold what child we are on so we know which img to display in the hierarchical view
 
-	private int currentChildIndex;
-	// this will hold what child we are on so we know which img to display in the hierarchical view
+        protected void Page_Load(object sender, EventArgs e)
+        {
+            if(!IsPostBack)
+            {
+                Util.CanWriteRedirect(Context);
+            }
 
-	protected void Page_Load(object sender, EventArgs e)
-	{
-		if (!IsPostBack)
-		{
-			Util.CanWriteRedirect(Context);
-		}
+            if (Request.QueryString["id"] != null)
+            {
+                if (!IsPostBack)
+                {
+                    Category c = _categoryService.FetchCategory(Request.QueryString["id"]);
 
-		if (Request.QueryString["id"] != null)
-		{
-			if (!IsPostBack)
-			{
-				Category c = new Category(Request.QueryString["id"]);
+                    if (!c.IsLoaded || c.IsNew)
+                        throw new Exception("This category id does not exist");
 
-				if (!c.IsLoaded || c.IsNew)
-					throw new Exception("This category id does not exist");
+                    if (Request.QueryString["new"] != null && !IsPostBack)
+                    {
+                        Message.Text = "The category <strong>" + c.Name + "</strong> was created";
+                        Message.Type = StatusType.Success;
+                    }
 
-				if (Request.QueryString["new"] != null && !IsPostBack)
-				{
-					Message.Text = "The category <strong>" + c.Name + "</strong> was created";
-					Message.Type = StatusType.Success;
-				}
+                    txtExistingCategory.Text = Server.HtmlDecode(c.Name);
+                    txtFeedBurner.Text = c.FeedUrlOverride;
+                    Editor.Text = c.Body;
+                    txtKeywords.Text = Server.HtmlDecode(c.MetaKeywords ?? string.Empty);
+                    txtMetaScription.Text = Server.HtmlDecode(c.MetaDescription ?? string.Empty);
+                    SortOrder.SelectedValue = c.SortOrder.ToString();
 
-				txtExistingCategory.Text = Server.HtmlDecode(c.Name);
-				txtFeedBurner.Text = c.FeedUrlOverride;
-				Editor.Text = c.Body;
-				txtKeywords.Text = Server.HtmlDecode(c.MetaKeywords ?? string.Empty);
-				txtMetaScription.Text = Server.HtmlDecode(c.MetaDescription ?? string.Empty);
-				SortOrder.SelectedValue = c.SortOrder.ToString();
+                    txtExistingLinkName.Text =  Util.CleanForUrl(c.FormattedName).Replace("-", " ");
+                    if (c.ParentId > 0)
+                    {
+                        Category parent = _categoryService.FetchCachedCategory(c.ParentId, false);
+                        existingParentLinkName.Text = parent.LinkName + "/ ";
+                    }
+                }
 
-				txtExistingLinkName.Text = Util.CleanForUrl(c.FormattedName).Replace("-", " ");
-				if (c.ParentId > 0)
-				{
-					Category parent = new CategoryController().GetCachedCategory(c.ParentId, false);
-					existingParentLinkName.Text = parent.LinkName + "/ ";
-				}
-			}
+                new_category_container.Visible = false;
+                Category_List.Visible = false;
+                category_edit_form.Visible = true;
 
-			new_category_container.Visible = false;
-			Category_List.Visible = false;
-			category_edit_form.Visible = true;
-		}
-		else
-		{
-			if (!IsPostBack)
-			{
-				CategoryCollection parents = new CategoryController().GetTopLevelCachedCategories();
+            }
+            else
+            {
+                if (!IsPostBack)
+                {
+                    CategoryCollection parents = new CategoryCollection(_categoryService.FetchTopLevelCachedCategories());
 
-				foreach (Category parent in parents)
-				{
-					Parent_Categories.Items.Add(new ListItem(Server.HtmlDecode(parent.Name), parent.Id.ToString()));
-				}
-
-
-				Parent_Categories.Items.Insert(0, new ListItem("[No parent category]", "-1"));
-
-				if (Request.QueryString["upd"] != null)
-				{
-					Message.Text = "The category <strong>" + Request.QueryString["upd"] + "</strong> was updated";
-					Message.Type = StatusType.Success;
-				}
-			}
-			new_category_container.Visible = true;
-			category_edit_form.Visible = false;
-			Category_List.Visible = true;
-
-			GetCategories();
-		}
-	}
-
-	protected void EditCategory_Click(object sender, EventArgs e)
-	{
-		try
-		{
-			Category c = new Category(Request.QueryString["id"]);
-			c.Name = Server.HtmlEncode(txtExistingCategory.Text.Trim());
-			c.FormattedName = txtExistingLinkName.Text.Trim();
-			c.Body = Editor.Text;
-			c.FeedUrlOverride = txtFeedBurner.Text;
-			c.MetaDescription = Server.HtmlEncode(txtMetaScription.Text.Trim());
-			c.MetaKeywords = Server.HtmlEncode(txtKeywords.Text.Trim());
-			c.SortOrder = (SortOrderType) Enum.Parse(typeof (SortOrderType), SortOrder.SelectedValue, true);
-			c.Save();
-
-			Response.Redirect("~/graffiti-admin/categories/?upd=" + c.Name);
-		}
-		catch (Exception ex)
-		{
-			string exMessage = ex.Message;
-			if (!string.IsNullOrEmpty(exMessage) && exMessage.IndexOf("UNIQUE") > -1)
-				exMessage = "This category already exists";
-
-			Message.Text = "A category with the name of " + txtExistingCategory.Text + " could not be created <br />" +
-			               exMessage;
-			Message.Type = StatusType.Error;
-		}
-	}
-
-	protected void CreateCategory_Click(object sender, EventArgs e)
-	{
-		try
-		{
-			Category c = new Category();
-			c.Name = Server.HtmlEncode(txtCategory.Text.Trim());
-			c.ParentId = Int32.Parse(Parent_Categories.SelectedValue);
-
-			c.Save();
-			Response.Redirect("~/graffiti-admin/categories/?id=" + c.Id + "&new=true");
-		}
-		catch (Exception ex)
-		{
-			string exMessage = ex.Message;
-			if (!string.IsNullOrEmpty(exMessage) && exMessage.IndexOf("UNIQUE") > -1)
-				exMessage = "This category already exists";
-
-			Message.Text = "A category with the name of " + txtCategory.Text + " could not be created <br />" +
-			               exMessage;
-			Message.Type = StatusType.Error;
-		}
-	}
-
-	private void GetCategories()
-	{
-		cats = new CategoryController().GetCachedCategories();
-
-		var parents = cats.FindAll(
-			delegate(Category c) { return c.ParentId >= 0; });
-
-		if (cats != null && cats.Count > 0)
-		{
-			Category_List.Visible = true;
+                    foreach(Category parent in parents)
+                    {
+                        Parent_Categories.Items.Add(new ListItem(Server.HtmlDecode(parent.Name),parent.Id.ToString()));
+                    }
 
 
-			CategoryCollection source = new CategoryController().GetTopLevelCachedCategories();
-			source.Sort(
-				delegate(Category c, Category c1) { return c.Name.CompareTo(c1.Name); });
 
-			Categories_List.DataSource = source;
-			Categories_List.ItemDataBound += Categories_List_ItemDataBound;
-			Categories_List.DataBind();
-		}
-		else
-		{
-			Category_List.Visible = false;
-		}
-	}
+                    Parent_Categories.Items.Insert(0, new ListItem("[No parent category]", "-1"));
 
-	protected void Categories_List_ItemDataBound(object sender, RepeaterItemEventArgs e)
-	{
-		if (e.Item.ItemType == ListItemType.Item || e.Item.ItemType == ListItemType.AlternatingItem)
-		{
-			Category cat = (Category) e.Item.DataItem;
+                    if (Request.QueryString["upd"] != null)
+                    {
+                        Message.Text = "The category <strong>" + Request.QueryString["upd"] + "</strong> was updated";
+                        Message.Type = StatusType.Success;
+                    }
+                }
+                new_category_container.Visible = true;
+                category_edit_form.Visible = false;
+                Category_List.Visible = true;
 
-			var children = cats.FindAll(
-				delegate(Category c) { return c.ParentId == cat.Id; });
-			if (children != null && children.Count > 0)
-			{
-				// reset the child index counter
-				currentChildIndex = 0;
+                GetCategories();
+            }
+        }
 
-				Repeater c = (Repeater) e.Item.FindControl("NestedCategoriesList");
-				c.ItemDataBound += NestedCategoriesList_ItemDataBound;
-				c.DataSource = children;
-				c.DataBind();
-			}
-		}
-	}
+        protected void EditCategory_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                Category c = _categoryService.FetchCategory(Request.QueryString["id"]);
+                c.Name = Server.HtmlEncode(txtExistingCategory.Text.Trim());
+                c.FormattedName = txtExistingLinkName.Text.Trim();
+                c.Body = Editor.Text;
+                c.FeedUrlOverride = txtFeedBurner.Text;
+                c.MetaDescription = Server.HtmlEncode(txtMetaScription.Text.Trim());
+                c.MetaKeywords = Server.HtmlEncode(txtKeywords.Text.Trim());
+                c.SortOrder = (SortOrderType)Enum.Parse(typeof(SortOrderType), SortOrder.SelectedValue, true);
+                c = _categoryService.SaveCategory(c);
 
-	protected void NestedCategoriesList_ItemDataBound(object sender, RepeaterItemEventArgs e)
-	{
-		if (e.Item.ItemType == ListItemType.Item || e.Item.ItemType == ListItemType.AlternatingItem)
-		{
-			// increment the child index counter
-			++currentChildIndex;
+                Response.Redirect("~/graffiti-admin/categories/?upd=" + c.Name);
+            }
+            catch (Exception ex)
+            {
+                string exMessage = ex.Message;
+                if (!string.IsNullOrEmpty(exMessage) && exMessage.IndexOf("UNIQUE") > -1)
+                    exMessage = "This category already exists";
 
-			Category cat = (Category) e.Item.DataItem;
+                Message.Text = "A category with the name of " + txtExistingCategory.Text + " could not be created <br />" +
+                               exMessage;
+                Message.Type = StatusType.Error;
+            }
+        }
 
-			// how many children are there?
-			var children = cats.FindAll(
-				delegate(Category c) { return c.ParentId == cat.ParentId; });
+        protected void CreateCategory_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                Category c = new Category();
+                c.Name = Server.HtmlEncode(txtCategory.Text.Trim());
+                c.ParentId = Int32.Parse(Parent_Categories.SelectedValue);
 
-			if (children != null && children.Count > 0)
-			{
-				Image img = (Image) e.Item.FindControl("TreeImage");
+                c = _categoryService.SaveCategory(c);
+                Response.Redirect("~/graffiti-admin/categories/?id=" + c.Id + "&new=true");
 
-				if (currentChildIndex < children.Count)
-					img.ImageUrl = ResolveUrl("~/graffiti-admin/common/img/m.gif");
-				else
-					img.ImageUrl = ResolveUrl("~/graffiti-admin/common/img/b.gif");
-			}
-		}
-	}
+            }
+            catch (Exception ex)
+            {
+                string exMessage = ex.Message;
+                if (!string.IsNullOrEmpty(exMessage) && exMessage.IndexOf("UNIQUE") > -1)
+                    exMessage = "This category already exists";
 
-	protected void lbDelete_Command(object sender, CommandEventArgs args)
-	{
-		int id = Convert.ToInt32(args.CommandArgument);
-		Category c = new Category(id);
+                Message.Text = "A category with the name of " + txtCategory.Text + " could not be created <br />" +
+                               exMessage;
+                Message.Type = StatusType.Error;
+            }
+        }
 
-		if (c.HasChildren)
-		{
-			Message.Text = "You cannot delete this category because it has child categories.";
-			Message.Type = StatusType.Error;
-			return;
-		}
+        private void GetCategories()
+        {
+            cats = new CategoryCollection(_categoryService.FetchCachedCategories());
 
-		var postCounts = Post.GetPostCounts(id, null);
+            List<Category> parents = (List<Category>)cats.FindAll(
+                                                        delegate(Category c)
+                                                        {
+                                                            return c.ParentId >= 0;
+                                                        });
 
-		if (postCounts != null && postCounts.Count > 0)
-		{
-			int totalPosts = 0;
-			foreach (PostCount p in postCounts)
-				totalPosts += p.Count;
+            if (cats != null && cats.Count > 0)
+            {
+                Category_List.Visible = true;
 
-			if (totalPosts == 1)
-			{
-				Message.Text = "You cannot delete this category because it is in use by " + totalPosts + " post.";
-				Message.Text += " <a href=\"" + ResolveUrl("~/graffiti-admin/posts/?category=") + id +
-				                "\">Click here</a> to change this post to another category or delete it.";
-				Message.Type = StatusType.Error;
-			}
-			else
-			{
-				Message.Text = "You cannot delete this category because it is in use by " + totalPosts + " posts.";
-				Message.Text += " <a href=\"" + ResolveUrl("~/graffiti-admin/posts/?category=") + id +
-				                "\">Click here</a> to change these posts to another category or delete them.";
-				Message.Type = StatusType.Error;
-			}
-			return;
-		}
+                
+                CategoryCollection source = new CategoryCollection(_categoryService.FetchTopLevelCachedCategories());
+                source.Sort(
+                    delegate(Category c, Category c1)
+                    {
+                        return c.Name.CompareTo(c1.Name);
+                    });
 
-		try
-		{
-			// destroy any deleted posts in this category
-			Post.DestroyDeletedPostCascadingForCategory(id);
+                Categories_List.DataSource = source;
+                Categories_List.ItemDataBound += new RepeaterItemEventHandler(Categories_List_ItemDataBound);
+                Categories_List.DataBind();
+            }
+            else
+            {
+                Category_List.Visible = false;
+            }
+        }
 
-			Category.Destroy(Category.Columns.Id, id);
+        protected void Categories_List_ItemDataBound(object sender, RepeaterItemEventArgs e)
+        {
+            if (e.Item.ItemType == ListItemType.Item || e.Item.ItemType == ListItemType.AlternatingItem)
+            {
+                Category cat = (Category)e.Item.DataItem;
 
-			NavigationSettings navSettings = NavigationSettings.Get();
-			DynamicNavigationItem item = navSettings.Items == null
-				                             ? null
-				                             : navSettings.Items.Find(
-					                             delegate(DynamicNavigationItem itm) { return itm.CategoryId == id; });
+                List<Category> children = (List<Category>)cats.FindAll(
+                                                    delegate(Category c)
+                                                    {
+                                                        return c.ParentId == cat.Id;
+                                                    });
+                if (children != null && children.Count > 0)
+                {
+                    // reset the child index counter
+                    currentChildIndex = 0;
 
-			if (item != null)
-				NavigationSettings.Remove(item.Id);
+                    Repeater c = (Repeater)e.Item.FindControl("NestedCategoriesList");
+                    c.ItemDataBound += new RepeaterItemEventHandler(NestedCategoriesList_ItemDataBound);
+                    c.DataSource = children;
+                    c.DataBind();
+                }
+            }
+        }
 
-			CategoryController.Reset();
-			GetCategories();
+        protected void NestedCategoriesList_ItemDataBound(object sender, RepeaterItemEventArgs e)
+        {
+            if (e.Item.ItemType == ListItemType.Item || e.Item.ItemType == ListItemType.AlternatingItem)
+            {
+                // increment the child index counter
+                ++currentChildIndex;
 
-			Message.Text = "The category " + c.Name + " was deleted.";
-		}
-		catch (Exception ex)
-		{
-			Message.Text = ex.Message;
-			Message.Type = StatusType.Error;
-		}
-	}
-}
+                Category cat = (Category)e.Item.DataItem;
+
+                // how many children are there?
+                List<Category> children = (List<Category>)cats.FindAll(
+                                                    delegate(Category c)
+                                                    {
+                                                        return c.ParentId == cat.ParentId;
+                                                    });
+
+                if (children != null && children.Count > 0)
+                {
+                    Image img = (Image)e.Item.FindControl("TreeImage");
+
+                    if (currentChildIndex < children.Count)
+                        img.ImageUrl = ResolveUrl("~/graffiti-admin/common/img/m.gif");
+                    else
+                        img.ImageUrl = ResolveUrl("~/graffiti-admin/common/img/b.gif");
+                }
+            }
+        }
+
+        protected void lbDelete_Command(object sender, CommandEventArgs args)
+        {
+            int id = Convert.ToInt32(args.CommandArgument);
+            Category c = _categoryService.FetchCategory(id);
+
+            if (c.HasChildren)
+            {
+                Message.Text = "You cannot delete this category because it has child categories.";
+                Message.Type = StatusType.Error;
+                return;
+            }
+
+            CategoryPermissionCheck callback = (_rolePermissionService.GetPermissions);
+            List<PostCount> postCounts = _postService.GetPostCounts(GraffitiUsers.Current, id, null, callback);
+
+            if (postCounts != null && postCounts.Count > 0)
+            {
+                int totalPosts = 0;
+                foreach (PostCount p in postCounts)
+                    totalPosts += p.Count;
+
+                if (totalPosts == 1)
+                {
+                    Message.Text = "You cannot delete this category because it is in use by " + totalPosts + " post.";
+                    Message.Text += " <a href=\"" + ResolveUrl("~/graffiti-admin/posts/?category=") + id + "\">Click here</a> to change this post to another category or delete it.";
+                    Message.Type = StatusType.Error;
+                }
+                else
+                {
+                    Message.Text = "You cannot delete this category because it is in use by " + totalPosts + " posts.";
+                    Message.Text += " <a href=\"" + ResolveUrl("~/graffiti-admin/posts/?category=") + id + "\">Click here</a> to change these posts to another category or delete them.";
+                    Message.Type = StatusType.Error;
+                }
+                return;
+            }
+
+            try
+            {
+                // destroy any deleted posts in this category
+                _postService.DestroyDeletedPostCascadingForCategory(id);
+
+                _categoryService.DestroyCategory(id);
+
+                NavigationSettings navSettings = NavigationSettings.Get();
+                DynamicNavigationItem item = navSettings.Items == null ? null : navSettings.Items.Find(
+                                                                                        delegate(DynamicNavigationItem itm)
+                                                                                        {
+                                                                                            return itm.CategoryId == id;
+                                                                                        });
+
+                if (item != null)
+                    NavigationSettings.Remove(item.Id);
+
+                _categoryService.Reset();
+                GetCategories();
+
+                Message.Text = "The category " + c.Name + " was deleted.";
+            }
+            catch (Exception ex)
+            {
+                Message.Text = ex.Message;
+                Message.Type = StatusType.Error;
+            }
+        }
+    }

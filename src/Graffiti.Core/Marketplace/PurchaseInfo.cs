@@ -1,46 +1,44 @@
-using System.Xml.Linq;
+using System.Xml;
 
 namespace Graffiti.Core.Marketplace
 {
-	public class PurchaseInfo
-	{
-		private string _buyUrl = string.Empty;
-		private double _price;
+    public class PurchaseInfo
+    {
+        private double _price = 0.0;
+        private string _buyUrl = string.Empty;
 
-		public PurchaseInfo(XElement node)
-		{
-			string value;
+        public PurchaseInfo(XmlNode node)
+        {
+            XmlNode n = node.SelectSingleNode("price");
+            if (n != null)
+                _price = double.Parse(n.InnerText);
 
-			XElement n = node.Element("price");
-			if (n != null && n.TryGetValue(out value))
-				_price = double.Parse(value);
+            n = node.SelectSingleNode("buyUrl");
+            if (n != null)
+                _buyUrl = n.InnerText;
+        }
 
-			n = node.Element("buyUrl");
-			if (n != null && n.TryGetValue(out value))
-				_buyUrl = value;
-		}
+        public double Price
+        {
+            get { return _price; }
+            set { _price = value; }
+        }
 
-		public double Price
-		{
-			get { return _price; }
-			set { _price = value; }
-		}
+        public string FormattedPrice
+        {
+            get
+            {
+                if (_price <= 0.0)
+                    return "FREE";
 
-		public string FormattedPrice
-		{
-			get
-			{
-				if (_price <= 0.0)
-					return "FREE";
+                return string.Format("{0:C}", _price);
+            }
+        }
 
-				return string.Format("{0:C}", _price);
-			}
-		}
-
-		public string BuyUrl
-		{
-			get { return _buyUrl; }
-			set { _buyUrl = value; }
-		}
-	}
+        public string BuyUrl
+        {
+            get { return _buyUrl; }
+            set { _buyUrl = value; }
+        }
+    }
 }

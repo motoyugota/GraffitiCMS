@@ -1,15 +1,22 @@
-********************
- Graffiti 2.0 Alpha
-********************
 
-NOTES:
+====================================
+ About the v1.2 Refactoring Branch
+====================================
 
-* Trunk is NOT STABLE! It will be undergoing heavy refactoring and modernization.
+This branch was started as a copy of the early 1.3 branch
+around Feb 2010 timeframe. It was intended to be the future
+version 2.0 release, and put in the "trunk" folder at first.
 
-* For now, use the 1.3 Branch if you want to run Graffiti CMS in production.
+In March 2010 Dan Hounshell made extensive (and much needed) refactoring
+changes to decouple many components and modernize the codebase. 
+The SQL backend was not changed, so no db upgrade scripts were needed.
 
-* Currently Trunk only supports SQL Server.  Additional databases may be supported in the future.
+Unfortunately we split this branch off too early in hindsight.
+The 1.3 version still needed a good deal of work and bug fixing, and with
+limited available time/resources by all involved, we failed to keep the 
+refactoring branch up-to-date. 
 
-* To run, update the web.config to use the appropriate database connection string. Sample connection strings for various database types are included in the web.config comments.
+In December 2012 the final 1.3 version was remerged into Trunk, to allow
+for a possible 2.0 version in the future. This branch can be used as a 
+base / reference for refactoring the v2.0 Trunk if desired.
 
-* Setup the database using the instructions in the \Trunk\data\read_me.txt file.

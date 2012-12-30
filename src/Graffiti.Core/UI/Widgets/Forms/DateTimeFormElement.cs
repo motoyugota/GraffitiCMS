@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Specialized;
 using System.Text;
 using System.Web;
@@ -19,11 +18,10 @@ namespace Graffiti.Core
 			sb.Append(": " + SafeToolTip(false));
 			sb.Append("</h2><div>");
 
-			string guid = Guid.NewGuid().ToString();
+			string guid = System.Guid.NewGuid().ToString();
 			guid = guid.Replace("-", "");
 
-			sb.AppendFormat("<input type=\"text\" id=\"ds_state" + guid + "\" name=\"{0}\" value=\"{1}\" size=\"40\" />", Name,
-			                nvc[Name]);
+			sb.AppendFormat("<input type=\"text\" id=\"ds_state" + guid + "\" name=\"{0}\" value=\"{1}\" size=\"40\" />", Name, nvc[Name]);
 
 			sb.Append("</div>");
 
@@ -31,8 +29,7 @@ namespace Graffiti.Core
 			Page p = HttpContext.Current.Handler as Page;
 			if (p == null)
 			{
-				string js = "ds" + guid + " = new Telligent_DateTimeSelector('ds" + guid + "', 'ds_state" + guid +
-				            "', '<January,February,March,April,May,June,July,August,September,October,November,December> <1-31> <1900-3000> <01-12>:<00-59> <AM,PM>', 2, 0, 1, 3, 4, 5, true, true, null);";
+				string js = "ds" + guid + " = new Telligent_DateTimeSelector('ds" + guid + "', 'ds_state" + guid + "', '<January,February,March,April,May,June,July,August,September,October,November,December> <1-31> <1900-3000> <01-12>:<00-59> <AM,PM>', 2, 0, 1, 3, 4, 5, true, true, null);";
 
 				sb.Append("startscript:" + js + ":endscript");
 			}

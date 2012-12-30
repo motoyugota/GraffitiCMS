@@ -1,90 +1,108 @@
-using System.Xml.Linq;
+using System.Xml;
 
 namespace Graffiti.Core.Marketplace
 {
-	public class CreatorInfo
-	{
-		private string _bio = string.Empty;
-		private string _email = string.Empty;
-		private string _id = string.Empty;
-		private ItemInfoCollection _items;
-		private string _name = string.Empty;
-		private string _url = string.Empty;
+    public class CreatorInfo
+    {
+        private int _id = 0;
+        private string _name = string.Empty;
+        private string _location = string.Empty;
+        private bool _displayLocation = false;
+        private string _email = string.Empty;
+        private bool _displayEmail = false;
+        private string _url = string.Empty;
+        private ItemInfoCollection _items;
 
-		public CreatorInfo(XElement node)
-		{
-			string value;
+        public CreatorInfo(XmlNode node)
+        {
+            XmlAttribute a = node.Attributes["id"];
+            if (a != null)
+                _id = int.Parse(a.Value);
 
-			if (node.TryGetAttributeValue("id", out value))
-				_id = value;
+            XmlNode n = node.SelectSingleNode("name");
+            if (n != null)
+                _name = n.InnerText;
 
-			XElement n = node.Element("name");
-			if (n != null && n.TryGetValue(out value))
-				_name = value;
+            n = node.SelectSingleNode("location");
+            if (n != null)
+            {
+                _location = n.InnerText;
 
-			n = node.Element("email");
-			if (n != null && n.TryGetValue(out value))
-			{
-				_email = value;
+                a = n.Attributes["display"];
+                if (a != null)
+                    _displayLocation = bool.Parse(a.Value);
+            }
 
-				if (n.TryGetAttributeValue("display", out value))
-					DisplayEmail = bool.Parse(value);
-			}
+            n = node.SelectSingleNode("email");
+            if (n != null)
+            {
+                _email = n.InnerText;
 
-			n = node.Element("bio");
-			if (n != null && n.TryGetValue(out value))
-				_bio = value;
+                a = n.Attributes["display"];
+                if (a != null)
+                    _displayEmail = bool.Parse(a.Value);
+            }
 
-			n = node.Element("url");
-			if (n != null && n.TryGetValue(out value))
-				_url = value;
-		}
+            n = node.SelectSingleNode("url");
+            if (n != null)
+                _url = n.InnerText;
+        }
 
-		public string Id
-		{
-			get { return _id; }
-			set { _id = value; }
-		}
+        public int Id
+        {
+            get { return _id; }
+            set { _id = value; }
+        }
 
-		public string Name
-		{
-			get { return _name; }
-			set { _name = value; }
-		}
+        public string Name
+        {
+            get { return _name; }
+            set { _name = value; }
+        }
 
-		public string Bio
-		{
-			get { return _bio; }
-			set { _bio = value; }
-		}
+        public string Location
+        {
+            get { return _location; }
+            set { _location = value; }
+        }
 
-		public string Email
-		{
-			get { return _email; }
-			set { _email = value; }
-		}
+        public bool DisplayLocation
+        {
+            get { return _displayLocation; }
+            set { _displayLocation = value; }
+        }
 
-		public bool DisplayEmail { get; set; }
+        public string Email
+        {
+            get { return _email; }
+            set { _email = value; }
+        }
 
-		public string Url
-		{
-			get { return _url; }
-			set { _url = value; }
-		}
+        public bool DisplayEmail
+        {
+            get { return _displayEmail; }
+            set { _displayEmail = value; }
+        }
 
-		public ItemInfoCollection GetItems(CatalogType catType)
-		{
-			if (_items == null)
-			{
-				_items = new ItemInfoCollection();
-				foreach (ItemInfo item in Marketplace.Catalogs[catType].Items.Values)
-				{
-					if (Util.AreEqualIgnoreCase(item.CreatorId, Id))
-						_items.Add(item.Id, item);
-				}
-			}
+        public string Url
+        {
+            get { return _url; }
+            set { _url = value; }
+        }
 
-			return _items;
-		}
-	}
+        public ItemInfoCollection GetItems(int catalogId)
+        {
+            if (_items == null)
+            {
+                _items = new ItemInfoCollection();
+                foreach (ItemInfo item in Marketplace.Catalogs[catalogId].Items.Values)
+                {
+                    if (item.CreatorId == Id)
+                        _items.Add(item.Id, item);
+                }
+            }
+
+            return _items;
+        }
+    }
 }

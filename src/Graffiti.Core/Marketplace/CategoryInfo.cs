@@ -1,63 +1,72 @@
-using System.Xml.Linq;
+using System.Xml;
 
 namespace Graffiti.Core.Marketplace
 {
-	public class CategoryInfo
-	{
-		private string _description = string.Empty;
-		private ItemInfoCollection _items;
-		private string _name = string.Empty;
+    public class CategoryInfo
+    {
+        private CatalogInfo _catalog;
+        private int _id = 0;
+        private string _name = string.Empty;
+        private string _description = string.Empty;
+        private ItemInfoCollection _items;
 
-		public CategoryInfo(CatalogInfo catalog, XElement node)
-		{
-			Catalog = catalog;
+        public CategoryInfo(CatalogInfo catalog, XmlNode node)
+        {
+            _catalog = catalog;
 
-			string value;
+            XmlAttribute a = node.Attributes["id"];
+            if (a != null)
+                _id = int.Parse(a.Value);
 
-			if (node.TryGetAttributeValue("id", out value))
-				Id = int.Parse(value);
+            XmlNode n = node.SelectSingleNode("name");
+            if (n != null)
+                _name = n.InnerText;
 
-			XElement n = node.Element("name");
-			if (n != null && n.TryGetValue(out value))
-				_name = value;
+            n = node.SelectSingleNode("description");
+            if (n != null)
+                _description = n.InnerText;
+        }
 
-			n = node.Element("description");
-			if (n != null && n.TryGetValue(out value))
-				_description = value;
-		}
+        public CatalogInfo Catalog
+        {
+            get { return _catalog; }
+            set { _catalog = value; }
+        }
 
-		public CatalogInfo Catalog { get; set; }
+        public int Id
+        {
+            get { return _id; }
+            set { _id = value; }
+        }
 
-		public int Id { get; set; }
+        public string Name
+        {
+            get { return _name; }
+            set { _name = value; }
+        }
 
-		public string Name
-		{
-			get { return _name; }
-			set { _name = value; }
-		}
+        public string Description
+        {
+            get { return _description; }
+            set { _description = value; }
+        }
 
-		public string Description
-		{
-			get { return _description; }
-			set { _description = value; }
-		}
+        public ItemInfoCollection Items
+        {
+            get
+            {
+                if (_items == null)
+                {
+                    _items = new ItemInfoCollection();
+                    foreach (ItemInfo item in Catalog.Items.Values)
+                    {
+                        if (item.CategoryId == Id)
+                            _items.Add(item.Id, item);
+                    }
+                }
 
-		public ItemInfoCollection Items
-		{
-			get
-			{
-				if (_items == null)
-				{
-					_items = new ItemInfoCollection();
-					foreach (ItemInfo item in Catalog.Items.Values)
-					{
-						if (item.CategoryId == Id)
-							_items.Add(item.Id, item);
-					}
-				}
-
-				return _items;
-			}
-		}
-	}
+                return _items;
+            }
+        }
+    }
 }

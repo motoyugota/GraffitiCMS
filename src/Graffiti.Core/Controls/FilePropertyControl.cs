@@ -6,117 +6,126 @@ using Telligent.DynamicConfiguration.Controls;
 
 namespace Graffiti.Core
 {
-	public class FilePropertyControl : Control, IPropertyControl
-	{
-		private Button _browseButton;
-		private TextBox _textBox;
-		private CustomValidator _validator;
+    public class FilePropertyControl : Control, IPropertyControl
+    {
+        TextBox _textBox = null;
+        Button _browseButton = null;
+        CustomValidator _validator = null;
 
-		protected override void CreateChildControls()
-		{
-			base.CreateChildControls();
+        protected override void CreateChildControls()
+        {
+            base.CreateChildControls();
 
-			_textBox = new TextBox();
-			_textBox.ID = "Text";
-			_textBox.Columns = 50;
-			Controls.Add(_textBox);
+            _textBox = new TextBox();
+            _textBox.ID = "Text";
+            _textBox.Columns = 50;
+            this.Controls.Add(_textBox);
 
-			_browseButton = new Button();
-			_browseButton.Text = "Browse";
-			Controls.Add(_browseButton);
+            _browseButton = new Button();
+            _browseButton.Text = "Browse";
+            this.Controls.Add(_browseButton);
 
-			ConfigurationForm form = ConfigurationControlUtility.Instance().GetCurrentConfigurationForm(this);
-			if (form != null)
-			{
-				_validator = new CustomValidator();
-				_validator.ID = "Validator";
-				_validator.ControlToValidate = _textBox.ID;
-				_validator.ErrorMessage = form.InvalidUrlErrorMessage;
-				Controls.Add(_validator);
+            ConfigurationForm form = ConfigurationControlUtility.Instance().GetCurrentConfigurationForm(this);
+            if (form != null)
+            {
+                _validator = new CustomValidator();
+                _validator.ID = "Validator";
+                _validator.ControlToValidate = _textBox.ID;
+                _validator.ErrorMessage = form.InvalidUrlErrorMessage;
+                this.Controls.Add(_validator);
 
-				_validator.ServerValidate += DefaultUrlControl_ServerValidate;
-			}
+                _validator.ServerValidate += new ServerValidateEventHandler(DefaultUrlControl_ServerValidate);
+            }
 
-			_textBox.TextChanged += DefaultUrlControl_TextChanged;
-		}
+            _textBox.TextChanged += new EventHandler(DefaultUrlControl_TextChanged);
+        }
 
-		private void DefaultUrlControl_ServerValidate(object source, ServerValidateEventArgs args)
-		{
-			if (string.IsNullOrEmpty(args.Value))
-				args.IsValid = true;
-			else
-			{
-				string value = args.Value;
-				if (value.StartsWith("~|"))
-					value = value.Substring(2);
+        void DefaultUrlControl_ServerValidate(object source, ServerValidateEventArgs args)
+        {
+            if (string.IsNullOrEmpty(args.Value))
+                args.IsValid = true;
+            else
+            {
+                string value = args.Value;
+                if (value.StartsWith("~|"))
+                    value = value.Substring(2);
 
-				args.IsValid = Uri.IsWellFormedUriString(value, UriKind.RelativeOrAbsolute);
-			}
-		}
+                args.IsValid = Uri.IsWellFormedUriString(value, UriKind.RelativeOrAbsolute);
+            }
+        }
 
-		private void DefaultUrlControl_TextChanged(object sender, EventArgs e)
-		{
-			OnConfigurationValueChanged(GetConfigurationPropertyValue());
-		}
+        void DefaultUrlControl_TextChanged(object sender, EventArgs e)
+        {
+            OnConfigurationValueChanged(GetConfigurationPropertyValue());
+        }
 
-		protected override void OnInit(EventArgs e)
-		{
-			base.OnInit(e);
-			EnsureChildControls();
-		}
+        protected override void OnInit(EventArgs e)
+        {
+            base.OnInit(e);
+            EnsureChildControls();
+        }
 
-		protected override void OnPreRender(EventArgs e)
-		{
-			FileBrowser.RegisterJavaScript(Page);
+        protected override void OnPreRender(EventArgs e)
+        {
+            FileBrowser.RegisterJavaScript(this.Page);
 
-			_browseButton.OnClientClick = "OpenFileBrowser(new Function('url', 'document.getElementById(\\'" + _textBox.ClientID +
-			                              "\\').value = url;')); return false;";
+            _browseButton.OnClientClick = "OpenFileBrowser(new Function('url', 'document.getElementById(\\'" + _textBox.ClientID + "\\').value = url;')); return false;";
 
-			base.OnPreRender(e);
-		}
+            base.OnPreRender(e);
+        }
 
-		#region IPropertyControl Members
+        #region IPropertyControl Members
 
-		private static readonly object EventConfigurationValueChanged = new object();
-		public Property ConfigurationProperty { get; set; }
+        private Property _configurationProperty = null;
+        public Property ConfigurationProperty
+        {
+            get { return _configurationProperty; }
+            set { _configurationProperty = value; }
+        }
 
-		public ConfigurationDataBase ConfigurationData { get; set; }
+        private ConfigurationDataBase _configurationData = null;
+        public ConfigurationDataBase ConfigurationData
+        {
+            get { return _configurationData; }
+            set { _configurationData = value; }
+        }
 
-		public void SetConfigurationPropertyValue(object value)
-		{
-			EnsureChildControls();
-			_textBox.Text = value == null ? string.Empty : value.ToString();
-		}
+        public void SetConfigurationPropertyValue(object value)
+        {
+            EnsureChildControls();
+            _textBox.Text = value == null ? string.Empty : value.ToString();
+        }
 
-		public object GetConfigurationPropertyValue()
-		{
-			EnsureChildControls();
-			return string.IsNullOrEmpty(_textBox.Text) ? null : new Uri(_textBox.Text, UriKind.RelativeOrAbsolute);
-		}
+        public object GetConfigurationPropertyValue()
+        {
+            EnsureChildControls();
+            return string.IsNullOrEmpty(_textBox.Text) ? null : new Uri(_textBox.Text, UriKind.RelativeOrAbsolute);
+        }
 
-		public event ConfigurationPropertyChanged ConfigurationValueChanged
-		{
-			add
-			{
-				EnsureChildControls();
-				base.Events.AddHandler(EventConfigurationValueChanged, value);
-				_textBox.AutoPostBack = true;
-			}
-			remove { base.Events.RemoveHandler(EventConfigurationValueChanged, value); }
-		}
+        public event ConfigurationPropertyChanged ConfigurationValueChanged
+        {
+            add
+            {
+                EnsureChildControls();
+                base.Events.AddHandler(EventConfigurationValueChanged, value);
+                _textBox.AutoPostBack = true;
+            }
+            remove { base.Events.RemoveHandler(EventConfigurationValueChanged, value); }
+        }
+        private static readonly object EventConfigurationValueChanged = new object();
 
-		public Control Control
-		{
-			get { return this; }
-		}
+        protected virtual void OnConfigurationValueChanged(object value)
+        {
+            ConfigurationPropertyChanged handler = (ConfigurationPropertyChanged)base.Events[EventConfigurationValueChanged];
+            if (handler != null)
+                handler(this, value);
+        }
 
-		protected virtual void OnConfigurationValueChanged(object value)
-		{
-			ConfigurationPropertyChanged handler = (ConfigurationPropertyChanged) base.Events[EventConfigurationValueChanged];
-			if (handler != null)
-				handler(this, value);
-		}
+        public Control Control
+        {
+            get { return this; }
+        }
 
-		#endregion
-	}
+        #endregion
+    }
 }

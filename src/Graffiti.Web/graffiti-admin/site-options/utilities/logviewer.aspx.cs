@@ -1,36 +1,37 @@
 using System;
-using DataBuddy;
+using System.Collections.Generic;
 using Graffiti.Core;
+using Graffiti.Core.Services;
 
 namespace Graffiti.Web.graffiti_admin.site_options.utilities
 {
-	public partial class logviewer : AdminControlPanelPage
-	{
-		protected void Page_Load(object sender, EventArgs e)
-		{
-			LiHyperLink.SetNameToCompare(Context, "settings");
+    public partial class logviewer : Graffiti.Core.AdminControlPanelPage
+    {
 
-			LogViews.ActiveViewIndex = Int32.Parse(Request.QueryString["type"] ?? "1") - 1;
+        private ILogService _logService;
 
-			Query q = Log.CreateQuery();
-			q.AndWhere(Log.Columns.Type, Request.QueryString["type"] ?? "1");
-			q.PageSize = 15;
-			q.PageIndex = Int32.Parse(Request.QueryString["p"] ?? "1");
-			q.OrderByDesc(Log.Columns.CreatedOn);
+        protected void Page_Load(object sender, EventArgs e)
+        {
+            LiHyperLink.SetNameToCompare(Context, "settings");
 
-			LogCollection logs = LogCollection.FetchByQuery(q);
+            LogViews.ActiveViewIndex = Int32.Parse(Request.QueryString["type"] ?? "1") - 1;
 
-			LogList.DataSource = logs;
-			LogList.DataBind();
+            int totalCount = 0;
+            IList<Log> logsQ = _logService.FetchByType(Request.QueryString["type"] ?? "1",
+                                                           Int32.Parse(Request.QueryString["p"] ?? "1"), 15,
+                                                           out totalCount);
+            LogCollection logs = new LogCollection(logsQ);
 
-			if (logs.Count > 0)
-			{
-				pager.Text =
-					Util.Pager(q.PageIndex, q.PageSize, q.GetRecordCount(), null,
-					           Request.QueryString["type"] == null ? null : "?type=" + Request.QueryString["type"], "&larr; Older Logs",
-					           "Newer Logs &rarr;");
-				;
-			}
-		}
-	}
+            LogList.DataSource = logs;
+            LogList.DataBind();
+
+            if(logs.Count > 0)
+            {
+                pager.Text =
+                    Util.Pager(Int32.Parse(Request.QueryString["p"] ?? "1"), 15, totalCount, null,
+                               Request.QueryString["type"] == null ? null : "?type=" + Request.QueryString["type"], "&larr; Older Logs", "Newer Logs &rarr;");
+                ;
+            }
+        }
+    }
 }

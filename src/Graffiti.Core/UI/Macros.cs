@@ -4,33 +4,49 @@ using System.Collections.Generic;
 using System.Configuration;
 using System.Drawing;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Web;
-using System.Web.Security;
-using DataBuddy;
-using Docuverse.Identicon;
+using Graffiti.Core.Services;
 
 namespace Graffiti.Core
 {
 	/// <summary>
-	///     Macros is a helper tool loaded by Graffiti on every page request. ($macros)
+	/// Macros is a helper tool loaded by Graffiti on every page request. ($macros)
 	/// </summary>
 	[Chalk("macros")]
 	public class Macros
 	{
-		#region const
+	    private ICategoryService _categoryService;
+        private IPostService _postService;
+        private IRolePermissionService _rolePermissionService;
 
+        public Macros(IPostService postService, ICategoryService categoryService, IRolePermissionService rolePermissionService) 
+        {
+            _postService = postService;
+            _categoryService = categoryService;
+            _rolePermissionService = rolePermissionService;
+        }
+
+        public Macros() 
+        {
+            _postService = ServiceLocator.Get<IPostService>();
+            _categoryService = ServiceLocator.Get<ICategoryService>();
+            _rolePermissionService = ServiceLocator.Get<IRolePermissionService>();
+        }
+
+
+		#region const
 		private const string lihrefWithClassFormat = "<li {3}><a href=\"{0}\" {2}>{1}</a></li>\n";
 		private const string liHrefFormat = "<li><a href=\"{0}\">{1}</a></li>\n";
 		private const string themesShortCut = "~|";
-
 		#endregion
 
 		#region Theme
 
 		/// <summary>
-		///     Loads a view found in the same directory of the current theme.
+		/// Loads a view found in the same directory of the current theme.
 		/// </summary>
 		/// <param name="file"></param>
 		/// <returns></returns>
@@ -42,7 +58,7 @@ namespace Graffiti.Core
 
 
 		/// <summary>
-		///     Returns the absolute path to a file in the current theme
+		/// Returns the absolute path to a file in the current theme
 		/// </summary>
 		/// <param name="file"></param>
 		/// <returns></returns>
@@ -52,7 +68,7 @@ namespace Graffiti.Core
 		}
 
 		/// <summary>
-		///     Renders a style link element - defaults to screen media type.
+		/// Renders a style link element - defaults to screen media type.
 		/// </summary>
 		/// <param name="file"></param>
 		/// <returns></returns>
@@ -62,27 +78,27 @@ namespace Graffiti.Core
 		}
 
 		/// <summary>
-		///     Renders a style link element and allows setting the media type
+		/// Renders a style link element and allows setting the media type
 		/// </summary>
 		public string Style(string file, string media)
 		{
 			return
-				string.Format("<link rel=\"stylesheet\" href=\"{0}\" type=\"text/css\" media=\"{1}\" />",
-							  ThemeFile(file), media);
+				 string.Format("<link rel=\"stylesheet\" href=\"{0}\" type=\"text/css\" media=\"{1}\" />",
+									ThemeFile(file), media);
 		}
 
 		/// <summary>
-		///     Renders a javascript script element
+		/// Renders a javascript script element
 		/// </summary>
 		public string JavaScript(string file)
 		{
 			return
-				string.Format("<script type=\"text/javascript\" src=\"{0}\"></script>",
-							  ThemeFile(file));
+				 string.Format("<script type=\"text/javascript\" src=\"{0}\"></script>",
+									ThemeFile(file));
 		}
 
 		/// <summary>
-		///     Renders an IMG element for the supplied imageName. imageName is relative to the current theme
+		/// Renders an IMG element for the supplied imageName. imageName is relative to the current theme 
 		/// </summary>
 		/// <returns></returns>
 		public string Image(string imageName)
@@ -91,7 +107,7 @@ namespace Graffiti.Core
 		}
 
 		/// <summary>
-		///     Renders an IMG element. Extra attibutes are applied to the img.
+		/// Renders an IMG element. Extra attibutes are applied to the img.
 		/// </summary>
 		/// <param name="imageName"></param>
 		/// <param name="id"></param>
@@ -102,7 +118,7 @@ namespace Graffiti.Core
 		}
 
 		/// <summary>
-		///     Renders an IMG element. Extra attibutes are applied to the img.
+		/// Renders an IMG element. Extra attibutes are applied to the img.
 		/// </summary>
 		/// <param name="imageName"></param>
 		/// <param name="imgAttributes"></param>
@@ -113,7 +129,7 @@ namespace Graffiti.Core
 		}
 
 		/// <summary>
-		///     Renders the right widget sidebar
+		/// Renders the right widget sidebar
 		/// </summary>
 		/// <param name="dictionary"></param>
 		/// <returns></returns>
@@ -123,7 +139,7 @@ namespace Graffiti.Core
 		}
 
 		/// <summary>
-		///     Renders the left widget sidebar
+		/// Renders the left widget sidebar
 		/// </summary>
 		/// <param name="dictionary"></param>
 		/// <returns></returns>
@@ -133,7 +149,7 @@ namespace Graffiti.Core
 		}
 
 		/// <summary>
-		///     Renders a widget sidebar
+		/// Renders a widget sidebar
 		/// </summary>
 		/// <param name="location"></param>
 		/// <param name="dictionary"></param>
@@ -154,7 +170,7 @@ namespace Graffiti.Core
 
 			StringBuilder sb = new StringBuilder();
 
-			var allWidgets = Widgets.FetchByLocation(location);
+			List<Widget> allWidgets = Widgets.FetchByLocation(location);
 
 			int curCount = 0;
 
@@ -170,8 +186,7 @@ namespace Graffiti.Core
 						sb.Append(widget.Render(beforeTitle, afterTitle, beforeContent, afterContent));
 						sb.Append(String.IsNullOrEmpty(afterFirstWidget) ? afterWidget : afterFirstWidget);
 					}
-					else if ((!String.IsNullOrEmpty(beforeLastWidget) || !String.IsNullOrEmpty(afterLastWidget)) &&
-							 curCount == allWidgets.Count)
+					else if ((!String.IsNullOrEmpty(beforeLastWidget) || !String.IsNullOrEmpty(afterLastWidget)) && curCount == allWidgets.Count)
 					{
 						sb.Append(String.IsNullOrEmpty(beforeLastWidget) ? beforeWidget : beforeLastWidget);
 						sb.Append(widget.Render(beforeTitle, afterTitle, beforeContent, afterContent));
@@ -200,7 +215,7 @@ namespace Graffiti.Core
 		}
 
 		/// <summary>
-		///     Renders the value of a variable.
+		/// Renders the value of a variable.
 		/// </summary>
 		/// <param name="id"></param>
 		/// <returns></returns>
@@ -212,7 +227,7 @@ namespace Graffiti.Core
 			if (value == null)
 				return string.Empty;
 			else if (value is Color)
-				return ColorTranslator.ToHtml((Color) value);
+				return ColorTranslator.ToHtml((Color)value);
 			else if (value is Uri)
 				return Link(value.ToString());
 			else
@@ -224,7 +239,7 @@ namespace Graffiti.Core
 		#region Links and Navigation
 
 		/// <summary>
-		///     Converts a virtual (~/) link to an absolute. If ~| is used instead of ~/ the link is assumed to be to a file in the themes directory
+		/// Converts a virtual (~/) link to an absolute. If ~| is used instead of ~/ the link is assumed to be to a file in the themes directory
 		/// </summary>
 		/// <param name="virtualPath"></param>
 		/// <returns></returns>
@@ -241,44 +256,46 @@ namespace Graffiti.Core
 		}
 
 		/// <summary>
-		///     Determines if the logged in user can view the control panel
+		/// Determines if the logged in user can view the control panel
 		/// </summary>
 		/// <param name="user"></param>
 		/// <returns></returns>
 		public bool CanViewControlPanel(IGraffitiUser user)
 		{
-			return RolePermissionManager.CanViewControlPanel(user);
+			return _rolePermissionService.CanViewControlPanel(user);
 		}
 
 		/// <summary>
-		///     Returns an edit link for the post if the current user has edit permissions.
+		/// Returns an edit link for the post if the current user has edit permissions.
 		/// </summary>
 		public string EditLink(Post post)
 		{
 			IGraffitiUser user = GraffitiUsers.Current;
-			Permission p = RolePermissionManager.GetPermissions(post.CategoryId, user);
+			Permission p = _rolePermissionService.GetPermissions(post.CategoryId, user);
 
 			if (user != null && p.Edit)
 			{
 				return
-					"[<a class=\"editlink\" href=\"" + new Urls().Write + "?id=" + post.Id +
-					"\">Edit - " + post.Title +
-					"</a>]";
+					 "[<a class=\"editlink\" href=\"" + new Urls().Write + "?id=" + post.Id +
+					 "\">Edit - " + post.Title +
+					 "</a>]";
 			}
 
 			return string.Empty;
 		}
 
 		/// <summary>
-		///     Fully qualifies an absolute url
+		/// Fully qualifies an absolute url
 		/// </summary>
+		/// <param name="aboluteUrl"></param>
+		/// <returns></returns>
 		public string FullUrl(string absoluteUrl)
 		{
 			return new Uri(HttpContext.Current.Request.Url, absoluteUrl).ToString();
 		}
 
 		/// <summary>
-		///     Creates a list of links which can be used to build custom navigation.
+		/// Creates a list of links which can be used to build custom navigation.
 		/// </summary>
 		/// <returns></returns>
 		public List<Link> NavigationLinks()
@@ -287,17 +304,16 @@ namespace Graffiti.Core
 			int current_Parent_CategoryID = -1;
 			int current_CategoryID = -1;
 
-			var items = NavigationSettings.Get().SafeItems();
-			var links = new List<Link>();
-
+			List<DynamicNavigationItem> items = NavigationSettings.Get().SafeItems();
+			List<Link> links = new List<Link>();
 			// Will hold a reference to the selected item
 			DynamicNavigationItem selectedItem = null;
 
-			// We can only do this on a graffit page that exposes the post/category/etc properties
+			//We can only do this on a graffit page that exposes the post/category/etc properties
 			TemplatedThemePage ttp = HttpContext.Current.Handler as TemplatedThemePage;
 			if (ttp != null)
 			{
-				// Is this page a post? 
+				//Is this page a post? 
 				if (ttp.PostId > 0)
 					current_PostID = ttp.PostId;
 
@@ -308,14 +324,14 @@ namespace Graffiti.Core
 					// This could be a subcategory. Since we do not expose subcategories via NavBar(), 
 					// we should mark the parent (if it exists) as selected item
 					current_CategoryID = ttp.CategoryID;
-					Category the_Category = new CategoryController().GetCachedCategory(current_CategoryID, true);
+					Category the_Category = _categoryService.FetchCachedCategory(current_CategoryID, true);
 					if (the_Category != null)
 					{
 						current_Parent_CategoryID = the_Category.ParentId;
 					}
 				}
 
-				// If we are a post, see if it has a DynamicNavigationItem
+				//If we are a post, see if it has a DynamicNavigationItem
 				if (current_PostID > 0)
 				{
 					foreach (DynamicNavigationItem item in items)
@@ -331,7 +347,7 @@ namespace Graffiti.Core
 					}
 				}
 
-				// We default to post first, but if that has not been selected, try to find a category
+				//We default to post first, but if that has not been selected, try to find a category
 				if (selectedItem == null && (current_CategoryID > 0 || current_Parent_CategoryID > 0))
 				{
 					foreach (DynamicNavigationItem item in items)
@@ -347,9 +363,9 @@ namespace Graffiti.Core
 					}
 				}
 
-				// Graffiti has two pages which could end up in the NavBar (home and search).
-				// If still no item exists, lets see if this was added. 
-				// Note: Tags are not yet part of this
+				//Graffiti has two pages which could end up in the NavBar (home and search).
+				//If still no item exists, lets see if this was added. 
+				//Note: Tags are not yet part of this
 				if (selectedItem == null)
 				{
 					bool isHomePage = ttp.GetType().ToString().IndexOf("GraffitiHomePage") > -1;
@@ -391,7 +407,7 @@ namespace Graffiti.Core
 				{
 					case DynamicNavigationType.Post:
 
-						Post p = Post.GetCachedPost(item.PostId);
+						Post p = _postService.FetchCachedPost(item.PostId);
 
 						if (!p.IsNew && p.IsLoaded)
 						{
@@ -402,7 +418,7 @@ namespace Graffiti.Core
 
 					case DynamicNavigationType.Category:
 
-						Category category = new CategoryController().GetCachedCategory(item.CategoryId, true);
+						Category category = _categoryService.FetchCachedCategory(item.CategoryId, true);
 						if (category != null)
 						{
 							the_Link.Url = category.Url;
@@ -415,8 +431,8 @@ namespace Graffiti.Core
 						if (!string.IsNullOrEmpty(item.Href))
 						{
 							the_Link.Url = item.Href.StartsWith("~/")
-											   ? VirtualPathUtility.ToAbsolute(item.Href)
-											   : item.Href;
+													 ? VirtualPathUtility.ToAbsolute(item.Href)
+													 : item.Href;
 						}
 						break;
 				}
@@ -425,12 +441,12 @@ namespace Graffiti.Core
 					links.Add(the_Link);
 			}
 
-			var permissionsFiltered = new List<Link>();
+			List<Link> permissionsFiltered = new List<Link>();
 			permissionsFiltered.AddRange(links);
 
 			foreach (Link link in links)
 			{
-				if (!RolePermissionManager.GetPermissions(link.CategoryId, GraffitiUsers.Current).Read && link.CategoryId != 0)
+				if (!_rolePermissionService.GetPermissions(link.CategoryId, GraffitiUsers.Current).Read && link.CategoryId != 0)
 					permissionsFiltered.Remove(link);
 			}
 
@@ -438,35 +454,37 @@ namespace Graffiti.Core
 		}
 
 		/// <summary>
-		///     Renders the dynamic NavBar based on the list generated in Macros.NavigationLinks()
+		/// Renders the dynamic NavBar based on the list generated in Macros.NavigationLinks()
 		/// </summary>
 		/// <returns></returns>
 		public string NavBar()
 		{
 			StringBuilder sb = new StringBuilder();
-			var links = NavigationLinks();
+			List<Link> links = NavigationLinks();
 
 			for (int i = 0; i < links.Count; i++)
 			{
 				Link link = links[i];
 
-				sb.AppendFormat(lihrefWithClassFormat, link.Url, link.Text,
-								GetNavigationCSSClass(link.IsSelected, i == 0, i == links.Count - 1, null),
-								GetNavigationCSSClass(link.IsSelected, i == 0, i == links.Count - 1, "li"));
+				sb.AppendFormat(lihrefWithClassFormat, link.Url, link.Text, GetNavigationCSSClass(link.IsSelected, i == 0, i == links.Count - 1, null),
+									 GetNavigationCSSClass(link.IsSelected, i == 0, i == links.Count - 1, "li"));
 			}
 			return sb.ToString();
 		}
 
 		/// <summary>
-		///     Enables checking a link to see if it is part of NavigationLinks()
+		/// Enables checking a link to see if it is part of NavigationLinks() 
 		/// </summary>
 		/// <param name="url"></param>
 		/// <returns></returns>
 		public bool IsInNavigation(string url)
 		{
-			var links = NavigationLinks();
+			List<Link> links = NavigationLinks();
 
-			Link temp = links.Find(delegate(Link l) { return l.Url == url; });
+			Link temp = links.Find(delegate(Link l)
+												{
+													return l.Url == url;
+												});
 
 			if (temp == null)
 				return false;
@@ -475,7 +493,7 @@ namespace Graffiti.Core
 		}
 
 		/// <summary>
-		///     Helper method responsible for setting the CSS class on the NavBar
+		/// Helper method responsible for setting the CSS class on the NavBar
 		/// </summary>
 		private static string GetNavigationCSSClass(bool isSelected, bool isFirst, bool isLast, string text)
 		{
@@ -483,21 +501,21 @@ namespace Graffiti.Core
 				return null;
 
 			return
-				string.Format("class=\"{0}{1}{2}\"",
-							  isFirst ? "first" + text + " " : null,
-							  isSelected ? "selected" + text : null,
-							  isLast ? (((isFirst || isSelected) ? " " : null) + "last" + text) : null);
+				 string.Format("class=\"{0}{1}{2}\"",
+									isFirst ? "first" + text + " " : null,
+									isSelected ? "selected" + text : null,
+									isLast ? (((isFirst || isSelected) ? " " : null) + "last" + text) : null);
 		}
 
 
 		/// <summary>
-		///     Creates a list of links which can be used to build custom sub category navigation.
+		/// Creates a list of links which can be used to build custom sub category navigation.
 		/// </summary>
 		/// <param name="usePostsIfNoChildCategories">If the current top-level category does not have any child categories, should posts from that category be returned as links instead?</param>
 		/// <returns></returns>
 		public List<Link> NavigationSubLinks(bool usePostsIfNoChildCategories)
 		{
-			var links = new List<Link>();
+			List<Link> links = new List<Link>();
 
 			Category currentCategory = null;
 			TemplatedThemePage ttp = HttpContext.Current.Handler as TemplatedThemePage;
@@ -511,14 +529,14 @@ namespace Graffiti.Core
 				{
 					// This could be a subcategory. Since we do not expose subcategories via NavBar(), 
 					// we should mark the parent (if it exists) as selected item
-					currentCategory = new CategoryController().GetCachedCategory(ttp.CategoryID, true);
+					currentCategory = _categoryService.FetchCachedCategory(ttp.CategoryID, true);
 					if (currentCategory != null)
 					{
 						// If the current category has a parent, we have to assume it's a child category.
 						// In which case, we need to list out all the children of the parent.
 						if (currentCategory.ParentId > 0)
 						{
-							Category parentCategory = new CategoryController().GetCachedCategory(currentCategory.ParentId, true);
+							Category parentCategory = _categoryService.FetchCachedCategory(currentCategory.ParentId, true);
 							categories = parentCategory.Children;
 						}
 						else
@@ -545,7 +563,7 @@ namespace Graffiti.Core
 							foreach (Post post in posts)
 							{
 								Link link = new Link();
-								link.IsSelected = (ttp.PostId == post.Id);
+                                link.IsSelected = (ttp.PostId == post.Id);
 								link.Text = post.Title;
 								link.CategoryId = post.Id;
 								link.PostId = post.Id;
@@ -562,28 +580,27 @@ namespace Graffiti.Core
 		}
 
 		/// <summary>
-		///     Renders sub category navigation based on the current page
+		/// Renders sub category navigation based on the current page
 		/// </summary>
 		/// <returns></returns>
 		public string SubNavBar()
 		{
 			StringBuilder sb = new StringBuilder();
-			var links = NavigationSubLinks(false);
+			List<Link> links = NavigationSubLinks(false);
 
 			for (int i = 0; i < links.Count; i++)
 			{
 				Link link = links[i];
 
-				sb.AppendFormat(lihrefWithClassFormat, link.Url, link.Text,
-								GetNavigationCSSClass(link.IsSelected, i == 0, i == links.Count - 1, null),
-								GetNavigationCSSClass(link.IsSelected, i == 0, i == links.Count - 1, "li"));
+				sb.AppendFormat(lihrefWithClassFormat, link.Url, link.Text, GetNavigationCSSClass(link.IsSelected, i == 0, i == links.Count - 1, null),
+									 GetNavigationCSSClass(link.IsSelected, i == 0, i == links.Count - 1, "li"));
 			}
 			return sb.ToString();
 		}
 
 
 		/// <summary>
-		///     Returns an href for a category. Includes subcategory if it exists.
+		/// Returns an href for a category. Includes subcategory if it exists.
 		/// </summary>
 		/// <param name="category"></param>
 		/// <returns></returns>
@@ -593,9 +610,8 @@ namespace Graffiti.Core
 				return string.Format("<a href=\"{0}\">{1}</a>", category.Url, category.Name);
 			else
 			{
-				Category parent = new CategoryController().GetCachedCategory(category.ParentId, false);
-				return string.Format("<a href=\"{0}\">{1}</a>", parent.Url, parent.Name) + " / " +
-					   string.Format("<a href=\"{0}\">{1}</a>", category.Url, category.Name);
+				Category parent = _categoryService.FetchCachedCategory(category.ParentId, false);
+				return string.Format("<a href=\"{0}\">{1}</a>", parent.Url, parent.Name) + " / " + string.Format("<a href=\"{0}\">{1}</a>", category.Url, category.Name);
 			}
 		}
 
@@ -604,32 +620,7 @@ namespace Graffiti.Core
 		#region Header
 
 		/// <summary>
-		///     Returns the generator element.
-		/// </summary>
-		public string Generator
-		{
-			get { return "<meta name=\"generator\" content=\"" + SiteSettings.Version + "\" />"; }
-		}
-
-		/// <summary>
-		///     Renders default Graffiti javascript includes
-		/// </summary>
-		public string GraffitiJavaScript
-		{
-			get
-			{
-				return
-					string.Format(
-						"\n<script type=\"text/javascript\" src=\"{0}\"></script>\n<script type=\"text/javascript\" src=\"{1}\" ></script>\n",
-						SiteSettings.Get().UseExternalJQuery
-							? "http://ajax.microsoft.com/ajax/jQuery/jquery-1.4.2.min.js"
-							: VirtualPathUtility.ToAbsolute("~/__utility/js/jquery-1.4.2.min.js"),
-						VirtualPathUtility.ToAbsolute("~/__utility/js/graffiti.js"));
-			}
-		}
-
-		/// <summary>
-		///     Returns the standard (name, keywords, robots, and generator) metatags for a Graffiti page.
+		/// Returns the standard (name, keywords, robots, and generator) metatags for a Graffiti page.
 		/// </summary>
 		/// <returns></returns>
 		public string MetaTags()
@@ -670,7 +661,7 @@ namespace Graffiti.Core
 		}
 
 		/// <summary>
-		///     Helper which renders all the default HTML Head settings
+		/// Helper which renders all the default HTML Head settings
 		/// </summary>
 		/// <returns></returns>
 		public string Head()
@@ -691,19 +682,19 @@ namespace Graffiti.Core
 		}
 
 		/// <summary>
-		///     Returns the RSD element
+		/// Returns the RSD element
 		/// </summary>
 		/// <returns></returns>
 		public string RSD()
 		{
 			return
-				string.Format(
-					"<link rel=\"EditURI\" type=\"application/rsd+xml\" title=\"RSD\" href=\"{0}api/rsd.ashx\" />\n<link rel=\"wlwmanifest\" type=\"application/wlwmanifest+xml\" title=\"WLWManifest\" href=\"{0}api/wlwmanifest.ashx\" />\n",
-					FullUrl(new Urls().Home));
+				 string.Format(
+					  "<link rel=\"EditURI\" type=\"application/rsd+xml\" title=\"RSD\" href=\"{0}api/rsd.ashx\" />\n<link rel=\"wlwmanifest\" type=\"application/wlwmanifest+xml\" title=\"WLWManifest\" href=\"{0}api/wlwmanifest.ashx\" />\n",
+					  FullUrl(new Urls().Home));
 		}
 
 		/// <summary>
-		///     Returns RSS Autodiscoverable feeds.
+		/// Returns RSS Autodiscoverable feeds.
 		/// </summary>
 		/// <returns></returns>
 		public string RssAutodiscovery()
@@ -711,19 +702,19 @@ namespace Graffiti.Core
 			string pattern = "<link rel=\"alternate\" type=\"application/rss+xml\" title=\"{0}\" href=\"{1}\" />\n";
 			StringBuilder sb = new StringBuilder();
 			sb.AppendFormat(pattern, "Rss Feed",
-							SiteSettings.Get().ExternalFeedUrl ?? FullUrl(VirtualPathUtility.ToAbsolute("~/feed/")));
+								 SiteSettings.Get().ExternalFeedUrl ?? FullUrl(VirtualPathUtility.ToAbsolute("~/feed/")));
 
 			TemplatedThemePage ttp = HttpContext.Current.Handler as TemplatedThemePage;
 			if (ttp != null)
 			{
 				if (ttp.CategoryID > -1)
 				{
-					Category category = new CategoryController().GetCachedCategory(ttp.CategoryID, false);
-					if (category.Name != CategoryController.UncategorizedName)
+					Category category = _categoryService.FetchCachedCategory(ttp.CategoryID, false);
+					if (category.Name != _categoryService.UncategorizedName())
 					{
 						if (category.ParentId > 0)
 						{
-							Category parent = new CategoryController().GetCachedCategory(category.ParentId, false);
+							Category parent = _categoryService.FetchCachedCategory(category.ParentId, false);
 							sb.AppendFormat(pattern, parent.Name + " Rss Feed", FullUrl(parent.Url + "feed/"));
 						}
 
@@ -734,12 +725,33 @@ namespace Graffiti.Core
 				if (ttp.TagName != null)
 				{
 					sb.AppendFormat(pattern, ttp.TagName + " Rss Feed",
-									FullUrl(VirtualPathUtility.ToAbsolute("~/tags/" + Util.CleanForUrl(ttp.TagName)) +
-											"/feed/"));
+										 FullUrl(VirtualPathUtility.ToAbsolute("~/tags/" + Util.CleanForUrl(ttp.TagName)) +
+													"/feed/"));
 				}
 			}
 
 			return sb.ToString();
+		}
+
+		/// <summary>
+		/// Returns the generator element.
+		/// </summary>
+		public string Generator
+		{
+			get { return "<meta name=\"generator\" content=\"" + SiteSettings.Version + "\" />"; }
+		}
+
+		/// <summary>
+		/// Renders default Graffiti javascript includes
+		/// </summary>
+		public string GraffitiJavaScript
+		{
+			get
+			{
+				return string.Format("\n<script type=\"text/javascript\" src=\"{0}\"></script>\n<script type=\"text/javascript\" src=\"{1}\" ></script>\n",
+					SiteSettings.Get().UseExternalJQuery ? "http://ajax.microsoft.com/ajax/jQuery/jquery-1.4.2.min.js" : VirtualPathUtility.ToAbsolute("~/__utility/js/jquery-1.4.2.min.js"),
+					VirtualPathUtility.ToAbsolute("~/__utility/js/graffiti.js"));
+			}
 		}
 
 		#endregion
@@ -747,12 +759,12 @@ namespace Graffiti.Core
 		#region Content Lists
 
 		/// <summary>
-		///     Renders an unordered list of the of the top level categories
+		/// Renders an unordered list of the of the top level categories
 		/// </summary>
 		/// <returns></returns>
 		public string ULCategories()
 		{
-			CategoryCollection cc = new CategoryController().GetTopLevelCachedCategories();
+			CategoryCollection cc = new CategoryCollection(_categoryService.FetchTopLevelCachedCategories());
 			StringBuilder sb = new StringBuilder();
 			if (cc.Count > 0)
 			{
@@ -766,7 +778,7 @@ namespace Graffiti.Core
 		}
 
 		/// <summary>
-		///     Renders the tags for the post as "Tagged as: " + tags
+		/// Renders the tags for the post as "Tagged as: " + tags
 		/// </summary>
 		/// <param name="tags"></param>
 		/// <returns></returns>
@@ -776,7 +788,7 @@ namespace Graffiti.Core
 		}
 
 		/// <summary>
-		///     Renders the tags for the post with a custom start element "[desc]" + tags
+		/// Renders the tags for the post with a custom start element "[desc]" + tags
 		/// </summary>
 		/// <param name="tags"></param>
 		/// <param name="desc"></param>
@@ -786,13 +798,13 @@ namespace Graffiti.Core
 			if (string.IsNullOrEmpty(tags))
 				return string.Empty;
 
-			var ta = tags.Split(new[] {",", ";"}, StringSplitOptions.RemoveEmptyEntries);
-			var theTags = new string[ta.Length];
+			string[] ta = tags.Split(new string[] { ",", ";" }, StringSplitOptions.RemoveEmptyEntries);
+			string[] theTags = new string[ta.Length];
 			for (int i = 0; i < ta.Length; i++)
 			{
 				theTags[i] =
-					string.Format("<a rel=\"tag\" href=\"{0}\">{1}</a>",
-								  VirtualPathUtility.ToAbsolute("~/tags/" + Util.CleanForUrl(ta[i]) + "/"), ta[i]);
+					 string.Format("<a rel=\"tag\" href=\"{0}\">{1}</a>",
+										VirtualPathUtility.ToAbsolute("~/tags/" + Util.CleanForUrl(ta[i]) + "/"), ta[i]);
 			}
 
 			return desc + string.Join(", ", theTags);
@@ -800,20 +812,13 @@ namespace Graffiti.Core
 
 
 		/// <summary>
-		///     Renders an unordered list with the sites most recent posts by categoryID
+		/// Renders an unordered list with the sites most recent posts by categoryID
 		/// </summary>
 		/// <param name="categoryId"></param>
 		/// <returns></returns>
 		public string ULPostsInCategory(int categoryId)
 		{
-			PostCollection pc = new PostCollection();
-			Query q = Post.CreateQuery();
-			q.PageIndex = 0;
-			q.AndWhere(Post.Columns.CategoryId, categoryId);
-			q.AndWhere(Post.Columns.IsDeleted, 0);
-			q.AndWhere(Post.Columns.IsPublished, 1);
-
-			pc.LoadAndCloseReader(q.ExecuteReader());
+            PostCollection pc = new PostCollection(_postService.FetchPostsByCategory(categoryId).Where(x => !x.IsDeleted && x.IsPublished).ToList());
 
 			StringBuilder sb = new StringBuilder();
 			if (pc.Count > 0)
@@ -828,32 +833,22 @@ namespace Graffiti.Core
 		}
 
 		/// <summary>
-		///     Renders an unordered lists with the sites most recent posts
+		/// Renders an unordered lists with the sites most recent posts
 		/// </summary>
 		/// <param name="numberOfPosts"></param>
 		/// <returns></returns>
 		public string ULRecentPosts(int numberOfPosts)
 		{
-			PostCollection pc = new PostCollection();
-			Query q = PostCollection.DefaultQuery();
-			q.PageIndex = 1;
-			q.PageSize = numberOfPosts;
-			pc.LoadAndCloseReader(q.ExecuteReader());
-
 			StringBuilder sb = new StringBuilder();
-			if (pc.Count > 0)
+    		foreach (Post p in _postService.FetchRecentPosts(numberOfPosts))
 			{
-				foreach (Post p in pc)
-				{
-					sb.AppendFormat(liHrefFormat, p.Url, p.Title);
-				}
+				sb.AppendFormat(liHrefFormat, p.Url, p.Title);
 			}
-
 			return sb.ToString();
 		}
 
 		/// <summary>
-		///     Renders an unordred list of recent (published) comments
+		/// Renders an unordred list of recent (published) comments
 		/// </summary>
 		/// <param name="numberOfComments"></param>
 		/// <returns></returns>
@@ -867,7 +862,7 @@ namespace Graffiti.Core
 				foreach (Comment c in cc)
 				{
 					sb.AppendFormat("<li><a href=\"{0}\" title=\"{2} on {1} at {3}\">{2} on {1}</a></li>\n", c.Url, c.Post.Title,
-									c.User.ProperName, c.Published);
+										 c.User.ProperName, c.Published);
 				}
 			}
 
@@ -876,7 +871,7 @@ namespace Graffiti.Core
 
 
 		/// <summary>
-		///     Renders a pager for the current values in the Graffiti context (with customizable Older Posts and Newer Posts text)
+		/// Renders a pager for the current values in the Graffiti context (with customizable Older Posts and Newer Posts text)
 		/// </summary>
 		/// <param name="cssClass"></param>
 		/// <param name="previousText"></param>
@@ -885,24 +880,24 @@ namespace Graffiti.Core
 		public string Pager(string cssClass, string previousText, string nextText)
 		{
 			GraffitiContext graffiti = GraffitiContext.Current;
-			string sq = (SearchQuery == null) ? null : sq = "?q=" + SearchQuery;
+            string sq = (SearchQuery == null) ? null : sq = "?q=" + SearchQuery;
 			return Util.Pager(graffiti.PageIndex, graffiti.PageSize, graffiti.TotalRecords, cssClass, sq, previousText, nextText);
 		}
 
 		/// <summary>
-		///     Renders a pager for the current values in the Graffiti context
+		/// Renders a pager for the current values in the Graffiti context
 		/// </summary>
 		/// <param name="cssClass"></param>
 		/// <returns></returns>
 		public string Pager(string cssClass)
 		{
 			GraffitiContext graffiti = GraffitiContext.Current;
-			string sq = (SearchQuery == null) ? null : sq = "?q=" + SearchQuery;
+            string sq = (SearchQuery == null) ? null : sq = "?q=" + SearchQuery;
 			return Util.Pager(graffiti.PageIndex, graffiti.PageSize, graffiti.TotalRecords, cssClass, sq);
 		}
 
 		/// <summary>
-		///     Renders a tag cloud
+		/// Renders a tag cloud
 		/// </summary>
 		/// <param name="min">Minimum number of posts with the tag</param>
 		/// <param name="max">Maximum number of tags to return</param>
@@ -913,15 +908,14 @@ namespace Graffiti.Core
 
 			foreach (TagWeight tw in TagWeightCloud.FetchTags(min, max))
 			{
-				sb.AppendFormat("<a title=\"{3} posts\" style=\"font-size:{0}\" href=\"{1}\">{2}</a> ", tw.FontSize, tw.Url, tw.Name,
-								tw.Count);
+				sb.AppendFormat("<a title=\"{3} posts\" style=\"font-size:{0}\" href=\"{1}\">{2}</a> ", tw.FontSize, tw.Url, tw.Name, tw.Count);
 			}
 
 			return sb.ToString();
 		}
 
 		/// <summary>
-		///     Renders the tag cloud as an unordered list
+		/// Renders the tag cloud as an unordered list
 		/// </summary>
 		/// <param name="min">Minimum number of posts with the tag</param>
 		/// <param name="max">Maximum number of tags to return</param>
@@ -932,8 +926,7 @@ namespace Graffiti.Core
 
 			foreach (TagWeight tw in TagWeightCloud.FetchTags(min, max))
 			{
-				sb.AppendFormat("<li><a title=\"{3} posts\" style=\"font-size:{0}\" href=\"{1}\">{2}</a></li>", tw.FontSize, tw.Url,
-								tw.Name, tw.Count);
+				sb.AppendFormat("<li><a title=\"{3} posts\" style=\"font-size:{0}\" href=\"{1}\">{2}</a></li>", tw.FontSize, tw.Url, tw.Name, tw.Count);
 			}
 
 			return sb.ToString();
@@ -942,9 +935,8 @@ namespace Graffiti.Core
 		#endregion
 
 		#region Search
-
 		/// <summary>
-		///     Returns the current search query (q)
+		/// Returns the current search query (q)
 		/// </summary>
 		public string SearchQuery
 		{
@@ -952,15 +944,7 @@ namespace Graffiti.Core
 		}
 
 		/// <summary>
-		///     Returns the specified search query string value
-		/// </summary>
-		public string QueryString(string Key)
-		{
-			return HttpUtility.HtmlEncode(HttpContext.Current.Request[Key]);
-		}
-
-		/// <summary>
-		///     Returns the search url from $urls.Search
+		/// Returns the search url from $urls.Search
 		/// </summary>
 		/// <returns></returns>
 		public string SearchUrl()
@@ -969,21 +953,20 @@ namespace Graffiti.Core
 		}
 
 		/// <summary>
-		///     Returns the template to the search form (.view)
+		/// Returns the template to the search form (.view)
 		/// </summary>
 		/// <returns></returns>
 		public string SearchForm()
 		{
 			return
-				ViewManager.RenderTemplate(HttpContext.Current, GraffitiContext.Current, "~/__utility/forms/search.view");
+				 ViewManager.RenderTemplate(HttpContext.Current, GraffitiContext.Current, "~/__utility/forms/search.view");
 		}
-
 		#endregion
 
 		#region Comments
 
 		/// <summary>
-		///     Renders the element which links directly to the new comment form.
+		/// Renders the element which links directly to the new comment form.
 		/// </summary>
 		/// <param name="p"></param>
 		/// <returns></returns>
@@ -993,7 +976,7 @@ namespace Graffiti.Core
 		}
 
 		/// <summary>
-		///     Renders the element which links directly to the new comment form and includes additional attributes.
+		/// Renders the element which links directly to the new comment form and includes additional attributes.
 		/// </summary>
 		public string CommentUrl(Post p, IDictionary dictionary)
 		{
@@ -1019,7 +1002,7 @@ namespace Graffiti.Core
 		}
 
 		/// <summary>
-		///     Renders an href with the user details for the comment
+		/// Renders an href with the user details for the comment
 		/// </summary>
 		/// <param name="comment"></param>
 		/// <returns></returns>
@@ -1037,7 +1020,7 @@ namespace Graffiti.Core
 
 				// only show this if it is HTTP or HTTPS
 				if (uri != null && (
-									   uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps))
+											  uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps))
 					return string.Format("<a href=\"{0}\">{1}</a>", uri, comment.Name);
 			}
 
@@ -1050,7 +1033,7 @@ namespace Graffiti.Core
 		#region Publc Helpers
 
 		/// <summary>
-		///     Truncates a block of HTML
+		/// Truncates a block of HTML
 		/// </summary>
 		/// <param name="html"></param>
 		/// <param name="len"></param>
@@ -1061,7 +1044,7 @@ namespace Graffiti.Core
 		}
 
 		/// <summary>
-		///     Returns a random image from the current theme based on a pattern
+		/// Returns a random image from the current theme based on a pattern
 		/// </summary>
 		/// <param name="path"></param>
 		/// <param name="pattern"></param>
@@ -1070,22 +1053,23 @@ namespace Graffiti.Core
 		{
 			string newpath = ViewManager.GetFilePath(GraffitiContext.Current.Theme, path);
 			DirectoryInfo di = new DirectoryInfo(newpath);
-			var fis = di.GetFiles(pattern);
+			FileInfo[] fis = di.GetFiles(pattern);
 
 			if (fis != null && fis.Length > 0)
 			{
-				var files = new List<string>(fis.Length);
+				List<string> files = new List<string>(fis.Length);
 				foreach (FileInfo fi in fis)
 					files.Add(path + "/" + fi.Name);
 
 				return ThemeFile(Util.Randomize(files.ToArray(), 1)[0]);
+
 			}
 
 			return null;
 		}
 
 		/// <summary>
-		///     Checks to see if an object is null. If the object is a string, it will return true if it is null or empty.
+		/// Checks to see if an object is null. If the object is a string, it will return true if it is null or empty. 
 		/// </summary>
 		/// <param name="obj"></param>
 		/// <returns></returns>
@@ -1102,7 +1086,7 @@ namespace Graffiti.Core
 		}
 
 		/// <summary>
-		///     Checks to if an object is not null (!IsNull)
+		/// Checks to if an object is not null (!IsNull)
 		/// </summary>
 		/// <param name="obj"></param>
 		/// <returns></returns>
@@ -1112,7 +1096,7 @@ namespace Graffiti.Core
 		}
 
 		/// <summary>
-		///     Enables parsing of text as a template on the fly.
+		/// Enables parsing of text as a template on the fly.
 		/// </summary>
 		/// <param name="templateText"></param>
 		/// <returns></returns>
@@ -1122,7 +1106,7 @@ namespace Graffiti.Core
 		}
 
 		/// <summary>
-		///     Allows you to combine two objects and return the resulting string value
+		/// Allows you to combine two objects and return the resulting string value
 		/// </summary>
 		/// <param name="leftSide">The object to appear on the left side of the concattenated string</param>
 		/// <param name="rightSide">The object to appear on the right side of the concattenated string</param>
@@ -1135,7 +1119,7 @@ namespace Graffiti.Core
 		#region Reflection
 
 		/// <summary>
-		///     Helper method which reflects on the current object and writes out a table.
+		/// Helper method which reflects on the current object and writes out a table. 
 		/// </summary>
 		public string Reflect(object obj)
 		{
@@ -1143,7 +1127,7 @@ namespace Graffiti.Core
 		}
 
 		/// <summary>
-		///     Helper method which reflects on the current object and writes out a table.
+		/// Helper method which reflects on the current object and writes out a table. 
 		/// </summary>
 		public string Reflect(object obj, bool showTypes)
 		{
@@ -1157,17 +1141,18 @@ namespace Graffiti.Core
 			if (showTypes)
 			{
 				sb.Append("<th>Type</th>");
+
 			}
 
 			sb.Append("</tr>");
 
-			var properties = obj.GetType().GetProperties(BindingFlags.Instance | BindingFlags.Public);
+			PropertyInfo[] properties = obj.GetType().GetProperties(BindingFlags.Instance | BindingFlags.Public);
 
 			foreach (PropertyInfo pi in properties)
 			{
 				if (pi.CanRead)
 				{
-					if (pi.PropertyType == typeof (IList))
+					if (pi.PropertyType == typeof(IList))
 					{
 						IList list = pi.GetValue(obj, null) as IList;
 						if (list == null || list.Count == 0)
@@ -1183,6 +1168,7 @@ namespace Graffiti.Core
 								sb.AppendFormat("<tr><td>{0}</td><td>{1} ({2})</td></tr>", pi.Name, pi.PropertyType, list[0].GetType().Name);
 							else
 								sb.AppendFormat("<tr><td>{0}</td></tr>", pi.Name);
+
 						}
 					}
 					else
@@ -1206,11 +1192,11 @@ namespace Graffiti.Core
 
 		#region Gravatar
 
-		private static string defaultGravatar;
+		private static string defaultGravatar = null;
 		//private static string defaultEnocodedGravatar  = null;
 
 		/// <summary>
-		///     Generates a gravtar image
+		/// Generates a gravtar image
 		/// </summary>
 		/// <param name="email"></param>
 		/// <param name="name">Users name used for alt attribute</param>
@@ -1222,7 +1208,7 @@ namespace Graffiti.Core
 		}
 
 		/// <summary>
-		///     Generates a gravtar image
+		/// Generates a gravtar image
 		/// </summary>
 		public string Gravatar(string email, string name, string ip, IDictionary attributes)
 		{
@@ -1233,15 +1219,14 @@ namespace Graffiti.Core
 				attributes.Remove("size");
 
 			string image = GravatarImage(email, ip, size);
-			return string.Format("<img src=\"{0}\" {1} width=\"{2}\" height=\"{2}\" alt=\"{3} avatar\" />", image,
-								 GetAttributes(attributes), size, name);
+			return string.Format("<img src=\"{0}\" {1} width=\"{2}\" height=\"{2}\" alt=\"{3} avatar\" />", image, GetAttributes(attributes), size, name);
 		}
 
 		//Based on code by Jon Galloway
 		//http://weblogs.asp.net/jgalloway/archive/2007/09/23/adding-gravatars-to-your-asp-net-site-in-a-few-lines-of-code.aspx
 
 		/// <summary>
-		///     Generates the url for the Gravtar image
+		/// Generates the url for the Gravtar image
 		/// </summary>
 		/// <param name="email">address used to look up a user's Gravtar</param>
 		/// <param name="ip">users IP Address to use if Gravatar does not exist</param>
@@ -1256,7 +1241,7 @@ namespace Graffiti.Core
 			}
 
 			string identicon =
-				string.Format("{0}?code={1}&size={2}", defaultGravatar, IdenticonUtil.Code(ip), size);
+				 string.Format("{0}?code={1}&size={2}", defaultGravatar, Docuverse.Identicon.IdenticonUtil.Code(ip), size);
 
 
 			if (string.IsNullOrEmpty(email))
@@ -1266,9 +1251,8 @@ namespace Graffiti.Core
 
 			identicon = HttpUtility.UrlEncode(identicon);
 
-			string hash =
-				FormsAuthentication.HashPasswordForStoringInConfigFile(email.Trim(), "MD5").Trim().ToLower();
-			return string.Format("http://www.gravatar.com/avatar/{0}?amp;r=g&amp;s={2}&amp;d={1}", hash, identicon, size);
+			string hash = System.Web.Security.FormsAuthentication.HashPasswordForStoringInConfigFile(email.Trim(), "MD5").Trim().ToLower();
+      return string.Format("http://www.gravatar.com/avatar/{0}?amp;r=g&amp;s={2}&amp;d={1}", hash, identicon, size);
 		}
 
 		#endregion
@@ -1276,20 +1260,19 @@ namespace Graffiti.Core
 		#region Logo
 
 		/// <summary>
-		///     Renders an IMG with the logo.
+		/// Renders an IMG with the logo.
 		/// </summary>
 		public string LogoImage
 		{
-			get
-			{
-				return "<img style=\"border: none;\" id=\"graffiti_logo\" alt=\"Powered by Graffiti CMS\" src=\"" +
-					   VirtualPathUtility.ToAbsolute("~/__utility/img/logo.png") + "\" />";
-			}
+			get { return "<img style=\"border: none;\" id=\"graffiti_logo\" alt=\"Powered by Graffiti CMS\" src=\"" + VirtualPathUtility.ToAbsolute("~/__utility/img/logo.png") + "\" />"; }
 		}
 
 		public string Logo
 		{
-			get { return "<a title=\"Powered by Graffiti CMS\" href=\"http://graffiticms.codeplex.com\">" + LogoImage + "</a>"; }
+			get
+			{
+				return "<a title=\"Powered by Graffiti CMS\" href=\"http://graffiticms.codeplex.com\">" + LogoImage + "</a>";
+			}
 		}
 
 		#endregion
@@ -1297,7 +1280,7 @@ namespace Graffiti.Core
 		#region Forms
 
 		/// <summary>
-		///     Returns the template to the comment form (.view)
+		/// Returns the template to the comment form (.view)
 		/// </summary>
 		/// <returns></returns>
 		public string CommentForm()
@@ -1306,7 +1289,7 @@ namespace Graffiti.Core
 		}
 
 		/// <summary>
-		///     Renders the comment button wired up to the ajax handler.
+		/// Renders the comment button wired up to the ajax handler.
 		/// </summary>
 		/// <returns></returns>
 		public string CommentButton()
@@ -1315,7 +1298,7 @@ namespace Graffiti.Core
 		}
 
 		/// <summary>
-		///     Renders the comment button and allows additional attriubtes to be included.
+		/// Renders the comment button and allows additional attriubtes to be included. 
 		/// </summary>
 		/// <param name="dictionary"></param>
 		/// <returns></returns>
@@ -1327,14 +1310,14 @@ namespace Graffiti.Core
 			if (!dictionary.Contains("id"))
 				dictionary["id"] = "commentbutton";
 
+
 			return
-				string.Format(
-					"<input type=\"button\" {0} onclick=\"Comments.submitComment('{1}');\" />", GetAttributes(dictionary),
-					new Urls().Ajax);
+				 string.Format(
+					  "<input type=\"button\" {0} onclick=\"Comments.submitComment('{1}');\" />", GetAttributes(dictionary), new Urls().Ajax);
 		}
 
 		/// <summary>
-		///     Returns the contact form template (.view)
+		/// Returns the contact form template (.view)
 		/// </summary>
 		/// <returns></returns>
 		public string ContactForm()
@@ -1343,7 +1326,7 @@ namespace Graffiti.Core
 		}
 
 		/// <summary>
-		///     Renders the comment button wired up to the ajax handler.
+		/// Renders the comment button wired up to the ajax handler.
 		/// </summary>
 		/// <returns></returns>
 		public string ContactButton()
@@ -1352,7 +1335,7 @@ namespace Graffiti.Core
 		}
 
 		/// <summary>
-		///     Renders the comment button and allows additional attriubtes to be included.
+		/// Renders the comment button and allows additional attriubtes to be included. 
 		/// </summary>
 		/// <param name="dictionary"></param>
 		/// <returns></returns>
@@ -1366,9 +1349,8 @@ namespace Graffiti.Core
 
 
 			return
-				string.Format(
-					"<input type=\"button\" {0} onclick=\"Contact.submitMessage('{1}');\" />", GetAttributes(dictionary),
-					new Urls().Ajax);
+				 string.Format(
+					  "<input type=\"button\" {0} onclick=\"Contact.submitMessage('{1}');\" />", GetAttributes(dictionary), new Urls().Ajax);
 		}
 
 		#endregion
@@ -1376,7 +1358,7 @@ namespace Graffiti.Core
 		#region Spinner
 
 		/// <summary>
-		///     Returns the Url of the Spinner.gif image
+		/// Returns the Url of the Spinner.gif image
 		/// </summary>
 		public string Spinner
 		{
@@ -1384,7 +1366,7 @@ namespace Graffiti.Core
 		}
 
 		/// <summary>
-		///     Renders an image element containing the Spinner Image.
+		/// Renders an image element containing the Spinner Image.
 		/// </summary>
 		public string SpinnerImage
 		{
@@ -1393,10 +1375,12 @@ namespace Graffiti.Core
 
 		#endregion
 
+
+
 		#region Favicon
 
 		/// <summary>
-		///     Writes out the link information for a favicon
+		/// Writes out the link information for a favicon
 		/// </summary>
 		/// <param name="path"></param>
 		/// <returns></returns>
@@ -1406,10 +1390,11 @@ namespace Graffiti.Core
 				path = VirtualPathUtility.ToAbsolute(path);
 
 			return "<link rel=\"shortcut icon\" href=\"" + path + "\" type=\"image/x-icon\" />";
+
 		}
 
 		/// <summary>
-		///     Writes out the default favicon
+		/// Writes out the default favicon
 		/// </summary>
 		/// <returns></returns>
 		public string Favicon()
@@ -1423,9 +1408,8 @@ namespace Graffiti.Core
 		#endregion
 
 		#region Dates
-
 		/// <summary>
-		///     Gets a DateTime from a string
+		/// Gets a DateTime from a string
 		/// </summary>
 		/// <param name="dt">string to try to parse</param>
 		/// <returns>Valid DateTime for string value or DateTime.MinValue</returns>
@@ -1439,7 +1423,7 @@ namespace Graffiti.Core
 		}
 
 		/// <summary>
-		///     Gets the formatted date (from SiteSettings) for the datetime
+		/// Gets the formatted date (from SiteSettings) for the datetime
 		/// </summary>
 		/// <param name="dt"></param>
 		/// <returns></returns>
@@ -1449,7 +1433,7 @@ namespace Graffiti.Core
 		}
 
 		/// <summary>
-		///     Gets the formatted date (from SiteSettings) for the datetime
+		/// Gets the formatted date (from SiteSettings) for the datetime
 		/// </summary>
 		/// <param name="dt"></param>
 		/// <returns></returns>
@@ -1459,7 +1443,7 @@ namespace Graffiti.Core
 		}
 
 		/// <summary>
-		///     Gets the formatted time (from SiteSettings) for the datetime
+		/// Gets the formatted time (from SiteSettings) for the datetime
 		/// </summary>
 		/// <param name="dt"></param>
 		/// <returns></returns>
@@ -1469,7 +1453,7 @@ namespace Graffiti.Core
 		}
 
 		/// <summary>
-		///     Gets the formatted time (from SiteSettings) for the datetime
+		/// Gets the formatted time (from SiteSettings) for the datetime
 		/// </summary>
 		/// <param name="dt"></param>
 		/// <returns></returns>
@@ -1479,15 +1463,17 @@ namespace Graffiti.Core
 		}
 
 		/// <summary>
-		///     Gets the formatted date + seperator + formatted time (from SiteSettings) for the datetime
+		/// Gets the formatted date + seperator + formatted time (from SiteSettings) for the datetime
 		/// </summary>
+		/// <param name="dt"></param>
+		/// <returns></returns>
 		public string FormattedTime(string dt, string seperator)
 		{
 			return FormattedDateTime(GetDateTimeFromString(dt), seperator);
 		}
 
 		/// <summary>
-		///     Gets the formatted date + seperator + formatted time (from SiteSettings) for the datetime
+		/// Gets the formatted date + seperator + formatted time (from SiteSettings) for the datetime
 		/// </summary>
 		/// <param name="dt"></param>
 		/// <param name="seperator"></param>
@@ -1496,13 +1482,12 @@ namespace Graffiti.Core
 		{
 			return FormattedDate(dt) + seperator + FormattedTime(dt);
 		}
-
 		#endregion
 
 		#region Private Helpers
 
 		/// <summary>
-		///     Helper to convert an IDictionary to list of html attributes
+		/// Helper to convert an IDictionary to list of html attributes
 		/// </summary>
 		/// <param name="ht"></param>
 		/// <returns></returns>
@@ -1524,31 +1509,77 @@ namespace Graffiti.Core
 	}
 
 	/// <summary>
-	///     Used to return a safe link for chalk rendering
+	/// Used to return a safe link for chalk rendering
 	/// </summary>
 	public class Link
 	{
-		public string Url { get; set; }
+        private IPostService _postService;
+	    private ICategoryService _categoryService;
 
-		public string Text { get; set; }
+        //public Link(IPostService postService)
+        //{
+        //    _postService = postService;            
+        //}
 
-		public bool IsSelected { get; set; }
 
-		public DynamicNavigationType NavigationType { get; set; }
+		private string _url;
+
+		public string Url
+		{
+			get { return _url; }
+			set { _url = value; }
+		}
+
+		private string _name;
+
+		public string Text
+		{
+			get { return _name; }
+			set { _name = value; }
+		}
+
+		private bool _isSelected;
+
+		public bool IsSelected
+		{
+			get { return _isSelected; }
+			set { _isSelected = value; }
+		}
+
+		private DynamicNavigationType _navigationType;
+
+		public DynamicNavigationType NavigationType
+		{
+			get { return _navigationType; }
+			set { _navigationType = value; }
+		}
 
 
-		public int CategoryId { get; set; }
+		private int _categoryId;
 
-		public int PostId { get; set; }
+		public int CategoryId
+		{
+			get { return _categoryId; }
+			set { _categoryId = value; }
+		}
+
+		private int _postId;
+
+		public int PostId
+		{
+			get { return _postId; }
+			set { _postId = value; }
+		}
 
 		public Category Category
 		{
-			get { return CategoryId > 0 ? new CategoryController().GetCachedCategory(CategoryId, true) : null; }
+			get { return CategoryId > 0 ? _categoryService.FetchCachedCategory(CategoryId, true) : null; }
 		}
 
 		public Post Post
 		{
-			get { return PostId > 0 ? Post.GetCachedPost(PostId) : null; }
+			get { return PostId > 0 ? _postService.FetchCachedPost(PostId) : null; }
 		}
+
 	}
 }

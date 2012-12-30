@@ -1,215 +1,212 @@
 using System;
+using Telligent.DynamicConfiguration.Components;
 using System.Collections.Specialized;
-using System.IO;
-using System.Web.Caching;
+using System.Xml.Serialization;
 using System.Xml;
 using System.Xml.Schema;
-using System.Xml.Serialization;
-using Telligent.DynamicConfiguration.Components;
-using Telligent.DynamicConfiguration.Controls;
+using System.IO;
 
 namespace Graffiti.Core
 {
-	[Serializable]
-	public class ThemeConfigurationData : ConfigurationDataBase, IXmlConfigurationParserHelper, IXmlSerializable
-	{
-		private NameValueCollection _values;
+    [Serializable]
+    public class ThemeConfigurationData : ConfigurationDataBase, IXmlConfigurationParserHelper, IXmlSerializable
+    {
+        NameValueCollection _values;
 
-		#region Constructors
+        #region Constructors
 
-		public ThemeConfigurationData()
-		{
-			_theme = "default";
-			_values = new NameValueCollection();
-		}
+        public ThemeConfigurationData() : base()
+        {
+            _theme = "default";
+            _values = new NameValueCollection();
+        }
 
-		#endregion
+        #endregion
 
-		#region Public Properties
+        #region Public Properties
 
-		private string _theme;
+        string _theme;
+        public string Theme
+        {
+            get { return _theme; }
+            set { _theme = value; }
+        }
 
-		public string Theme
-		{
-			get { return _theme; }
-			set { _theme = value; }
-		}
+        public string Key
+        {
+            get { return GetKey(this.Theme); }
+        }
 
-		public string Key
-		{
-			get { return GetKey(Theme); }
-		}
+        #endregion
 
-		#endregion
+        #region ConfigurationDataBase Implementation
 
-		#region ConfigurationDataBase Implementation
+        public override ConfigurationDataBase Clone()
+        {
+            ThemeConfigurationData data2 = new ThemeConfigurationData();
 
-		public override PropertyGroup[] PropertyGroups
-		{
-			get
-			{
-				string key = Key + "-Groups";
-				var groups = ZCache.Get<PropertyGroup[]>(key);
+            data2.Theme = this.Theme;
+            foreach (string key in _values.Keys)
+            {
+                data2.SetValueInternal(key, _values[key]);
+            }
 
-				if (groups == null)
-				{
-					groups = ParsePropertyGroups();
-					ZCache.MaxCache(key, groups, new CacheDependency(ViewManager.GetThemePath(Theme)));
-				}
+            return data2;
+        }
 
-				return groups;
-			}
-		}
+        public override string GetResourceOrText(string resourceName, string resourceFile, string text)
+        {
+            // Graffiti doesn't currently support language resources
+            return text;
+        }
 
-		public override ConfigurationDataBase Clone()
-		{
-			ThemeConfigurationData data2 = new ThemeConfigurationData();
+        protected override string GetValueInternal(string propertyName, string defaultValue)
+        {
+            return _values[propertyName] ?? defaultValue;
+        }
 
-			data2.Theme = Theme;
-			foreach (string key in _values.Keys)
-			{
-				data2.SetValueInternal(key, _values[key]);
-			}
+        protected override void InternalCommit()
+        {
+            ObjectManager.Save(this, this.Key);
+        }
 
-			return data2;
-		}
+        public override PropertyGroup[] PropertyGroups
+        {
+            get 
+            {
+                string key = this.Key + "-Groups";
+                PropertyGroup[] groups = ZCache.Get<PropertyGroup[]>(key);
 
-		public override string GetResourceOrText(string resourceName, string resourceFile, string text)
-		{
-			// Graffiti doesn't currently support language resources
-			return text;
-		}
+                if (groups == null)
+                {
+                    groups = ParsePropertyGroups();
+                    ZCache.MaxCache(key, groups, new System.Web.Caching.CacheDependency(ViewManager.GetThemePath(this.Theme)));
+                }
 
-		protected override string GetValueInternal(string propertyName, string defaultValue)
-		{
-			return _values[propertyName] ?? defaultValue;
-		}
+                return groups;
+            }
+        }
 
-		protected override void InternalCommit()
-		{
-			ObjectManager.Save(this, Key);
-		}
+        protected override void SetValueInternal(string propertyName, string value)
+        {
+            _values[propertyName] = value;
+        }
 
-		protected override void SetValueInternal(string propertyName, string value)
-		{
-			_values[propertyName] = value;
-		}
+        #endregion
 
-		#endregion
+        #region MetaData Loading Methods
 
-		#region MetaData Loading Methods
+        private PropertyGroup[] ParsePropertyGroups()
+        {
+            string path = Path.Combine(ViewManager.GetThemePath(this.Theme), "theme.config");
+            if (File.Exists(path))
+            {
+                try
+                {
+                    XmlDocument doc = new XmlDocument();
+                    doc.Load(path);
 
-		private PropertyGroup[] ParsePropertyGroups()
-		{
-			string path = Path.Combine(ViewManager.GetThemePath(Theme), "theme.config");
-			if (File.Exists(path))
-			{
-				try
-				{
-					XmlDocument doc = new XmlDocument();
-					doc.Load(path);
+                    XmlNode node = doc.SelectSingleNode("Theme/DynamicConfiguration");
+                    if (node != null)
+                        return PropertyGroup.ParseAll(node.ChildNodes, this);
+                }
+                catch
+                {
+                    // ignore
+                }
+            }
+            
+            return new PropertyGroup[0];
+        }
 
-					XmlNode node = doc.SelectSingleNode("Theme/DynamicConfiguration");
-					if (node != null)
-						return PropertyGroup.ParseAll(node.ChildNodes, this);
-				}
-				catch
-				{
-					// ignore
-				}
-			}
+        #endregion
 
-			return new PropertyGroup[0];
-		}
+        public static string GetKey(string theme)
+        {
+            return "ThemeConfigurationData-" + theme;
+        }
 
-		#endregion
+        #region IXmlSerializable Members
 
-		public static string GetKey(string theme)
-		{
-			return "ThemeConfigurationData-" + theme;
-		}
+        public XmlSchema GetSchema()
+        {
+            return null;
+        }
 
-		#region IXmlSerializable Members
+        public void ReadXml(XmlReader reader)
+        {
+            this.Theme = reader.GetAttribute("Theme");
 
-		public XmlSchema GetSchema()
-		{
-			return null;
-		}
+            _values = new NameValueCollection();
+            while (reader.MoveToNextAttribute())
+            {
+                _values[reader.Name] = reader.Value;
+            }
 
-		public void ReadXml(XmlReader reader)
-		{
-			Theme = reader.GetAttribute("Theme");
+            reader.Read();
+        }
 
-			_values = new NameValueCollection();
-			while (reader.MoveToNextAttribute())
-			{
-				_values[reader.Name] = reader.Value;
-			}
+        public void WriteXml(XmlWriter writer)
+        {
+            writer.WriteAttributeString("Theme", this.Theme);
+            foreach (PropertyGroup group in this.PropertyGroups)
+            {
+                foreach (Property property in group.GetAllProperties())
+                {
+                    if (_values[property.ID] != null)
+                        writer.WriteAttributeString(property.ID, _values[property.ID]);
+                }
+            }
+        }
 
-			reader.Read();
-		}
+        #endregion
 
-		public void WriteXml(XmlWriter writer)
-		{
-			writer.WriteAttributeString("Theme", Theme);
-			foreach (PropertyGroup group in PropertyGroups)
-			{
-				foreach (Property property in group.GetAllProperties())
-				{
-					if (_values[property.ID] != null)
-						writer.WriteAttributeString(property.ID, _values[property.ID]);
-				}
-			}
-		}
+        #region IXmlConfigurationParserHelper Methods
 
-		#endregion
+        public void PropertyGroupParsed(XmlNode node, PropertyGroup group)
+        {
+        }
 
-		#region IXmlConfigurationParserHelper Methods
+        public void PropertySubGroupParsed(XmlNode node, PropertySubGroup subGroup)
+        {
+        }
 
-		public void PropertyGroupParsed(XmlNode node, PropertyGroup group)
-		{
-		}
+        public void PropertyParsed(XmlNode node, Property property)
+        {
+            if (node.Attributes["controlType"] == null)
+            {
+                if (node.Attributes["dataType"] != null)
+                {
+                    switch (node.Attributes["dataType"].Value.ToLower())
+                    {
+                        case "html":
+                            property.DataType = PropertyType.String;
+                            property.ControlType = typeof(Graffiti.Core.HtmlPropertyControl);
+                            break;
 
-		public void PropertySubGroupParsed(XmlNode node, PropertySubGroup subGroup)
-		{
-		}
+                        case "file":
+                        case "url":
+                            property.DataType = PropertyType.Url;
+                            property.ControlType = typeof(Graffiti.Core.FilePropertyControl);
+                            break;
 
-		public void PropertyParsed(XmlNode node, Property property)
-		{
-			if (node.Attributes["controlType"] == null)
-			{
-				if (node.Attributes["dataType"] != null)
-				{
-					switch (node.Attributes["dataType"].Value.ToLower())
-					{
-						case "html":
-							property.DataType = PropertyType.String;
-							property.ControlType = typeof (HtmlPropertyControl);
-							break;
+                        case "multilinestring":
+                            property.DataType = PropertyType.String;
+                            property.ControlType = typeof(Telligent.DynamicConfiguration.Controls.MultilineStringControl);
+                            break;
+                    }
+                }
+            }
+        }
 
-						case "file":
-						case "url":
-							property.DataType = PropertyType.Url;
-							property.ControlType = typeof (FilePropertyControl);
-							break;
+        public void PropertyValueParsed(XmlNode node, PropertyValue value)
+        {
+        }
 
-						case "multilinestring":
-							property.DataType = PropertyType.String;
-							property.ControlType = typeof (MultilineStringControl);
-							break;
-					}
-				}
-			}
-		}
+        public void PropertyRuleParsed(XmlNode node, PropertyRule rule)
+        {
+        }
 
-		public void PropertyValueParsed(XmlNode node, PropertyValue value)
-		{
-		}
-
-		public void PropertyRuleParsed(XmlNode node, PropertyRule rule)
-		{
-		}
-
-		#endregion
-	}
+        #endregion
+    }
 }

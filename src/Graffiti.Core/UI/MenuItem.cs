@@ -4,48 +4,69 @@ using System.Reflection;
 
 namespace Graffiti.Core
 {
-	public class MenuItem
-	{
-		public MenuItem(string name, string command, string description, string commandMenu)
-		{
-			Name = name;
-			Command = command;
-			Description = description;
-			CommandMenu = commandMenu;
-		}
+    public class MenuItem
+    {
+        private string _name;
+        private string _command;
+        private string _description;
+        private string _commandMenu;
 
-		public string Name { get; set; }
+        public string Name
+        {
+            get { return _name; }
+            set { _name = value; }
+        }
 
-		public string Command { get; set; }
+        public string Command
+        {
+            get { return _command; }
+            set { _command = value; }
+        }
 
-		public string Description { get; set; }
+        public string Description
+        {
+            get { return _description; }
+            set { _description = value; }
+        }
 
-		public string CommandMenu { get; set; }
+        public string CommandMenu
+        {
+            get { return _commandMenu; }
+            set { _commandMenu = value; }
+        }
 
-		public static List<MenuItem> GetMenuItems()
-		{
-			Assembly assembly = Assembly.GetExecutingAssembly();
+        public MenuItem(string name, string command, string description, string commandMenu)
+        {
+            _name = name;
+            _command = command;
+            _description = description;
+            _commandMenu = commandMenu;
+        }
 
-			var types = assembly.GetTypes();
+        public static List<MenuItem> GetMenuItems()
+        {
+            Assembly assembly = Assembly.GetExecutingAssembly();
 
-			var menuItems = new List<MenuItem>();
+            Type[] types = assembly.GetTypes();
 
-			foreach (Type t in types)
-			{
-				if (t.IsClass)
-				{
-					if (t.GetInterface("IMenuItem") != null)
-					{
-						object temp = Activator.CreateInstance(t);
+            List<MenuItem> menuItems = new List<MenuItem>();
 
-						menuItems.AddRange((List<MenuItem>) t.InvokeMember("GetMenuItems",
-						                                                   BindingFlags.Default | BindingFlags.InvokeMethod,
-						                                                   null, temp, null));
-					}
-				}
-			}
+            foreach (Type t in types)
+            {
+                if (t.IsClass)
+                {
+                    if (t.GetInterface("IMenuItem") != null)
+                    {
+                        object temp = Activator.CreateInstance(t);
 
-			return menuItems;
-		}
-	}
+                        menuItems.AddRange((List<MenuItem>)t.InvokeMember("GetMenuItems", 
+                                                            BindingFlags.Default | BindingFlags.InvokeMethod,
+                                                            null, temp, null));
+                    }
+                }
+            }
+            
+            return menuItems;
+        }
+    }
 }

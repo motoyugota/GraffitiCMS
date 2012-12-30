@@ -2,182 +2,187 @@ using System;
 using System.IO;
 using System.Text;
 using System.Xml;
+using Graffiti.Core.Services;
 
 namespace Graffiti.Core
 {
-	public static class ThemeConverter
-	{
-		public static void ToDisk(string xml, string basePath, bool overwrite)
-		{
-			ToDisk(xml, basePath, overwrite, null);
-		}
+    public static class ThemeConverter
+    {
+        private static IVersionStoreService _versionStoreService = ServiceLocator.Get<IVersionStoreService>();
 
-		public static string ToDisk(string xml, string basePath, bool overwrite, string overrideThemeName)
-		{
-			XmlDocument doc = new XmlDocument();
-			doc.LoadXml(xml);
+        public static void ToDisk(string xml, string basePath, bool overwrite)
+        {
+            ToDisk(xml, basePath, overwrite, null);
+        }
 
-			XmlNode node = doc.SelectSingleNode("/theme/folder");
+        public static string ToDisk(string xml, string basePath, bool overwrite, string overrideThemeName)
+        {   
+            XmlDocument doc = new XmlDocument();
+            doc.LoadXml(xml);
 
-			if (!String.IsNullOrEmpty(overrideThemeName))
-			{
-				node.Attributes["name"].Value = overrideThemeName;
-			}
+            XmlNode node = doc.SelectSingleNode("/theme/folder");
 
-			string name = node.Attributes["name"].Value;
+            if (!String.IsNullOrEmpty(overrideThemeName))
+            {
+                node.Attributes["name"].Value = overrideThemeName;
+            }
 
-			ProcessFolderNode(node, basePath, overwrite);
+            string name = node.Attributes["name"].Value;
 
-			return name;
-		}
+            ProcessFolderNode(node, basePath, overwrite);
 
-		private static void ProcessFolderNode(XmlNode node, string basePath, bool overwrite)
-		{
-			string folderName = node.Attributes["name"].Value;
-			string newPath = Path.Combine(basePath, folderName);
-			DirectoryInfo di = new DirectoryInfo(newPath);
-			if (!di.Exists)
-			{
-				di.Create();
-			}
-			else if (!overwrite)
-				throw new Exception("Directory " + newPath + " already exists");
+            return name;
+        }
 
-			foreach (XmlNode fileNode in node.SelectNodes("files/file"))
-			{
-				string fileToCreateName = Path.Combine(newPath, fileNode.Attributes["name"].Value);
-				if (!overwrite && File.Exists(fileToCreateName))
-					throw new Exception("The file " + fileToCreateName + " already exists");
+        private static void ProcessFolderNode(XmlNode node, string basePath, bool overwrite)
+        {
+            string folderName = node.Attributes["name"].Value;
+            string newPath = Path.Combine(basePath, folderName);
+            DirectoryInfo di = new DirectoryInfo(newPath);
+            if (!di.Exists)
+            {
+                di.Create();
+            }
+            else if (!overwrite)
+                throw new Exception("Directory " + newPath + " already exists");
 
-				bool isText = fileNode.Attributes["type"] != null ? fileNode.Attributes["type"].Value == "text" : false;
-				if (isText)
-				{
-					using (StreamWriter sw = new StreamWriter(fileToCreateName))
-					{
-						sw.Write(fileNode.InnerText);
-						sw.Close();
-					}
-				}
-				else
-				{
-					string base64 = fileNode.InnerText;
-					var ba = Convert.FromBase64String(base64);
-					using (FileStream fs = new FileStream(fileToCreateName, FileMode.Create, FileAccess.Write))
-					{
-						fs.Write(ba, 0, ba.Length);
-						fs.Close();
-					}
-				}
+            foreach(XmlNode fileNode in node.SelectNodes("files/file"))
+            {
+                string fileToCreateName = Path.Combine(newPath, fileNode.Attributes["name"].Value);
+                if (!overwrite && File.Exists(fileToCreateName))
+                    throw new Exception("The file " + fileToCreateName + " already exists");
 
-				VersionStore.VersionFile(new FileInfo((fileToCreateName)));
-			}
+                bool isText = fileNode.Attributes["type"] != null ? fileNode.Attributes["type"].Value == "text" : false;
+                if(isText)
+                {
+                    using (StreamWriter sw = new StreamWriter(fileToCreateName))
+                    {
+                        sw.Write(fileNode.InnerText);
+                        sw.Close();
+                    }
+                }
+                else
+                {
+                    string base64 = fileNode.InnerText;
+                    byte[] ba = Convert.FromBase64String(base64);
+                    using(FileStream fs = new FileStream(fileToCreateName,FileMode.Create,FileAccess.Write))
+                    {
+                        fs.Write(ba,0,ba.Length);
+                        fs.Close();
+                    }
+                }
 
-			foreach (XmlNode folderNode in node.SelectNodes("folders/folder"))
-			{
-				ProcessFolderNode(folderNode, newPath, overwrite);
-			}
-		}
+                _versionStoreService.VersionFile(new FileInfo((fileToCreateName)), GraffitiUsers.Current.Name, SiteSettings.CurrentUserTime);
+            }
 
-		public static string ToXML(string path)
-		{
-			DirectoryInfo di = new DirectoryInfo(path);
-			StringBuilder sb = new StringBuilder();
-			StringWriter sw = new StringWriter(sb);
+            foreach(XmlNode folderNode in node.SelectNodes("folders/folder"))
+            {
+                ProcessFolderNode(folderNode,newPath,overwrite);
+            }
+        }
 
-			XmlTextWriter writer = new XmlTextWriter(sw);
-			writer.Formatting = Formatting.Indented;
-			writer.WriteRaw("<?xml version=\"1.0\" encoding=\"utf-8\"?>");
-			writer.WriteStartElement("theme");
+        public static string ToXML(string path)
+        {
+            DirectoryInfo di = new DirectoryInfo(path);
+            StringBuilder sb = new StringBuilder();
+            StringWriter sw = new StringWriter(sb);
 
-			DirectoryToXML(di, writer);
+            XmlTextWriter writer = new XmlTextWriter(sw);
+            writer.Formatting = Formatting.Indented;
+            writer.WriteRaw("<?xml version=\"1.0\" encoding=\"utf-8\"?>");
+            writer.WriteStartElement("theme");
+            
+            DirectoryToXML(di,writer);
+            
+            writer.WriteEndElement();
 
-			writer.WriteEndElement();
+            return sb.ToString();
+        }
 
-			return sb.ToString();
-		}
+        private static void DirectoryToXML(DirectoryInfo di, XmlTextWriter writer)
+        {
+            writer.WriteStartElement("folder");
+            writer.WriteAttributeString("name", di.Name);
 
-		private static void DirectoryToXML(DirectoryInfo di, XmlTextWriter writer)
-		{
-			writer.WriteStartElement("folder");
-			writer.WriteAttributeString("name", di.Name);
+            FileInfo[] files = di.GetFiles();
+            if (files != null && files.Length > 0)
+            {
+                writer.WriteStartElement("files");
 
-			var files = di.GetFiles();
-			if (files != null && files.Length > 0)
-			{
-				writer.WriteStartElement("files");
+                foreach (FileInfo fi in files)
+                {
+                    writer.WriteStartElement("file");
+                    writer.WriteAttributeString("name", fi.Name);
 
-				foreach (FileInfo fi in files)
-				{
-					writer.WriteStartElement("file");
-					writer.WriteAttributeString("name", fi.Name);
+                    //switch (fi.Extension.ToLower())
+                    //{
+                    //    case ".txt":
+                    //    case ".js":
+                    //    case ".css":
+                    //    case ".view":
+                    //    case ".xml":
+                    //    case ".htm":
+                    //    case ".html":
+                    //    case ".config":
 
-					//switch (fi.Extension.ToLower())
-					//{
-					//    case ".txt":
-					//    case ".js":
-					//    case ".css":
-					//    case ".view":
-					//    case ".xml":
-					//    case ".htm":
-					//    case ".html":
-					//    case ".config":
+                    //        writer.WriteAttributeString("type", "text");
 
-					//        writer.WriteAttributeString("type", "text");
-
-					//        using (StreamReader sr = new StreamReader(fi.FullName))
-					//        {
-					//            writer.WriteCData(sr.ReadToEnd());
-					//            sr.Close();
-					//        }
-
-
-					//        break;
-
-					//    case ".jpg":
-					//    case ".jpeg":
-					//    case ".gif":
-					//    case ".png":
-					//    case ".zip":
-					//    case ".bmp":
-
-					writer.WriteAttributeString("type", "base64");
-
-					using (FileStream fs = new FileStream(fi.FullName, FileMode.Open, FileAccess.Read))
-					{
-						var ba = new byte[fs.Length];
-						fs.Read(ba, 0, ba.Length);
-						fs.Close();
-
-						string base64 = Convert.ToBase64String(ba);
-						writer.WriteCData(base64);
-					}
+                    //        using (StreamReader sr = new StreamReader(fi.FullName))
+                    //        {
+                    //            writer.WriteCData(sr.ReadToEnd());
+                    //            sr.Close();
+                    //        }
 
 
-					//        break;
-					//}
+                    //        break;
 
-					writer.WriteEndElement();
-				}
+                    //    case ".jpg":
+                    //    case ".jpeg":
+                    //    case ".gif":
+                    //    case ".png":
+                    //    case ".zip":
+                    //    case ".bmp":
 
-				writer.WriteEndElement();
-			}
+                            writer.WriteAttributeString("type", "base64");
 
-			var children = di.GetDirectories();
+                            using (FileStream fs = new FileStream(fi.FullName, FileMode.Open, FileAccess.Read))
+                            {
+                                byte[] ba = new byte[fs.Length];
+                                fs.Read(ba, 0, ba.Length);
+                                fs.Close();
 
-			if (children != null && children.Length > 0)
-			{
-				writer.WriteStartElement("folders");
-				foreach (DirectoryInfo diChild in children)
-				{
-					if (!diChild.Name.StartsWith(".") && !diChild.Name.StartsWith("_svn"))
-					{
-						DirectoryToXML(diChild, writer);
-					}
-				}
-				writer.WriteEndElement();
-			}
+                                string base64 = Convert.ToBase64String(ba);
+                                writer.WriteCData(base64);
+                            }
 
-			writer.WriteEndElement();
-		}
-	}
+
+                    //        break;
+                    //}
+
+                    writer.WriteEndElement();
+                }
+
+                writer.WriteEndElement();
+            }
+
+            DirectoryInfo[] children = di.GetDirectories();
+
+            if (children != null && children.Length > 0)
+            {
+                writer.WriteStartElement("folders");
+                foreach (DirectoryInfo diChild in children)
+                {
+                    if (!diChild.Name.StartsWith(".") && !diChild.Name.StartsWith("_svn"))
+                    {
+                        DirectoryToXML(diChild, writer);
+                    }
+                }
+                writer.WriteEndElement();
+            }
+
+            writer.WriteEndElement();
+        }
+
+
+    }
 }

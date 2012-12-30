@@ -18,7 +18,7 @@ namespace Graffiti.BlogExtensions
 
 		#region Properties
 
-		private const string _geoRSSCustomFieldName = "GeoRSS Location";
+		private readonly string _geoRSSCustomFieldName = "GeoRSS Location";
 
 		private bool _enableCommentRSS = false;
 		public bool EnableCommentRSS
@@ -153,7 +153,7 @@ namespace Graffiti.BlogExtensions
 				return StatusType.Error;
 			}
 
-			UrlRouting.Initialize();
+			SetupUrlRouting(null);
 			SetupCommentFeed();
 			SetupGeoRSS();
 
@@ -162,7 +162,7 @@ namespace Graffiti.BlogExtensions
 
 		public override void EventEnabled()
 		{
-			UrlRouting.Initialize();
+			SetupUrlRouting(null);
 			SetupCommentFeed();
 			SetupGeoRSS();
 		}
@@ -248,6 +248,31 @@ namespace Graffiti.BlogExtensions
 			}
 		}
 
+		private void SetupUrlRouting(RouteCollection routes)
+		{
+			if (EnableCommentRSS)
+			{
+				if (routes == null)
+					UrlRouting.AddRoute(new Route("feed/comments/", new CommentRssRouteHandler()));
+				else
+					routes.Add(new Route("feed/comments/", new CommentRssRouteHandler()));
+			}
+
+			if (EnableTrackbacks)
+			{
+				if (routes == null)
+				{
+					UrlRouting.AddRoute(new Route("trackback.ashx", new TrackbackRouteHandler()));
+					UrlRouting.AddRoute(new Route("pingback.ashx", new PingbackRouteHandler()));
+				}
+				else
+				{
+					routes.Add(new Route("trackback.ashx", new TrackbackRouteHandler()));
+					routes.Add(new Route("pingback.ashx", new PingbackRouteHandler()));
+				}
+			}
+		}
+
 		#endregion
 
 		#region Events
@@ -303,15 +328,7 @@ namespace Graffiti.BlogExtensions
 
 		void ga_UrlRoutingAdd(RouteCollection routes, EventArgs e)
 		{
-			if (EnableCommentRSS)
-				routes.Add(new Route("feed/comments/", new CommentRssRouteHandler()));
-
-			if (EnableTrackbacks)
-			{
-				routes.Add(new Route("trackback.ashx", new TrackbackRouteHandler()));
-				routes.Add(new Route("pingback.ashx", new PingbackRouteHandler()));
-			}
-
+			SetupUrlRouting(routes);
 		}
 
 		void ga_BeginRequest(object sender, EventArgs e)

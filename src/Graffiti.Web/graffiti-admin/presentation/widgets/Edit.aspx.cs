@@ -3,41 +3,43 @@ using Graffiti.Core;
 
 public partial class graffiti_admin_presentation_widgets_Edit : AdminControlPanelPage
 {
-	protected void Page_Load(object sender, EventArgs e)
-	{
-		LiHyperLink.SetNameToCompare(Context, "presentation");
 
-		Widget widget = Widgets.Fetch(new Guid(Request.QueryString["id"]));
-		if (widget == null)
-			throw new Exception("The widget does not exist");
 
-		if (!Util.AreEqualIgnoreCase("Edit.aspx", widget.EditUrl))
-			Response.Redirect(widget.EditUrl + "?id=" + Request.QueryString["id"]);
+    protected void Page_Load(object sender, EventArgs e)
+    {
+        LiHyperLink.SetNameToCompare(Context,"presentation");
 
-		PageTitle.Text = widget.FormName;
-		Page.Title = "Widget: " + widget.FormName;
+            Widget widget = Widgets.Fetch(new Guid(Request.QueryString["id"]));
+            if (widget == null)
+                throw new Exception("The widget does not exist");
 
-		if (!IsPostBack)
-		{
-			FormRegion.Text = widget.BuildForm();
-		}
-		else
-			FormRegion.Text = widget.BuildForm(Request.Form);
-	}
+        if(!Graffiti.Core.Util.AreEqualIgnoreCase("Edit.aspx", widget.EditUrl))
+            Response.Redirect(widget.EditUrl + "?id=" + Request.QueryString["id"]);
 
-	protected void EditWidget_Click(object sender, EventArgs e)
-	{
-		Widget widget = Widgets.Fetch(new Guid(Request.QueryString["id"]));
-		StatusType st = widget.SetValues(Context, Request.Form);
-		if (st == StatusType.Success)
-		{
-			Widgets.Save(widget);
-			Response.Redirect(ResolveUrl("~/graffiti-admin/presentation/widgets/?ws=") + widget.Id);
-		}
-		else
-		{
-			Message.Text = EditableForm.GetMessage(Context) ?? "Your widget could not be updated";
-			Message.Type = st;
-		}
-	}
+        PageTitle.Text = widget.FormName;
+        this.Page.Title = "Widget: " + widget.FormName;
+
+            if (!IsPostBack)
+            {
+                FormRegion.Text = widget.BuildForm();
+            }
+            else
+                FormRegion.Text = widget.BuildForm(Request.Form);
+    }
+
+    protected void EditWidget_Click(object sender, EventArgs e)
+    {
+        Widget widget = Widgets.Fetch(new Guid(Request.QueryString["id"]));
+        StatusType st = widget.SetValues(Context, Request.Form);
+        if(st == StatusType.Success)
+        {
+            Widgets.Save(widget);
+            Response.Redirect(ResolveUrl("~/graffiti-admin/presentation/widgets/?ws=") + widget.Id);
+        }
+        else
+        {
+            Message.Text = Widget.GetMessage(Context) ?? "Your widget could not be updated";
+            Message.Type = st;
+        }
+    }
 }

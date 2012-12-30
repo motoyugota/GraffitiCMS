@@ -1,17 +1,13 @@
 using System;
 using System.Collections.Specialized;
-using System.Web;
+using System.Text;
 
 namespace Graffiti.Core
 {
-	[WidgetInfo("4eaf767d-c787-4e9c-aafc-e37d0ef3f70c", "Recent Comments",
-		"Controls the display of a list of recent comments")]
+	[WidgetInfo("4eaf767d-c787-4e9c-aafc-e37d0ef3f70c", "Recent Comments", "Controls the display of a list of recent comments")]
 	[Serializable]
 	public class RecentCommentsWidget : Widget
 	{
-		private int _categoryId = -1;
-		private int _numberOfComments = 5;
-
 		public override string Name
 		{
 			get
@@ -32,32 +28,31 @@ namespace Graffiti.Core
 
 				return base.Title;
 			}
-			set { base.Title = value; }
+			set
+			{
+				base.Title = value;
+			}
 		}
 
+		private int _categoryId = -1;
 		public int CategoryId
 		{
 			get { return _categoryId; }
 			set { _categoryId = value; }
 		}
 
+		private int _numberOfComments = 5;
 		public int NumberOfComments
 		{
 			get { return _numberOfComments; }
 			set { _numberOfComments = value; }
 		}
 
-		public override string FormName
-		{
-			get { return "Recent Comment Configuration"; }
-		}
-
 		protected override FormElementCollection AddFormElements()
 		{
 			FormElementCollection fec = new FormElementCollection();
 			fec.Add(AddTitleElement());
-			ListFormElement lfe = new ListFormElement("numberOFcomments", "Number of Comments",
-			                                          "The number of most recent comments to list");
+			ListFormElement lfe = new ListFormElement("numberOFcomments", "Number of Comments", "The number of most recent comments to list");
 			lfe.Add(new ListItemFormElement("3", "3"));
 			lfe.Add(new ListItemFormElement("5", "5", true));
 			lfe.Add(new ListItemFormElement("10", "10"));
@@ -79,7 +74,7 @@ namespace Graffiti.Core
 			return nvc;
 		}
 
-		public override StatusType SetValues(HttpContext context, NameValueCollection nvc)
+		public override StatusType SetValues(System.Web.HttpContext context, NameValueCollection nvc)
 		{
 			base.SetValues(context, nvc);
 
@@ -89,5 +84,14 @@ namespace Graffiti.Core
 			//CategoryId = Int32.Parse(nvc["categoryid"]);
 			return StatusType.Success;
 		}
+
+		public override string FormName
+		{
+			get
+			{
+				return "Recent Comment Configuration";
+			}
+		}
+
 	}
 }

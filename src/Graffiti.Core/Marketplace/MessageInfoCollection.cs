@@ -1,21 +1,21 @@
 using System.Collections.Generic;
-using System.Xml.Linq;
+using System.Xml;
 
 namespace Graffiti.Core.Marketplace
 {
-	public class MessageInfoCollection : List<MessageInfo>
-	{
-		public MessageInfoCollection()
-		{
-		}
+    public class MessageInfoCollection : List<MessageInfo>
+    {
+        public MessageInfoCollection()
+        {
+        }
 
-		public MessageInfoCollection(IEnumerable<XElement> nodes)
-		{
-			foreach (XElement node in nodes)
-			{
-				MessageInfo messageInfo = new MessageInfo(node);
-				Add(messageInfo);
-			}
-		}
-	}
+        public MessageInfoCollection(XmlNodeList nodes)
+        {
+            foreach (XmlNode node in nodes)
+            {
+                MessageInfo messageInfo = new MessageInfo(node);
+                Add(messageInfo);
+            }
+        }
+    }
 }

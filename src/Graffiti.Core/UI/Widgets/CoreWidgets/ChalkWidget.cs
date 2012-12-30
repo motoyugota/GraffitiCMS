@@ -1,55 +1,54 @@
 using System.Collections.Specialized;
-using System.Web;
 
 namespace Graffiti.Core
 {
-	[WidgetInfo("f7aca00e-5b77-4bac-b0d7-b626cf1051cb", "Chalk Widget",
-		"Parsers a block of Chalk and renders it as a widget")]
-	public class ChalkWidget : Widget
-	{
-		public string Chalk;
+    [WidgetInfo("f7aca00e-5b77-4bac-b0d7-b626cf1051cb","Chalk Widget", "Parsers a block of Chalk and renders it as a widget")]
+    public class ChalkWidget : Widget
+    {
 
-		public override string Name
-		{
-			get
-			{
-				if (string.IsNullOrEmpty(Title))
-					return "Chalk Widget";
-				else
-					return Title + " (Chalk widget)";
-			}
-		}
+        public override string Name
+        {
+            get
+            {
+                if (string.IsNullOrEmpty(Title))
+                    return "Chalk Widget";
+                else
+                    return Title + " (Chalk widget)";
+            }
+        }
 
-		protected override FormElementCollection AddFormElements()
-		{
-			FormElementCollection fec = new FormElementCollection();
-			fec.Add(new TextFormElement("Title", "Title", "The title of the section"));
-			fec.Add(new TextAreaFormElement("Chalk", "Your Chalk Script", null, 15));
-			return fec;
-		}
+        public string Chalk;
 
-		public override StatusType SetValues(HttpContext context, NameValueCollection nvc)
-		{
-			base.SetValues(context, nvc);
-			Chalk = nvc["Chalk"];
-			return StatusType.Success;
-		}
+        protected override FormElementCollection AddFormElements()
+        {
+            FormElementCollection fec = new FormElementCollection();
+            fec.Add(new TextFormElement("Title", "Title", "The title of the section"));
+            fec.Add(new TextAreaFormElement("Chalk", "Your Chalk Script", null, 15));
+            return fec;
+        }
 
-		protected override NameValueCollection DataAsNameValueCollection()
-		{
-			NameValueCollection nvc = base.DataAsNameValueCollection();
-			nvc["Chalk"] = Chalk;
-			return nvc;
-		}
+        public override StatusType SetValues(System.Web.HttpContext context, NameValueCollection nvc)
+        {
+            base.SetValues(context, nvc);
+            Chalk = nvc["Chalk"];
+            return StatusType.Success;
+        }
 
-		public override string RenderData()
-		{
-			if (!string.IsNullOrEmpty(Chalk))
-			{
-				return TemplateEngine.Evaluate(Chalk, GraffitiContext.Current);
-			}
+        protected override NameValueCollection DataAsNameValueCollection()
+        {
+            NameValueCollection nvc = base.DataAsNameValueCollection();
+            nvc["Chalk"] = Chalk;
+            return nvc;
+        }
 
-			return string.Empty;
-		}
-	}
+        public override string RenderData()
+        {
+            if(!string.IsNullOrEmpty(Chalk))
+            {
+                return TemplateEngine.Evaluate(Chalk, GraffitiContext.Current);
+            }
+
+            return string.Empty;
+        }
+    }
 }

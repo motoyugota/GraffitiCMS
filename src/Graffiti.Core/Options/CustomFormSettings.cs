@@ -2,167 +2,171 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Text;
+using Graffiti.Core.Services;
 
 namespace Graffiti.Core
 {
-	/// <summary>
-	///     Defines a single custom form. This object is stored in the ObjectStore
-	/// </summary>
-	[Serializable]
-	public class CustomFormSettings
-	{
-		public static readonly string DefaultCustomFormName = "Default::Custom::Form";
-		public int CategoryId;
-		public List<CustomField> Fields;
-		public int FormCategoryId;
-		public bool IsNew = true;
-		public string Name;
+    /// <summary>
+    /// Defines a single custom form. This object is stored in the ObjectStore
+    /// </summary>
+    [Serializable]
+    public class CustomFormSettings
+    {
+        private static ICategoryService _categoryService = ServiceLocator.Get<ICategoryService>();
 
-		public bool HasFields
-		{
-			get { return Fields != null && Fields.Count > 0; }
-		}
+        public static readonly string DefaultCustomFormName = "Default::Custom::Form";
+        public string Name;
+        public int CategoryId;
+        public int FormCategoryId;
+        public bool IsNew = true;
 
-		public void Add(CustomField field)
-		{
-			if (field.Id == Guid.Empty)
-				field.Id = Guid.NewGuid();
+        public List<CustomField> Fields;
 
-			if (Fields == null)
-				Fields = new List<CustomField>();
+        public void Add(CustomField field)
+        {
+            if (field.Id == Guid.Empty)
+                field.Id = Guid.NewGuid();
 
-			Fields.Add(field);
-		}
+            if(Fields == null)
+                Fields = new List<CustomField>();
 
-		/// <summary>
-		///     Returns a named custom form. The default post form is named "post".
-		/// </summary>
-		public static CustomFormSettings Get(int categoryId)
-		{
-			return Get(categoryId, true);
-		}
+            Fields.Add(field);
+        }
 
-		public static CustomFormSettings Get(int categoryId, bool processFormInheritance)
-		{
-			if (categoryId > 0)
-				return Get(new CategoryController().GetCachedCategory(categoryId, false), processFormInheritance);
-			else
-				return Get();
-		}
+        public bool HasFields
+        {
+            get{ return Fields != null && Fields.Count > 0;}
+        }
 
-		public static CustomFormSettings Get(Category category)
-		{
-			return Get(category, true);
-		}
+        /// <summary>
+        /// Returns a named custom form. The default post form is named "post".
+        /// </summary>
+        public static CustomFormSettings Get(int categoryId)
+        {
+            return Get(categoryId, true);
+        }
 
-		public static CustomFormSettings Get(Category category, bool processFormInheritance)
-		{
-			if (category == null)
-				return Get();
+        public static CustomFormSettings Get(int categoryId, bool processFormInheritance)
+        {
+            if (categoryId > 0)
+                return Get(_categoryService.FetchCachedCategory(categoryId,false), processFormInheritance);
+            else
+                return Get();
+        }
 
-			CustomFormSettings cfs = ObjectManager.Get<CustomFormSettings>("CustomFormSettings-" + category.Id);
-			cfs.FormCategoryId = category.Id;
+        public static CustomFormSettings Get(Category category)
+        {
+            return Get(category, true);
+        }
 
-			if (processFormInheritance)
-			{
-				CustomFormSettings combinedCfs = new CustomFormSettings();
-				combinedCfs.Name = category.Name;
-				combinedCfs.FormCategoryId = category.Id;
-				combinedCfs.IsNew = cfs.IsNew;
-				combinedCfs.Fields = new List<CustomField>();
+        public static CustomFormSettings Get(Category category, bool processFormInheritance)
+        {
+            if (category == null)
+                return Get();
+            
+            CustomFormSettings cfs = ObjectManager.Get<CustomFormSettings>("CustomFormSettings-" + category.Id);
+            cfs.FormCategoryId = category.Id;
 
-				if (cfs.Fields != null)
-				{
-					foreach (CustomField field in cfs.Fields)
-					{
-						combinedCfs.Fields.Add(field);
-					}
-				}
+            if (processFormInheritance)
+            {
+                CustomFormSettings combinedCfs = new CustomFormSettings();
+                combinedCfs.Name = category.Name;
+                combinedCfs.FormCategoryId = category.Id;
+                combinedCfs.IsNew = cfs.IsNew;
+                combinedCfs.Fields = new List<CustomField>();
 
-				CustomFormSettings cfs2;
-				if (category.ParentId > 0)
-				{
-					cfs2 = ObjectManager.Get<CustomFormSettings>("CustomFormSettings-" + category.ParentId);
+                if (cfs.Fields != null)
+                {
+                    foreach (CustomField field in cfs.Fields)
+                    {
+                        combinedCfs.Fields.Add(field);
+                    }
+                }
 
-					if (cfs2.Fields != null)
-					{
-						foreach (CustomField field in cfs2.Fields)
-						{
-							combinedCfs.Fields.Add(field);
-						}
-					}
+                CustomFormSettings cfs2;
+                if (category.ParentId > 0)
+                {
+                    cfs2 = ObjectManager.Get<CustomFormSettings>("CustomFormSettings-" + category.ParentId);
 
-					if (combinedCfs.IsNew)
-					{
-						combinedCfs.FormCategoryId = category.ParentId;
-						combinedCfs.IsNew = false;
-					}
-				}
+                    if (cfs2.Fields != null)
+                    {
+                        foreach (CustomField field in cfs2.Fields)
+                        {
+                            combinedCfs.Fields.Add(field);
+                        }
+                    }
 
-				cfs2 = Get();
-				if (cfs2.Fields != null)
-				{
-					foreach (CustomField field in cfs2.Fields)
-					{
-						combinedCfs.Fields.Add(field);
-					}
-				}
+                    if (combinedCfs.IsNew)
+                    {
+                        combinedCfs.FormCategoryId = category.ParentId;
+                        combinedCfs.IsNew = false;
+                    }
+                }
 
-				if (combinedCfs.IsNew)
-				{
-					combinedCfs.FormCategoryId = -1;
-					combinedCfs.IsNew = false;
-				}
+                cfs2 = Get();
+                if (cfs2.Fields != null)
+                {
+                    foreach (CustomField field in cfs2.Fields)
+                    {
+                        combinedCfs.Fields.Add(field);
+                    }
+                }
 
-				cfs = combinedCfs;
-			}
+                if (combinedCfs.IsNew)
+                {
+                    combinedCfs.FormCategoryId = -1;
+                    combinedCfs.IsNew = false;
+                }
 
-			cfs.CategoryId = category.Id;
+                cfs = combinedCfs;
+            }
 
-			return cfs;
-		}
+            cfs.CategoryId = category.Id;
 
-		public static CustomFormSettings Get()
-		{
-			CustomFormSettings cfs = ObjectManager.Get<CustomFormSettings>(DefaultCustomFormName);
-			cfs.FormCategoryId = -1;
-			cfs.CategoryId = -1;
+            return cfs;
+        }
 
-			return cfs;
-		}
+        public static CustomFormSettings Get()
+        {
+            CustomFormSettings cfs = ObjectManager.Get<CustomFormSettings>(DefaultCustomFormName);
+            cfs.FormCategoryId = -1;
+            cfs.CategoryId = -1;
 
-		public void Save()
-		{
-			if (string.IsNullOrEmpty(Name))
-				throw new Exception("The name of the custom form cannot be null");
+            return cfs;
+        }
 
-			IsNew = false;
-			if (CategoryId == -1)
-				ObjectManager.Save(this, DefaultCustomFormName);
-			else
-				ObjectManager.Save(this, "CustomFormSettings-" + CategoryId.ToString());
-		}
+        public void Save()
+        {
+            if (string.IsNullOrEmpty(Name))
+                throw new Exception("The name of the custom form cannot be null");
+
+            this.IsNew = false;
+            if (CategoryId == -1)
+                ObjectManager.Save(this, DefaultCustomFormName);
+            else
+                ObjectManager.Save(this, "CustomFormSettings-" + CategoryId.ToString());
+        }
 
 		public string GetHtmlForm(NameValueCollection customFieldValues, bool isNew)
-		{
-			NameValueCollection fieldValues = new NameValueCollection();
-			foreach (CustomField cf in Fields)
-			{
-				if (customFieldValues[cf.Name] != null)
-					fieldValues[cf.Id.ToString()] = customFieldValues[cf.Name];
-				else
-					fieldValues[cf.Id.ToString()] = customFieldValues[cf.Id.ToString()];
-			}
+        {
+            NameValueCollection fieldValues = new NameValueCollection();
+            foreach (CustomField cf in this.Fields)
+            {
+                if (customFieldValues[cf.Name] != null)
+                    fieldValues[cf.Id.ToString()] = customFieldValues[cf.Name];
+                else
+                    fieldValues[cf.Id.ToString()] = customFieldValues[cf.Id.ToString()];
+            }
 
 			StringBuilder sb = new StringBuilder();
-			foreach (CustomField cf in Fields)
+			foreach (CustomField cf in this.Fields)
 			{
 				switch (cf.FieldType)
 				{
 					case FieldType.TextBox:
 						new TextFormElement(cf.Id.ToString(), cf.Name, cf.Description).Write(sb, fieldValues);
 						break;
-
+		
 					case FieldType.TextArea:
 						new TextAreaFormElement(cf.Id.ToString(), cf.Name, cf.Description, cf.Rows).Write(sb, fieldValues);
 						break;
@@ -196,7 +200,10 @@ namespace Graffiti.Core
 				}
 			}
 
-			return sb.ToString();
-		}
-	}
+            return sb.ToString();
+        }
+    }
+
+
+
 }

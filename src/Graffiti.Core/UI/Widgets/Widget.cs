@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Specialized;
+using System.Text;
 using System.Web;
 
 namespace Graffiti.Core
@@ -8,13 +9,9 @@ namespace Graffiti.Core
 	public abstract class Widget : EditableForm
 	{
 		private Guid _id;
-		private WidgetLocation _location = WidgetLocation.Queue;
-		private int _order = Int16.MaxValue;
-
-		private string _title;
 
 		/// <summary>
-		///     Id of the current Widget instance
+		/// Id of the current Widget instance
 		/// </summary>
 		public Guid Id
 		{
@@ -22,9 +19,11 @@ namespace Graffiti.Core
 			set { _id = value; }
 		}
 
+		private string _title = null;
+
 		/// <summary>
-		///     The title is usually renderd as an H3. You can change this
-		///     by overriding the Render() method.
+		/// The title is usually renderd as an H3. You can change this
+		/// by overriding the Render() method.
 		/// </summary>
 		public virtual string Title
 		{
@@ -32,8 +31,10 @@ namespace Graffiti.Core
 			set { _title = value; }
 		}
 
+		private WidgetLocation _location = WidgetLocation.Queue;
+
 		/// <summary>
-		///     Where in the layout does this widget belong.
+		/// Where in the layout does this widget belong.
 		/// </summary>
 		public WidgetLocation Location
 		{
@@ -42,9 +43,11 @@ namespace Graffiti.Core
 		}
 
 
+		private int _order = Int16.MaxValue;
+
 		/// <summary>
-		///     The sort order of the widgets. This value does not have to be
-		///     unique.
+		/// The sort order of the widgets. This value does not have to be 
+		/// unique.
 		/// </summary>
 		public int Order
 		{
@@ -54,7 +57,7 @@ namespace Graffiti.Core
 
 
 		/// <summary>
-		///     Helper method for adding title. Just about every widget will have a title.
+		/// Helper method for adding title. Just about every widget will have a title.
 		/// </summary>
 		protected static TextFormElement AddTitleElement()
 		{
@@ -62,7 +65,7 @@ namespace Graffiti.Core
 		}
 
 		/// <summary>
-		///     This method can be overriden to control what elements are rendered on the edit screen.
+		/// This method can be overriden to control what elements are rendered on the edit screen.
 		/// </summary>
 		protected override FormElementCollection AddFormElements()
 		{
@@ -72,7 +75,7 @@ namespace Graffiti.Core
 		}
 
 		/// <summary>
-		///     The data receieved during a postback.
+		/// The data receieved during a postback.
 		/// </summary>
 		/// <param name="context"></param>
 		/// <param name="nvc">This value will always be the Request.Forms collection</param>
@@ -85,15 +88,16 @@ namespace Graffiti.Core
 
 
 		/// <summary>
-		///     Renders the _sub_ data of a widget. This method is invoked by Render() which is
-		///     responsible for adding the title.
+		/// Renders the _sub_ data of a widget. This method is invoked by Render() which is 
+		/// responsible for adding the title. 
 		/// </summary>
 		/// <returns></returns>
 		public abstract string RenderData();
 
 
+
 		/// <summary>
-		///     Enables widget developers to selectively hide widgets from users at runtime.
+		/// Enables widget developers to selectively hide widgets from users at runtime.
 		/// </summary>
 		/// <returns></returns>
 		public virtual bool IsUserValid()
@@ -102,18 +106,18 @@ namespace Graffiti.Core
 		}
 
 		/// <summary>
-		///     Renders a widget to the screen.
+		/// Renders a widget to the screen.
 		/// </summary>
 		/// <returns></returns>
 		public virtual string Render(string beforeTitle, string afterTitle, string beforeContent, string afterContent)
 		{
 			return
-				string.Format("{0}{1}{2}\n{3}{4}{5}", beforeTitle, Title, afterTitle, beforeContent, RenderData(),
-				              afterContent);
+				 string.Format("{0}{1}{2}\n{3}{4}{5}", beforeTitle, Title, afterTitle, beforeContent, RenderData(),
+									afterContent);
 		}
 
 		/// <summary>
-		///     Enables a common data format to be used for the binding of the custom edit form.
+		/// Enables a common data format to be used for the binding of the custom edit form.
 		/// </summary>
 		/// <returns></returns>
 		protected override NameValueCollection DataAsNameValueCollection()
@@ -142,5 +146,6 @@ namespace Graffiti.Core
 
 			return nvc;
 		}
+
 	}
 }

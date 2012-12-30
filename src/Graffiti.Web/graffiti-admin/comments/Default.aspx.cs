@@ -1,379 +1,385 @@
 using System;
-using System.Text;
-using System.Web.UI.WebControls;
-using DataBuddy;
+using System.Collections.Generic;
+using System.Linq;
 using Graffiti.Core;
+using System.Web.UI.WebControls;
+using System.Text;
 
 public partial class graffiti_admin_comments_Default : ControlPanelPage
 {
-	protected void CommentSave_Click(object sender, EventArgs e)
-	{
-		Comment comment = new Comment(Request.QueryString["id"]);
-		if (comment.IsNew)
-			throw new Exception("Invalid Comment Id");
+    protected void CommentSave_Click(object sender, EventArgs e)
+    {
+        Comment comment = _commentService.FetchComment(Request.QueryString["id"]);
+        if (comment.IsNew)
+            throw new Exception("Invalid Comment Id");
 
-		comment.Body = CommentEditor.Text;
-		comment.Name = Server.HtmlEncode(txtName.Text);
-		comment.WebSite = txtSite.Text;
-		comment.Email = txtEmail.Text;
-		comment.Save();
+        comment.Body = CommentEditor.Text;
+        comment.Name = Server.HtmlEncode(txtName.Text);
+        comment.WebSite = txtSite.Text;
+        comment.Email = txtEmail.Text;
+        comment = _commentService.SaveComment(comment);
 
-		Response.Redirect("~/graffiti-admin/comments/");
-	}
+        Response.Redirect("~/graffiti-admin/comments/");
+    }
 
-	protected void Page_Load(object sender, EventArgs e)
-	{
-		if (!IsPostBack)
-		{
-			BuildPage();
-		}
-	}
+    protected void Page_Load(object sender, EventArgs e)
+    {
+        if(!IsPostBack)
+        {
+            BuildPage();   
+        }
+    }
 
-	private void BuildPage()
-	{
-		if (Request.QueryString["id"] == null)
-		{
-			//CommentCollection cc = new CommentCollection();
-			Query q = Comment.CreateQuery();
+    private void BuildPage()
+    {
+        if (Request.QueryString["id"] == null)
+        {
+            //CommentCollection cc = new CommentCollection();
+            IList<Comment> comments = _commentService.FetchComments();
 
-			if (!(Request.QueryString["a"] == "d"))
-				q.AndWhere(Comment.Columns.IsPublished, !(Request.QueryString["a"] == "f"));
+            if (!(Request.QueryString["a"] == "d"))
+                comments = comments.Where(x => x.IsPublished == !(Request.QueryString["a"] == "f")).ToList();
 
-			q.AndWhere(Comment.Columns.IsDeleted, (Request.QueryString["a"] == "d"));
+            comments = comments.Where(x => x.IsDeleted == (Request.QueryString["a"] == "d")).ToList();
 
-			if (!String.IsNullOrEmpty(Request.QueryString["pid"]))
-			{
-				q.AndWhere(Comment.Columns.PostId, Request.QueryString["pid"]);
-			}
+            if (!String.IsNullOrEmpty(Request.QueryString["pid"]))
+            {
+                comments = comments.Where(x => x.PostId == int.Parse(Request.QueryString["pid"])).ToList();
+            }
 
-			q.OrderByDesc(Comment.Columns.Id);
+            comments = comments.OrderByDescending(x => x.Id).ToList();
 
-			CommentCollection tempCC = CommentCollection.FetchByQuery(q);
+            CommentCollection tempCC = new CommentCollection(comments);
 
-			CommentCollection permissionsFilteredCount = new CommentCollection();
-			permissionsFilteredCount.AddRange(tempCC);
+            CommentCollection permissionsFilteredCount = new CommentCollection();
+            permissionsFilteredCount.AddRange(tempCC);
 
-			foreach (Comment c in tempCC)
-			{
-				if (!RolePermissionManager.GetPermissions(c.Post.CategoryId, GraffitiUsers.Current).Read)
-					permissionsFilteredCount.Remove(c);
-			}
+            foreach (Comment c in tempCC)
+            {
+                if (!_rolePermissionService.GetPermissions(c.Post.CategoryId, GraffitiUsers.Current).Read)
+                    permissionsFilteredCount.Remove(c);
+            }
 
-			q.PageIndex = Int32.Parse(Request.QueryString["p"] ?? "1");
-			q.PageSize = 25;
+            int pageIndex = Int32.Parse(Request.QueryString["p"] ?? "1");
+            int pageSize = 25;
 
-			CommentCollection cc = CommentCollection.FetchByQuery(q);
+            CommentCollection cc = new CommentCollection(comments);
 
-			CommentCollection permissionsFiltered = new CommentCollection();
-			permissionsFiltered.AddRange(cc);
+            CommentCollection permissionsFiltered = new CommentCollection();
+            permissionsFiltered.AddRange(cc);
 
-			foreach (Comment c in cc)
-			{
-				if (!RolePermissionManager.GetPermissions(c.Post.CategoryId, GraffitiUsers.Current).Read)
-					permissionsFiltered.Remove(c);
-			}
+            foreach (Comment c in cc)
+            {
+                if (!_rolePermissionService.GetPermissions(c.Post.CategoryId, GraffitiUsers.Current).Read)
+                    permissionsFiltered.Remove(c);
+            }
 
-			CommentList.DataSource = permissionsFiltered;
-			CommentList.DataBind();
+            int commentCount = permissionsFiltered.Count;
+            if (pageIndex > 0 && pageSize > 0 && commentCount > pageSize)
+                permissionsFiltered = new CommentCollection(permissionsFiltered.Skip(pageIndex - 1 * pageSize).Take(pageSize));
 
-			string qs = Request.QueryString["a"] != null ? "?a=" + Request.QueryString["a"] : "?a=t";
+            CommentList.DataSource = permissionsFiltered;
+            CommentList.DataBind();
 
-			Pager.Text = Util.Pager(q.PageIndex, q.PageSize, permissionsFilteredCount.Count, "navigation", qs);
+            string qs = Request.QueryString["a"] != null ? "?a=" + Request.QueryString["a"] : "?a=t";
 
-			if (Request.QueryString["a"] == "f")
-				CommentLinks.SetActiveView(PendingComments);
-			else if (Request.QueryString["a"] == "d")
-				CommentLinks.SetActiveView(DeletedComments);
-		}
-		else
-		{
-			the_Views.SetActiveView(Comment_Form);
-			Comment comment = new Comment(Request.QueryString["id"]);
-			if (comment.IsNew)
-				throw new Exception("Invalid Comment Id");
+            Pager.Text = Util.Pager(pageIndex, pageSize, commentCount, "navigation", qs);
 
-			txtName.Text = Server.HtmlDecode(comment.Name);
-			txtSite.Text = comment.WebSite;
-			txtEmail.Text = comment.Email;
-			CommentEditor.Text = comment.Body;
-		}
+            if (Request.QueryString["a"] == "f")
+                CommentLinks.SetActiveView(PendingComments);
+            else if (Request.QueryString["a"] == "d")
+                CommentLinks.SetActiveView(DeletedComments);
+        }
+        else
+        {
+            the_Views.SetActiveView(Comment_Form);
+            Comment comment = _commentService.FetchComment(Request.QueryString["id"]);
+            if (comment.IsNew)
+                throw new Exception("Invalid Comment Id");
 
-		#region build the page title
+            txtName.Text = Server.HtmlDecode(comment.Name);
+            txtSite.Text = comment.WebSite;
+            txtEmail.Text = comment.Email;
+            CommentEditor.Text = comment.Body;
+        }
 
-		StringBuilder sb = new StringBuilder();
+        #region build the page title
 
-		string page = Request.QueryString["a"] ?? "t";
+        StringBuilder sb = new StringBuilder();
 
-		switch (page)
-		{
-			case "t":
-				sb.Append("Published ");
-				break;
-			case "f":
-				sb.Append("Pending ");
-				break;
-			case "d":
-				sb.Append("Deleted ");
-				break;
-		}
+        string page = Request.QueryString["a"] ?? "t";
 
-		sb.Append(" Comments");
+        switch (page)
+        {
+            case "t":
+                sb.Append("Published ");
+                break;
+            case "f":
+                sb.Append("Pending ");
+                break;
+            case "d":
+                sb.Append("Deleted ");
+                break;
+        }
 
-		lblPageTitle.Text = sb.ToString();
+        sb.Append(" Comments");
 
-		string post = Request.QueryString["pid"];
+        lblPageTitle.Text = sb.ToString();
 
-		if (!String.IsNullOrEmpty(post))
-		{
-			Post p = new Post(Convert.ToInt32(post));
+        string post = Request.QueryString["pid"];
 
-			lblPageTitle.Text += " for \"" + p.Name + "\"";
-		}
+        if (!String.IsNullOrEmpty(post))
+        {
+            Post p = _postService.FetchPost(Convert.ToInt32(post));
 
-		#endregion
-	}
+            lblPageTitle.Text += " for \"" + p.Name + "\"";
+        }
 
-	protected void CommentList_OnItemCommand(object sender, RepeaterCommandEventArgs e)
-	{
-		int count = 0;
+        #endregion
+    }
 
-		switch (e.CommandName)
-		{
-			case "Delete":
+    protected void CommentList_OnItemCommand(object sender, RepeaterCommandEventArgs e)
+    {
+        int count = 0;
 
-				foreach (RepeaterItem item in CommentList.Items)
-				{
-					int id = Convert.ToInt32(((HiddenField) item.FindControl("CommentID")).Value);
+        switch (e.CommandName)
+        {
+            case "Delete":
 
-					if (((CheckBox) item.FindControl("CommentCheckbox")).Checked)
-					{
-						Comment.Delete(id);
-						count++;
-					}
-				}
+                foreach (RepeaterItem item in CommentList.Items)
+                {
+                    int id = Convert.ToInt32(((HiddenField)item.FindControl("CommentID")).Value);
 
-				CommentStatus.Text = "You have deleted " + count.ToString() + " comment(s).";
+                    if (((CheckBox)item.FindControl("CommentCheckbox")).Checked)
+                    {
+                        _commentService.DeleteComment(id);
+                        count++;
+                    }
+                }
 
-				break;
+                CommentStatus.Text = "You have deleted " + count.ToString() + " comment(s).";
 
-			case "Approve":
+                break;
 
-				foreach (RepeaterItem item in CommentList.Items)
-				{
-					int id = Convert.ToInt32(((HiddenField) item.FindControl("CommentID")).Value);
+            case "Approve":
 
-					if (((CheckBox) item.FindControl("CommentCheckbox")).Checked)
-					{
-						Comment cmt = new Comment(id);
-						cmt.IsDeleted = false;
-						cmt.IsPublished = true;
-						cmt.Save();
+                foreach (RepeaterItem item in CommentList.Items)
+                {
+                    int id = Convert.ToInt32(((HiddenField)item.FindControl("CommentID")).Value);
 
-						count++;
-					}
-				}
+                    if (((CheckBox)item.FindControl("CommentCheckbox")).Checked)
+                    {
+                        Comment cmt = _commentService.FetchComment(id);
+                        cmt.IsDeleted = false;
+                        cmt.IsPublished = true;
+                        cmt = _commentService.SaveComment(cmt);
 
-				CommentStatus.Text = "You have approved " + count.ToString() + " comment(s).";
+                        count++;
+                    }
+                }
 
-				break;
+                CommentStatus.Text = "You have approved " + count.ToString() + " comment(s).";
 
-			case "Undelete":
+                break;
 
-				foreach (RepeaterItem item in CommentList.Items)
-				{
-					int id = Convert.ToInt32(((HiddenField) item.FindControl("CommentID")).Value);
+            case "Undelete":
 
-					if (((CheckBox) item.FindControl("CommentCheckbox")).Checked)
-					{
-						Comment comment = new Comment(id);
-						comment.IsDeleted = false;
-						comment.Save();
+                foreach (RepeaterItem item in CommentList.Items)
+                {
+                    int id = Convert.ToInt32(((HiddenField)item.FindControl("CommentID")).Value);
 
-						count++;
-					}
-				}
+                    if (((CheckBox)item.FindControl("CommentCheckbox")).Checked)
+                    {
+                        Comment comment = _commentService.FetchComment(id);
+                        comment.IsDeleted = false;
+                        comment = _commentService.SaveComment(comment);
 
-				CommentStatus.Text = "You have undeleted " + count.ToString() + " comment(s).";
+                        count++;
+                    }
+                }
 
-				break;
-		}
+                CommentStatus.Text = "You have undeleted " + count.ToString() + " comment(s).";
 
-		if (count == 0)
-		{
-			CommentStatus.Type = StatusType.Warning;
-			CommentStatus.Text = "No comments were selected.";
-		}
-		else
-		{
-			CommentStatus.Type = StatusType.Success;
-		}
+                break;
+        }
 
-		BuildPage();
-	}
+        if (count == 0)
+        {
+            CommentStatus.Type = StatusType.Warning;
+            CommentStatus.Text = "No comments were selected.";
+        }
+        else
+        {
+            CommentStatus.Type = StatusType.Success;
+        }
 
-	protected void CommentList_OnItemCreated(object sender, RepeaterItemEventArgs e)
-	{
-		if (e.Item.ItemType == ListItemType.Header)
-		{
-			PlaceHolder bulkApprove = (PlaceHolder) e.Item.FindControl("bulkApprove");
-			PlaceHolder bulkDelete = (PlaceHolder) e.Item.FindControl("bulkDelete");
-			PlaceHolder bulkUndelete = (PlaceHolder) e.Item.FindControl("bulkUndelete");
+        BuildPage();
+    }
 
-			// hide everything for now
-			bulkApprove.Visible = false;
-			bulkDelete.Visible = false;
-			bulkUndelete.Visible = false;
+    protected void CommentList_OnItemCreated(object sender, RepeaterItemEventArgs e)
+    {
+        if (e.Item.ItemType == ListItemType.Header)
+        {
+            PlaceHolder bulkApprove = (PlaceHolder)e.Item.FindControl("bulkApprove");
+            PlaceHolder bulkDelete = (PlaceHolder)e.Item.FindControl("bulkDelete");
+            PlaceHolder bulkUndelete = (PlaceHolder)e.Item.FindControl("bulkUndelete");
 
-			string page = Request.QueryString["a"] ?? "t";
+            // hide everything for now
+            bulkApprove.Visible = false;
+            bulkDelete.Visible = false;
+            bulkUndelete.Visible = false;
 
-			if (!String.IsNullOrEmpty(page))
-			{
-				switch (page)
-				{
-					case "t": // published
-						bulkDelete.Visible = true;
-						break;
-					case "f": // pending
-						bulkApprove.Visible = true;
-						bulkDelete.Visible = true;
-						break;
-					case "d": // bulkDeleted
-						bulkUndelete.Visible = true;
-						break;
-				}
-			}
-			else
-			{
-				bulkDelete.Visible = true;
-			}
-		}
+            string page = Request.QueryString["a"] ?? "t";
 
-		if (e.Item.ItemType == ListItemType.AlternatingItem || e.Item.ItemType == ListItemType.Item)
-		{
-			if (e.Item.DataItem == null)
-				return;
+            if (!String.IsNullOrEmpty(page))
+            {
+                switch (page)
+                {
+                    case "t": // published
+                        bulkDelete.Visible = true;
+                        break;
+                    case "f": // pending
+                        bulkApprove.Visible = true;
+                        bulkDelete.Visible = true;
+                        break;
+                    case "d": // bulkDeleted
+                        bulkUndelete.Visible = true;
+                        break;
+                }
+            }
+            else
+            {
+                bulkDelete.Visible = true;
+            }
+        }
 
-			Literal control = (Literal) e.Item.FindControl("cssclass");
+        if (e.Item.ItemType == ListItemType.AlternatingItem || e.Item.ItemType == ListItemType.Item)
+        {
+            if (e.Item.DataItem == null)
+                return;
 
-			if (control != null)
-				control.Text = IsAltRow(e.Item.ItemIndex);
+            Literal control = (Literal)e.Item.FindControl("cssclass");
 
-			HiddenField hf = (HiddenField) e.Item.FindControl("CommentID");
+            if (control != null)
+                control.Text = IsAltRow(e.Item.ItemIndex);
 
-			if (hf != null)
-				hf.Value = (((Comment) e.Item.DataItem).Id.ToString());
+            HiddenField hf = (HiddenField)e.Item.FindControl("CommentID");
 
-			PlaceHolder edit = (PlaceHolder) e.Item.FindControl("edit");
-			PlaceHolder approve = (PlaceHolder) e.Item.FindControl("approve");
-			PlaceHolder delete = (PlaceHolder) e.Item.FindControl("delete");
-			PlaceHolder undelete = (PlaceHolder) e.Item.FindControl("undelete");
+            if (hf != null)
+                hf.Value = (((Comment)e.Item.DataItem).Id.ToString());
 
-			// just to set them bold or not...
+			PlaceHolder edit = (PlaceHolder)e.Item.FindControl("edit");
+			PlaceHolder approve = (PlaceHolder)e.Item.FindControl("approve");
+			PlaceHolder delete = (PlaceHolder)e.Item.FindControl("delete");
+			PlaceHolder undelete = (PlaceHolder)e.Item.FindControl("undelete");
+
+            // just to set them bold or not...
 			//Literal EditBold = (Literal)edit.FindControl("EditBold");
 			//Literal ApproveBold = (Literal)approve.FindControl("ApproveBold");
 
-			Label pipe1 = (Label) e.Item.FindControl("pipe1");
-			Label pipe2 = (Label) e.Item.FindControl("pipe2");
+			Label pipe1 = (Label)e.Item.FindControl("pipe1");
+			Label pipe2 = (Label)e.Item.FindControl("pipe2");
 
-			// hide everything for now
-			edit.Visible = false;
-			approve.Visible = false;
-			delete.Visible = false;
-			undelete.Visible = false;
-			pipe1.Visible = false;
-			pipe2.Visible = false;
+            // hide everything for now
+            edit.Visible = false;
+            approve.Visible = false;
+            delete.Visible = false;
+            undelete.Visible = false;
+            pipe1.Visible = false;
+            pipe2.Visible = false;
 
-			string page = Request.QueryString["a"] ?? "t";
+            string page = Request.QueryString["a"] ?? "t";
 
-			Comment c = (Comment) e.Item.DataItem;
+            Comment c = (Comment)e.Item.DataItem;
 
-			if (!String.IsNullOrEmpty(page))
-			{
-				switch (page)
-				{
-					case "t": // published
-						if (RolePermissionManager.GetPermissions(c.Post.CategoryId, GraffitiUsers.Current).Edit)
-							edit.Visible = true;
+            if (!String.IsNullOrEmpty(page))
+            {
+                switch (page)
+                {
+                    case "t": // published
+                        if(_rolePermissionService.GetPermissions(c.Post.CategoryId, GraffitiUsers.Current).Edit)
+                            edit.Visible = true;
+                        
+                        if (_rolePermissionService.GetPermissions(c.Post.CategoryId, GraffitiUsers.Current).Publish)
+                        {
+                            //EditBold.Visible = true;
+                            pipe1.Visible = true;
+                            delete.Visible = true;
+                        }
+                        break;
+                    case "f": // pending
+                        if(_rolePermissionService.GetPermissions(c.Post.CategoryId, GraffitiUsers.Current).Edit)
+                        edit.Visible = true;
 
-						if (RolePermissionManager.GetPermissions(c.Post.CategoryId, GraffitiUsers.Current).Publish)
-						{
-							//EditBold.Visible = true;
-							pipe1.Visible = true;
-							delete.Visible = true;
-						}
-						break;
-					case "f": // pending
-						if (RolePermissionManager.GetPermissions(c.Post.CategoryId, GraffitiUsers.Current).Edit)
-							edit.Visible = true;
+                        if (_rolePermissionService.GetPermissions(c.Post.CategoryId, GraffitiUsers.Current).Publish)
+                        {
+                            pipe1.Visible = true;
+                            approve.Visible = true;
+                            //ApproveBold.Visible = true;
+                            pipe2.Visible = true;
+                            delete.Visible = true;
+                        }
+                        break;
+                    case "d": // deleted
+                        if(_rolePermissionService.GetPermissions(c.Post.CategoryId, GraffitiUsers.Current).Publish)
+                            undelete.Visible = true;
+                        break;
+                }
+            }
+            else
+            {
+                // published is default tab
+                if(_rolePermissionService.GetPermissions(c.Post.CategoryId, GraffitiUsers.Current).Edit)
+                    edit.Visible = true;
 
-						if (RolePermissionManager.GetPermissions(c.Post.CategoryId, GraffitiUsers.Current).Publish)
-						{
-							pipe1.Visible = true;
-							approve.Visible = true;
-							//ApproveBold.Visible = true;
-							pipe2.Visible = true;
-							delete.Visible = true;
-						}
-						break;
-					case "d": // deleted
-						if (RolePermissionManager.GetPermissions(c.Post.CategoryId, GraffitiUsers.Current).Publish)
-							undelete.Visible = true;
-						break;
-				}
-			}
-			else
-			{
-				// published is default tab
-				if (RolePermissionManager.GetPermissions(c.Post.CategoryId, GraffitiUsers.Current).Edit)
-					edit.Visible = true;
-
-				if (RolePermissionManager.GetPermissions(c.Post.CategoryId, GraffitiUsers.Current).Publish)
-				{
-					pipe1.Visible = true;
-					delete.Visible = true;
-				}
-			}
-
-
-			if (!RolePermissionManager.GetPermissions(c.Post.CategoryId, GraffitiUsers.Current).Publish)
-			{
-				CheckBox commentCheckbox = (CheckBox) e.Item.FindControl("CommentCheckbox");
-				commentCheckbox.Visible = false;
-			}
-		}
-	}
+                if (_rolePermissionService.GetPermissions(c.Post.CategoryId, GraffitiUsers.Current).Publish)
+                {
+                    pipe1.Visible = true;
+                    delete.Visible = true;
+                }
+            }
+            
+            
+            if(!_rolePermissionService.GetPermissions(c.Post.CategoryId, GraffitiUsers.Current).Publish)
+            {
+                CheckBox commentCheckbox = (CheckBox)e.Item.FindControl("CommentCheckbox");
+                commentCheckbox.Visible = false;
+            }
+            
+        }
+    }
 
 	protected string IsBold(string id)
 	{
 		string page = Request.QueryString["a"] ?? "t";
 
-		if (!String.IsNullOrEmpty(page))
-			switch (page)
-			{
-				case "t": // published
-					return (id == "EditBold") ? "font-weight: bold;" : string.Empty; //EditBold.Visible = true;
-				case "f": // pending
-					return (id == "ApproveBold") ? "font-weight: bold;" : string.Empty; //ApproveBold.Visible = true;
-			}
-
-		return string.Empty;
+        if (!String.IsNullOrEmpty(page))
+            switch (page)
+            {
+                case "t": // published
+                    return (id == "EditBold") ? "font-weight: bold;" : string.Empty;//EditBold.Visible = true;
+                case "f": // pending
+					return (id == "ApproveBold") ? "font-weight: bold;" : string.Empty;//ApproveBold.Visible = true;
+            }
+        
+        return string.Empty;
 	}
 
 	protected string IsAltRow(int index)
-	{
-		if (index%2 == 0)
-			return string.Empty;
-		else
-			return " class=\"alt\"";
-	}
+    {
+        if (index % 2 == 0)
+            return string.Empty;
+        else
+            return " class=\"alt\"";
+    }
 
-	protected string IsPostBound()
-	{
-		string post = Request.QueryString["pid"];
+    protected string IsPostBound()
+    {
+        string post = Request.QueryString["pid"];
 
-		if (!String.IsNullOrEmpty(post))
-			return "&pid=" + post;
+        if(!String.IsNullOrEmpty(post))
+            return "&pid=" + post;
 
-		return string.Empty;
-	}
+        return string.Empty;
+    }
 }

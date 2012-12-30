@@ -2,68 +2,72 @@ using System.Text;
 
 namespace Graffiti.Core
 {
-	/// <summary>
-	///     A widget which displays a title and the a block of text
-	/// </summary>
-	[WidgetInfo("bf6171d0-e9d5-46ba-bce3-be104a5e6fbd", "Uncategorized Posts Widget", "Represents a box")]
-	public class PageWidget : Widget
-	{
-		public int[] PostIds = new int[0];
+    /// <summary>
+    /// A widget which displays a title and the a block of text
+    /// </summary>
+    [WidgetInfo("bf6171d0-e9d5-46ba-bce3-be104a5e6fbd", "Uncategorized Posts Widget", "Represents a box")]
+    public class PageWidget : Widget
+    {
+        public override string Name
+        {
+            get
+            {
+                if (string.IsNullOrEmpty(Title))
+                    return "Uncategorized Posts";
+                else
+                    return Title + " (Pages)";
+            }
+        }
 
-		public override string Name
-		{
-			get
-			{
-				if (string.IsNullOrEmpty(Title))
-					return "Uncategorized Posts";
-				else
-					return Title + " (Pages)";
-			}
-		}
+        public override string EditUrl
+        {
+            get
+            {
+                return "EditUncategorizedPostWidget.aspx";
+            }
+        }
 
-		public override string EditUrl
-		{
-			get { return "EditUncategorizedPostWidget.aspx"; }
-		}
+        protected override FormElementCollection AddFormElements()
+        {
+            return null;
+        }
 
-		public string DataCacheKey
-		{
-			get { return "Posts-PageWidget-" + Id; }
-		}
+        public override string RenderData()
+        {
+            if (PostIds == null || PostIds.Length == 0)
+                return string.Empty;
 
-		protected override FormElementCollection AddFormElements()
-		{
-			return null;
-		}
+            PostCollection pc = ZCache.Get<PostCollection>(DataCacheKey);
+            if (pc == null)
+            {
+               
+                pc = new PostCollection();
+                foreach(int i in PostIds)
+                {
+                    Post p = _postService.FetchPost(i);
+                    if(!p.IsNew && !p.IsDeleted && p.IsPublished )
+                        pc.Add(p);
+                }
 
-		public override string RenderData()
-		{
-			if (PostIds == null || PostIds.Length == 0)
-				return string.Empty;
+                ZCache.InsertCache(DataCacheKey, pc, 180);
+            }
 
-			PostCollection pc = ZCache.Get<PostCollection>(DataCacheKey);
-			if (pc == null)
-			{
-				pc = new PostCollection();
-				foreach (int i in PostIds)
-				{
-					Post p = new Post(i);
-					if (!p.IsNew && !p.IsDeleted && p.IsPublished)
-						pc.Add(p);
-				}
+            StringBuilder sb = new StringBuilder("<ul>");
+            foreach(Post p in pc)
+            {
+                sb.AppendFormat("<li><a href=\"{0}\">{1}</a></li>", p.Url, p.Title);
+            }
 
-				ZCache.InsertCache(DataCacheKey, pc, 180);
-			}
+            sb.Append("</ul>");
 
-			StringBuilder sb = new StringBuilder("<ul>");
-			foreach (Post p in pc)
-			{
-				sb.AppendFormat("<li><a href=\"{0}\">{1}</a></li>", p.Url, p.Title);
-			}
+            return sb.ToString();
+        }
 
-			sb.Append("</ul>");
+        public int[] PostIds = new int[0];
 
-			return sb.ToString();
-		}
-	}
+        public string DataCacheKey
+        {
+            get { return "Posts-PageWidget-" + Id; }
+        }
+    }
 }

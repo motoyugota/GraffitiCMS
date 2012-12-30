@@ -1,6 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="4.0">
-  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+﻿<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="3.5">
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
@@ -16,15 +14,8 @@
     </FileUpgradeFlags>
     <UpgradeBackupLocation>
     </UpgradeBackupLocation>
-    <OldToolsVersion>4.0</OldToolsVersion>
-    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
-    <SccProjectName>SAK</SccProjectName>
-    <SccLocalPath>SAK</SccLocalPath>
-    <SccAuxPath>SAK</SccAuxPath>
-    <SccProvider>SAK</SccProvider>
-    <SolutionDir Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'">..\</SolutionDir>
-    <RestorePackages>true</RestorePackages>
-    <TargetFrameworkProfile />
+    <OldToolsVersion>2.0</OldToolsVersion>
+    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -35,7 +26,6 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <NoWarn>1591</NoWarn>
-    <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -44,7 +34,6 @@
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
-    <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release_Obfuscate|AnyCPU' ">
     <OutputPath>bin\</OutputPath>
@@ -53,75 +42,56 @@
     <DebugType>pdbonly</DebugType>
     <PlatformTarget>AnyCPU</PlatformTarget>
     <ErrorReport>prompt</ErrorReport>
-    <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="CookComputing.XmlRpcServerV2">
-      <HintPath>..\packages\xmlrpcnet-server.3.0.0.266\lib\net20\CookComputing.XmlRpcServerV2.dll</HintPath>
-    </Reference>
-    <Reference Include="CookComputing.XmlRpcV2, Version=3.0.0.0, Culture=neutral, PublicKeyToken=a7d6e17aa302004d, processorArchitecture=MSIL">
+    <Reference Include="CookComputing.XmlRpcV2, Version=2.4.0.0, Culture=neutral, PublicKeyToken=a7d6e17aa302004d, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\xmlrpcnet.3.0.0.266\lib\net20\CookComputing.XmlRpcV2.dll</HintPath>
+      <HintPath>..\Lib\CookComputing.XmlRpcV2.dll</HintPath>
     </Reference>
-    <Reference Include="ICSharpCode.SharpZipLib">
-      <HintPath>..\packages\SharpZipLib.0.86.0\lib\20\ICSharpCode.SharpZipLib.dll</HintPath>
+    <Reference Include="Highlighter.Net, Version=2.3.2.1, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\Lib\Highlighter.Net.dll</HintPath>
     </Reference>
     <Reference Include="Joel.Net.Akismet, Version=1.0.1.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\Lib\Joel.Net.Akismet.dll</HintPath>
     </Reference>
-    <Reference Include="Lucene.Net, Version=3.0.3.0, Culture=neutral, PublicKeyToken=85089178b9ac3181, processorArchitecture=MSIL">
+    <Reference Include="Lucene.Net, Version=2.9.1.2, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\Lucene.Net.3.0.3\lib\NET40\Lucene.Net.dll</HintPath>
+      <HintPath>..\Lib\Lucene.Net.dll</HintPath>
     </Reference>
-    <Reference Include="Lucene.Net.Contrib.Analyzers">
-      <HintPath>..\packages\Lucene.Net.Contrib.3.0.3\lib\net40\Lucene.Net.Contrib.Analyzers.dll</HintPath>
-    </Reference>
-    <Reference Include="Lucene.Net.Contrib.Core">
-      <HintPath>..\packages\Lucene.Net.Contrib.3.0.3\lib\net40\Lucene.Net.Contrib.Core.dll</HintPath>
-    </Reference>
-    <Reference Include="Lucene.Net.Contrib.FastVectorHighlighter">
-      <HintPath>..\packages\Lucene.Net.Contrib.3.0.3\lib\net40\Lucene.Net.Contrib.FastVectorHighlighter.dll</HintPath>
-    </Reference>
-    <Reference Include="Lucene.Net.Contrib.Highlighter">
-      <HintPath>..\packages\Lucene.Net.Contrib.3.0.3\lib\net40\Lucene.Net.Contrib.Highlighter.dll</HintPath>
-    </Reference>
-    <Reference Include="Lucene.Net.Contrib.Memory">
-      <HintPath>..\packages\Lucene.Net.Contrib.3.0.3\lib\net40\Lucene.Net.Contrib.Memory.dll</HintPath>
-    </Reference>
-    <Reference Include="Lucene.Net.Contrib.Queries">
-      <HintPath>..\packages\Lucene.Net.Contrib.3.0.3\lib\net40\Lucene.Net.Contrib.Queries.dll</HintPath>
-    </Reference>
-    <Reference Include="Lucene.Net.Contrib.Regex">
-      <HintPath>..\packages\Lucene.Net.Contrib.3.0.3\lib\net40\Lucene.Net.Contrib.Regex.dll</HintPath>
-    </Reference>
-    <Reference Include="Lucene.Net.Contrib.SimpleFacetedSearch">
-      <HintPath>..\packages\Lucene.Net.Contrib.3.0.3\lib\net40\Lucene.Net.Contrib.SimpleFacetedSearch.dll</HintPath>
-    </Reference>
-    <Reference Include="Lucene.Net.Contrib.Snowball">
-      <HintPath>..\packages\Lucene.Net.Contrib.3.0.3\lib\net40\Lucene.Net.Contrib.Snowball.dll</HintPath>
-    </Reference>
-    <Reference Include="Lucene.Net.Contrib.SpellChecker">
-      <HintPath>..\packages\Lucene.Net.Contrib.3.0.3\lib\net40\Lucene.Net.Contrib.SpellChecker.dll</HintPath>
-    </Reference>
-    <Reference Include="NVelocity, Version=1.1.1.0, Culture=neutral, PublicKeyToken=407dd0808d44fbdc, processorArchitecture=MSIL">
+    <Reference Include="Ninject, Version=2.0.0.0, Culture=neutral, PublicKeyToken=c7192dc5380945e7, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\Castle.NVelocity.1.1.1\lib\net35\NVelocity.dll</HintPath>
+      <HintPath>..\Lib\Ninject.dll</HintPath>
+    </Reference>
+    <Reference Include="Ninject.Extensions.Xml, Version=2.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\Lib\Ninject.Extensions.Xml.dll</HintPath>
+    </Reference>
+    <Reference Include="NVelocity, Version=1.1.0.0, Culture=neutral, PublicKeyToken=407dd0808d44fbdc, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\Lib\NVelocity.dll</HintPath>
     </Reference>
     <Reference Include="RssToolkit, Version=2.0.1.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\Lib\RssToolkit.dll</HintPath>
     </Reference>
     <Reference Include="System" />
+    <Reference Include="System.Core, Version=3.5.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089, processorArchitecture=MSIL">
+      <RequiredTargetFramework>3.5</RequiredTargetFramework>
+    </Reference>
     <Reference Include="System.Data" />
-    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="System.Data.DataSetExtensions, Version=3.5.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089, processorArchitecture=MSIL">
+      <RequiredTargetFramework>3.5</RequiredTargetFramework>
+    </Reference>
     <Reference Include="System.Drawing" />
     <Reference Include="System.Web" />
-    <Reference Include="System.Web.ApplicationServices" />
-    <Reference Include="System.Web.DynamicData" />
-    <Reference Include="System.Web.Entity" />
-    <Reference Include="System.Web.Extensions" />
-    <Reference Include="System.Web.Extensions.Design" />
+    <Reference Include="System.Web.Extensions, Version=3.5.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35">
+      <RequiredTargetFramework>3.5</RequiredTargetFramework>
+    </Reference>
+    <Reference Include="System.Web.Extensions.Design, Version=3.5.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35">
+      <RequiredTargetFramework>3.5</RequiredTargetFramework>
+    </Reference>
     <Reference Include="System.Web.Routing">
       <RequiredTargetFramework>3.5</RequiredTargetFramework>
     </Reference>
@@ -130,7 +100,9 @@
     <Reference Include="System.Web.Services" />
     <Reference Include="System.EnterpriseServices" />
     <Reference Include="System.Web.Mobile" />
-    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Xml.Linq, Version=3.5.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089, processorArchitecture=MSIL">
+      <RequiredTargetFramework>3.5</RequiredTargetFramework>
+    </Reference>
     <Reference Include="Telligent.DynamicConfiguration, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\Lib\Telligent.DynamicConfiguration.dll</HintPath>
@@ -164,13 +136,6 @@
     <Compile Include="graffiti-admin\comments\Default.aspx.designer.cs">
       <DependentUpon>Default.aspx</DependentUpon>
     </Compile>
-    <Compile Include="graffiti-admin\marketplace\Default.aspx.cs">
-      <DependentUpon>Default.aspx</DependentUpon>
-      <SubType>ASPXCodeBehind</SubType>
-    </Compile>
-    <Compile Include="graffiti-admin\marketplace\Default.aspx.designer.cs">
-      <DependentUpon>Default.aspx</DependentUpon>
-    </Compile>
     <Compile Include="graffiti-admin\posts\Default.aspx.cs">
       <DependentUpon>Default.aspx</DependentUpon>
       <SubType>ASPXCodeBehind</SubType>
@@ -199,18 +164,18 @@
     <Compile Include="graffiti-admin\presentation\navigation\Default.aspx.designer.cs">
       <DependentUpon>Default.aspx</DependentUpon>
     </Compile>
-    <Compile Include="graffiti-admin\marketplace\Catalog.aspx.cs">
+    <Compile Include="graffiti-admin\presentation\themes\Catalog.aspx.cs">
       <DependentUpon>Catalog.aspx</DependentUpon>
       <SubType>ASPXCodeBehind</SubType>
     </Compile>
-    <Compile Include="graffiti-admin\marketplace\Catalog.aspx.designer.cs">
+    <Compile Include="graffiti-admin\presentation\themes\Catalog.aspx.designer.cs">
       <DependentUpon>Catalog.aspx</DependentUpon>
     </Compile>
-    <Compile Include="graffiti-admin\marketplace\CatalogItem.aspx.cs">
+    <Compile Include="graffiti-admin\presentation\themes\CatalogItem.aspx.cs">
       <DependentUpon>CatalogItem.aspx</DependentUpon>
       <SubType>ASPXCodeBehind</SubType>
     </Compile>
-    <Compile Include="graffiti-admin\marketplace\CatalogItem.aspx.designer.cs">
+    <Compile Include="graffiti-admin\presentation\themes\CatalogItem.aspx.designer.cs">
       <DependentUpon>CatalogItem.aspx</DependentUpon>
     </Compile>
     <Compile Include="graffiti-admin\presentation\themes\ConfigureTheme.aspx.cs">
@@ -219,6 +184,20 @@
     </Compile>
     <Compile Include="graffiti-admin\presentation\themes\ConfigureTheme.aspx.designer.cs">
       <DependentUpon>ConfigureTheme.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="graffiti-admin\presentation\widgets\Catalog.aspx.cs">
+      <DependentUpon>Catalog.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="graffiti-admin\presentation\widgets\Catalog.aspx.designer.cs">
+      <DependentUpon>Catalog.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="graffiti-admin\presentation\widgets\CatalogItem.aspx.cs">
+      <DependentUpon>CatalogItem.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="graffiti-admin\presentation\widgets\CatalogItem.aspx.designer.cs">
+      <DependentUpon>CatalogItem.aspx</DependentUpon>
     </Compile>
     <Compile Include="graffiti-admin\reporting\charts.ashx.cs">
       <DependentUpon>charts.ashx</DependentUpon>
@@ -236,6 +215,20 @@
     </Compile>
     <Compile Include="graffiti-admin\site-options\configuration\Default.aspx.designer.cs">
       <DependentUpon>Default.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="graffiti-admin\site-options\plug-ins\CatalogItem.aspx.cs">
+      <DependentUpon>CatalogItem.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="graffiti-admin\site-options\plug-ins\CatalogItem.aspx.designer.cs">
+      <DependentUpon>CatalogItem.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="graffiti-admin\site-options\plug-ins\Catalog.aspx.cs">
+      <DependentUpon>Catalog.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="graffiti-admin\site-options\plug-ins\Catalog.aspx.designer.cs">
+      <DependentUpon>Catalog.aspx</DependentUpon>
     </Compile>
     <Compile Include="graffiti-admin\presentation\widgets\Default.aspx.cs">
       <DependentUpon>Default.aspx</DependentUpon>
@@ -342,6 +335,7 @@
     <Compile Include="graffiti-admin\user-management\users\Default.aspx.designer.cs">
       <DependentUpon>Default.aspx</DependentUpon>
     </Compile>
+    <Compile Include="KernelFactory.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -454,11 +448,10 @@
     <Content Include="graffiti-admin\common\img\wrap-bg.gif" />
     <Content Include="graffiti-admin\common\img\wrap-inner-bg.gif" />
     <Content Include="graffiti-admin\common\img\wrench.png" />
-    <Content Include="graffiti-admin\GraffitiInfo.aspx" />
     <Content Include="graffiti-admin\Default.aspx" />
+    <Content Include="graffiti-admin\GraffitiInfo.aspx" />
     <Content Include="graffiti-admin\loading.htm" />
     <Content Include="graffiti-admin\logout\Default.aspx" />
-    <Content Include="graffiti-admin\marketplace\Default.aspx" />
     <Content Include="graffiti-admin\msg\cannot-write.aspx" />
     <Content Include="graffiti-admin\posts\Default.aspx" />
     <Content Include="graffiti-admin\posts\PostMerge.aspx" />
@@ -467,18 +460,22 @@
     <Content Include="graffiti-admin\presentation\Default.aspx" />
     <Content Include="graffiti-admin\presentation\navigation\Default.aspx" />
     <Content Include="graffiti-admin\presentation\themes\AddFile.aspx" />
-    <Content Include="graffiti-admin\marketplace\Catalog.aspx" />
-    <Content Include="graffiti-admin\marketplace\CatalogItem.aspx" />
+    <Content Include="graffiti-admin\presentation\themes\Catalog.aspx" />
+    <Content Include="graffiti-admin\presentation\themes\CatalogItem.aspx" />
     <Content Include="graffiti-admin\presentation\themes\ConfigureTheme.aspx" />
     <Content Include="graffiti-admin\presentation\themes\UploadFile.aspx" />
     <Content Include="graffiti-admin\presentation\themes\CreateNewTheme.aspx" />
     <Content Include="graffiti-admin\presentation\themes\Default.aspx" />
     <Content Include="graffiti-admin\presentation\themes\EditTheme.aspx" />
     <Content Include="graffiti-admin\presentation\themes\UploadTheme.aspx" />
+    <Content Include="graffiti-admin\presentation\widgets\Catalog.aspx" />
+    <Content Include="graffiti-admin\presentation\widgets\CatalogItem.aspx" />
     <Content Include="graffiti-admin\reporting\Default.aspx" />
     <Content Include="graffiti-admin\site-options\configuration\Default.aspx" />
     <Content Include="graffiti-admin\site-options\packages\Default.aspx" />
     <Content Include="graffiti-admin\site-options\packages\UploadPackage.aspx" />
+    <Content Include="graffiti-admin\site-options\plug-ins\CatalogItem.aspx" />
+    <Content Include="graffiti-admin\site-options\plug-ins\Catalog.aspx" />
     <Content Include="graffiti-admin\presentation\widgets\Default.aspx" />
     <Content Include="graffiti-admin\presentation\widgets\Edit.aspx" />
     <Content Include="graffiti-admin\presentation\widgets\EditCategoryWidget.aspx" />
@@ -531,12 +528,12 @@
     <Content Include="graffiti-admin\user-management\users\Default.aspx" />
     <Content Include="graffiti-admin\user-management\users\DeleteUser.aspx" />
     <Content Include="graffiti-admin\user-management\users\RenameUser.aspx" />
+    <Content Include="graffiti-setup\Default.aspx" />
     <Content Include="login\Default.aspx" />
     <Content Include="login\reset-password\Default.aspx" />
     <Content Include="resources\resources.xml" />
     <Content Include="robots.txt" />
     <Content Include="Search\Default.aspx" />
-    <Content Include="graffiti-setup\Default.aspx" />
     <Content Include="Tags\Default.aspx" />
     <Content Include="Web.config" />
     <Content Include="__utility\ckeditor\adapters\jquery.js" />
@@ -733,13 +730,13 @@
     <Content Include="__utility\img\logo.png" />
     <Content Include="graffiti-admin\upload.ashx" />
     <Content Include="__utility\img\spinner.gif" />
+    <Content Include="Modules\ServicesModule.config" />
     <None Include="files\themes\default\blog.post.view" />
     <None Include="files\themes\default\blog.view" />
     <None Include="files\themes\default\contact-us.view" />
     <None Include="files\themes\default\index.view" />
     <None Include="files\themes\default\layout.view" />
     <None Include="files\themes\default\post.view" />
-    <Content Include="packages.config" />
     <None Include="__utility\emails\Comment.view" />
     <None Include="__utility\emails\Contact.view" />
     <None Include="__utility\emails\ForgotPassword.view" />
@@ -758,16 +755,12 @@
     <None Include="__utility\pages\tag.view" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\DataBuddy\DataBuddy.csproj">
-      <Project>{D1137CEB-9B3D-4774-B4F0-9BC0C272B8B8}</Project>
-      <Name>DataBuddy</Name>
-    </ProjectReference>
     <ProjectReference Include="..\Graffiti.Core.API\Graffiti.Core.API.csproj">
-      <Project>{523002d7-5fff-4734-8345-7a759a677c92}</Project>
+      <Project>{523002D7-5FFF-4734-8345-7A759A677C92}</Project>
       <Name>Graffiti.Core.API</Name>
     </ProjectReference>
     <ProjectReference Include="..\Graffiti.Core\Graffiti.Core.csproj">
-      <Project>{7c676af7-35be-4f98-953f-69769ed4175b}</Project>
+      <Project>{7C676AF7-35BE-4F98-953F-69769ED4175B}</Project>
       <Name>Graffiti.Core</Name>
     </ProjectReference>
   </ItemGroup>
@@ -776,10 +769,6 @@
     <Folder Include="files\media\Media\" />
     <Folder Include="files\uploads\" />
   </ItemGroup>
-  <PropertyGroup>
-    <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>
-    <VSToolsPath Condition="'$(VSToolsPath)' == ''">$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)</VSToolsPath>
-  </PropertyGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <!--<Import Project="$(MSBuildExtensionsPath)\Microsoft\VisualStudio\v9.0\WebApplications\Microsoft.WebApplication.targets" Condition="" />-->
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
@@ -802,7 +791,4 @@
     <PostBuildEvent>
     </PostBuildEvent>
   </PropertyGroup>
-  <Import Project="$(VSToolsPath)\WebApplications\Microsoft.WebApplication.targets" Condition="'$(VSToolsPath)' != ''" />
-  <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v10.0\WebApplications\Microsoft.WebApplication.targets" Condition="false" />
-  <Import Project="$(SolutionDir)\.nuget\nuget.targets" />
 </Project>

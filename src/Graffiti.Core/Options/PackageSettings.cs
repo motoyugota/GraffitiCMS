@@ -1,278 +1,289 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Web;
 using System.Xml;
+using System.Web;
+using System.IO;
+using Graffiti.Core.Services;
 
 namespace Graffiti.Core
 {
-	/// <summary>
-	///     Manages packages in Graffiti. This object is stored in the ObjectStore.
-	/// </summary>
-	[Serializable]
-	public class PackageSettings
-	{
-		private PackageCollection _packages;
+    /// <summary>
+    /// Manages packages in Graffiti. This object is stored in the ObjectStore.
+    /// </summary>
+    [Serializable]
+    public class PackageSettings
+    {
+        private static IVersionStoreService _versionStoreService = ServiceLocator.Get<IVersionStoreService>();
 
-		public PackageCollection Packages
-		{
-			get { return _packages; }
-			set { _packages = value; }
-		}
+        private PackageCollection _packages;
 
-		public void Save()
-		{
-			ObjectManager.Save(this, "PackageSettings");
-		}
+        public PackageCollection Packages
+        {
+            get { return _packages; }
+            set { _packages = value; }
+        }
 
-		public static PackageSettings Get()
-		{
-			return ObjectManager.Get<PackageSettings>("PackageSettings");
-		}
+        public void Save()
+        {
+            ObjectManager.Save(this, "PackageSettings");
+        }
 
-		public static bool RemovePackage(string packageName)
-		{
-			PackageSettings pSettings = Get();
+        public static PackageSettings Get()
+        {
+            return ObjectManager.Get<PackageSettings>("PackageSettings");
+        }
 
-			Package temp = pSettings.Packages.Find(
-				delegate(Package p) { return p.Name == packageName; });
+        public static bool RemovePackage(string packageName)
+        {
+            PackageSettings pSettings = PackageSettings.Get();
 
-			if (temp != null)
-			{
-				RemoveFilesAndFolders(temp);
-				pSettings.Packages.Remove(temp);
-				pSettings.Save();
-				return true;
-			}
+            Package temp = pSettings.Packages.Find(
+                                        delegate(Package p)
+                                        {
+                                            return p.Name == packageName;
+                                        });
 
-			return false;
-		}
+            if (temp != null)
+            {
+                RemoveFilesAndFolders(temp);
+                pSettings.Packages.Remove(temp);
+                pSettings.Save();
+                return true;
+            }
 
-		public static void ToDisk(string xml, bool overwrite)
-		{
-			ToDisk(xml, overwrite, null);
-		}
+            return false;        
+        }
 
-		public static string ToDisk(string xml, bool overwrite, string overrideThemeName)
-		{
-			XmlDocument doc = new XmlDocument();
-			doc.LoadXml(xml);
+        public static void ToDisk(string xml, bool overwrite)
+        {
+            ToDisk(xml, overwrite, null);
+        }
 
-			XmlNode node = doc.SelectSingleNode("/package");
+        public static string ToDisk(string xml, bool overwrite, string overrideThemeName)
+        {
+            XmlDocument doc = new XmlDocument();
+            doc.LoadXml(xml);
 
-			if (!String.IsNullOrEmpty(overrideThemeName))
-			{
-				node.Attributes["name"].Value = overrideThemeName;
-			}
+            XmlNode node = doc.SelectSingleNode("/package");
 
-			string name = node.Attributes["name"].Value;
-			string unpackTo = node.Attributes["location"].Value;
-			string version = null;
+            if (!String.IsNullOrEmpty(overrideThemeName))
+            {
+                node.Attributes["name"].Value = overrideThemeName;
+            }
 
-			if (node.Attributes["version"] != null)
-				version = node.Attributes["version"].Value;
+            string name = node.Attributes["name"].Value;
+            string unpackTo = node.Attributes["location"].Value;
+            string version = null;
 
-			if (!unpackTo.StartsWith("/"))
-				unpackTo = "/" + unpackTo;
+            if (node.Attributes["version"] != null)
+                version = node.Attributes["version"].Value;
 
-			PackageSettings pkgSettings = Get();
+            if (!unpackTo.StartsWith("/"))
+                unpackTo = "/" + unpackTo;
 
-			if (pkgSettings.Packages == null)
-				pkgSettings.Packages = new PackageCollection();
+            PackageSettings pkgSettings = PackageSettings.Get();
 
-			// check for duplicates
-			Package temp = pkgSettings.Packages.Find(
-				delegate(Package p) { return p.Name == name; });
+            if (pkgSettings.Packages == null)
+                pkgSettings.Packages = new PackageCollection();
 
-			if (temp != null)
-				throw new Exception("A package with this name already exist.");
+            // check for duplicates
+            Package temp = pkgSettings.Packages.Find(
+                                            delegate(Package p)
+                                            {
+                                                return p.Name == name;
+                                            });
 
-			Package pkg = new Package();
-			pkg.Name = name;
+            if (temp != null)
+                throw new Exception("A package with this name already exist.");
 
-			if (version != null)
-				pkg.Version = version;
+            Package pkg = new Package();
+            pkg.Name = name;
 
-			pkg.DateInstalled = DateTime.Today;
+            if (version != null)
+                pkg.Version = version;
 
-			ProcessFolderNode(node, unpackTo, overwrite, pkg, true);
+            pkg.DateInstalled = DateTime.Today;
 
-			pkgSettings.Packages.Add(pkg);
+            ProcessFolderNode(node, unpackTo, overwrite, pkg, true);
 
-			pkgSettings.Save();
+            pkgSettings.Packages.Add(pkg);
 
-			return name;
-		}
+            pkgSettings.Save();
 
-		/// <summary>
-		///     Checks if the current file is ok to install
-		/// </summary>
-		/// <param name="file"></param>
-		/// <returns>The package that is using the file if it cannot be installed, null if it can be installed</returns>
-		private static Package IsFileOkToInstall(string file)
-		{
-			PackageCollection packages = Get().Packages;
+            return name;
+        }
 
-			if (packages != null)
-			{
-				foreach (Package p in packages)
-				{
-					if (p.Files != null)
-					{
-						string temp = p.Files.Find(
-							delegate(string s) { return s == file; });
+        /// <summary>
+        /// Checks if the current file is ok to install
+        /// </summary>
+        /// <param name="file"></param>
+        /// <returns>The package that is using the file if it cannot be installed, null if it can be installed</returns>
+        private static Package IsFileOkToInstall(string file)
+        {
+            PackageCollection packages = PackageSettings.Get().Packages;
 
-						if (!String.IsNullOrEmpty(temp))
-							return p;
-					}
-				}
-			}
+            if(packages != null)
+            {
+                foreach(Package p in packages)
+                {
+                    if(p.Files != null)
+                    {
+                        string temp = p.Files.Find(
+                                        delegate(string s)
+                                        {
+                                            return s == file;
+                                        });
 
-			return null;
-		}
+                        if (!String.IsNullOrEmpty(temp))
+                            return p;
+                    }
+                }
+            }
 
-		private static void RemoveFilesAndFolders(Package p)
-		{
-			if (p.Files != null)
-			{
-				foreach (string file in p.Files)
-				{
-					string fileName = HttpContext.Current.Server.MapPath(VirtualPathUtility.ToAbsolute("~" + file));
+            return null;
+        }
 
-					if (File.Exists(fileName))
-						File.Delete(fileName);
+        private static void RemoveFilesAndFolders(Package p)
+        {
+            if(p.Files != null)
+            {
+                foreach(string file in p.Files)
+                {
+                    string fileName = HttpContext.Current.Server.MapPath(VirtualPathUtility.ToAbsolute("~" + file));
 
-					if (File.Exists(fileName + ".old"))
-						File.Move(fileName + ".old", fileName);
-					else
-					{
-						VersionStoreCollection vsc = VersionStore.GetVersionHistory(fileName, false);
+                    if(File.Exists(fileName))
+                        File.Delete(fileName);
 
-						if (vsc != null && vsc.Count > 0)
-						{
-							WriteFile(fileName, vsc[0].Data);
+                    if (File.Exists(fileName + ".old"))
+                        File.Move(fileName + ".old", fileName);
+                    else
+                    {
+                        VersionStoreCollection vsc = new VersionStoreCollection(_versionStoreService.FetchVersionHistory(fileName, false));
 
-							VersionStore.Destroy(VersionStore.Columns.UniqueId, vsc[0].UniqueId);
-						}
-					}
-				}
-			}
+                        if (vsc != null && vsc.Count > 0)
+                        {
+                            WriteFile(fileName, vsc[0].Data);
 
-			if (p.Directories != null)
-			{
-				foreach (string dir in p.Directories)
-				{
-					if (Directory.Exists(dir) && Directory.GetFiles(dir).Length == 0)
-						Directory.Delete(dir);
-				}
-			}
-		}
+                            _versionStoreService.DestroyVersionStore(vsc[0].UniqueId);
+                        }
+                    }
+                }
+            }
 
-		private static void WriteFile(string fileName, string data)
-		{
-			try
-			{
-				string base64 = data;
-				var ba = Convert.FromBase64String(base64);
-				using (FileStream fs = new FileStream(fileName, FileMode.Create, FileAccess.Write))
-				{
-					fs.Write(ba, 0, ba.Length);
-					fs.Close();
-				}
-			}
-			catch (Exception)
-			{
-				try
-				{
-					// try to write the file as text
-					using (TextWriter tw = new StreamWriter(fileName))
-					{
-						tw.Write(data);
-						tw.Close();
-					}
-				}
-				catch (Exception)
-				{
-					throw new Exception("Could not write file " + fileName + ".");
-				}
-			}
-		}
+            if (p.Directories != null)
+            {
+                foreach (string dir in p.Directories)
+                {
+                    if(Directory.Exists(dir) && Directory.GetFiles(dir).Length == 0)
+                        Directory.Delete(dir);
+                }
+            }
+        }
 
-		private static void ProcessFolderNode(XmlNode node, string basePath, bool overwrite, Package pkg, bool root)
-		{
-			string unpackTo = HttpContext.Current.Server.MapPath(VirtualPathUtility.ToAbsolute("~" + basePath));
+        private static void WriteFile(string fileName, string data)
+        {
+            try
+            {
+                string base64 = data;
+                byte[] ba = Convert.FromBase64String(base64);
+                using (FileStream fs = new FileStream(fileName, FileMode.Create, FileAccess.Write))
+                {
+                    fs.Write(ba, 0, ba.Length);
+                    fs.Close();
+                }
+            }
+            catch (Exception)
+            {
+                try
+                {
+                    // try to write the file as text
+                    using (TextWriter tw = new StreamWriter(fileName))
+                    {
+                        tw.Write(data);
+                        tw.Close();
+                    }
+                }
+                catch (Exception)
+                {
+                    throw new Exception("Could not write file " + fileName + ".");
+                }
+            }
+        }
 
-			if (!root && node.Attributes["name"] != null)
-			{
-				string folderName = node.Attributes["name"].Value;
+        private static void ProcessFolderNode(XmlNode node, string basePath, bool overwrite, Package pkg, bool root)
+        {
+            string unpackTo = HttpContext.Current.Server.MapPath(VirtualPathUtility.ToAbsolute("~" + basePath));
 
-				basePath = Path.Combine(basePath, folderName);
-				unpackTo = Path.Combine(unpackTo, folderName);
-			}
+            if (!root && node.Attributes["name"] != null)
+            {
+                string folderName = node.Attributes["name"].Value;
 
-			DirectoryInfo di = new DirectoryInfo(unpackTo);
+                basePath = Path.Combine(basePath, folderName);
+                unpackTo = Path.Combine(unpackTo, folderName);
+            }
 
-			if (!di.Exists)
-			{
-				di.Create();
+            DirectoryInfo di = new DirectoryInfo(unpackTo);
 
-				if (pkg.Directories == null)
-					pkg.Directories = new List<String>();
+            if (!di.Exists)
+            {
+                di.Create();
 
-				pkg.Directories.Add(unpackTo);
-			}
+                if (pkg.Directories == null)
+                    pkg.Directories = new List<String>();
 
-			foreach (XmlNode fileNode in node.SelectNodes("files/file"))
-			{
-				string fileToCreateName = Path.Combine(unpackTo, fileNode.Attributes["name"].Value);
+                pkg.Directories.Add(unpackTo);
+            }
 
-				string pkgFileName = basePath.Replace("\\", "/") + "/" + fileNode.Attributes["name"].Value;
-				pkgFileName = pkgFileName.Replace("//", "/");
+            foreach (XmlNode fileNode in node.SelectNodes("files/file"))
+            {
+                string fileToCreateName = Path.Combine(unpackTo, fileNode.Attributes["name"].Value);
 
-				Package p = IsFileOkToInstall(pkgFileName);
-				if (p != null)
-				{
-					RemoveFilesAndFolders(pkg);
-					throw new Exception("Cannot install this package because the file " + fileNode.Attributes["name"].Value +
-					                    " is in use by the package <strong>" + p.Name + "</strong>.");
-				}
+                string pkgFileName = basePath.Replace("\\", "/") + "/" + fileNode.Attributes["name"].Value;
+                pkgFileName = pkgFileName.Replace("//", "/");
 
-				if (!overwrite && File.Exists(fileToCreateName))
-				{
-					RemoveFilesAndFolders(pkg);
-					throw new Exception("The file " + fileNode.Attributes["name"].Value + " already exists.");
-				}
+                Package p = IsFileOkToInstall(pkgFileName);
+                if (p != null)
+                {
+                    RemoveFilesAndFolders(pkg);
+                    throw new Exception("Cannot install this package because the file " + fileNode.Attributes["name"].Value + " is in use by the package <strong>" + p.Name + "</strong>.");
+                }
 
-				if (overwrite && File.Exists(fileToCreateName))
-				{
-					// if the file is a .dll, rename it. otherwise version it.
-					if (fileToCreateName.ToLower().EndsWith(".dll"))
-						File.Move(fileToCreateName, fileToCreateName + ".old");
-					else
-						VersionStore.VersionFile(new FileInfo(fileToCreateName));
+                if (!overwrite && File.Exists(fileToCreateName))
+                {
+                    RemoveFilesAndFolders(pkg);
+                    throw new Exception("The file " + fileNode.Attributes["name"].Value + " already exists.");
+                }
 
-					File.Delete(fileToCreateName);
-				}
+                if (overwrite && File.Exists(fileToCreateName))
+                {
+                    // if the file is a .dll, rename it. otherwise version it.
+                    if (fileToCreateName.ToLower().EndsWith(".dll"))
+                        File.Move(fileToCreateName, fileToCreateName + ".old");
+                    else
+                        _versionStoreService.VersionFile(new FileInfo(fileToCreateName), GraffitiUsers.Current.Name, SiteSettings.CurrentUserTime);
 
-				if (pkg.Files == null)
-					pkg.Files = new List<String>();
+                    File.Delete(fileToCreateName);
+                }
 
-				pkg.Files.Add(pkgFileName);
+                if (pkg.Files == null)
+                    pkg.Files = new List<String>();
 
-				try
-				{
-					WriteFile(fileToCreateName, fileNode.InnerText);
-				}
-				catch (Exception exc)
-				{
-					throw new Exception("Could not create file " + fileNode.Attributes["name"].Value + ". " + exc.Message);
-				}
-			}
+                pkg.Files.Add(pkgFileName);
 
-			foreach (XmlNode folderNode in node.SelectNodes("folders/folder"))
-			{
-				ProcessFolderNode(folderNode, basePath, overwrite, pkg, false);
-			}
-		}
-	}
+                try
+                {
+                    WriteFile(fileToCreateName, fileNode.InnerText);
+                }
+                catch (Exception exc)
+                {
+                    throw new Exception("Could not create file " + fileNode.Attributes["name"].Value + ". " + exc.Message);
+                }
+            }
+
+            foreach (XmlNode folderNode in node.SelectNodes("folders/folder"))
+            {
+                ProcessFolderNode(folderNode, basePath, overwrite, pkg, false);
+            }
+        }
+    }
 }

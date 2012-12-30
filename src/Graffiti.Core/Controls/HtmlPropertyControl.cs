@@ -11,33 +11,43 @@ namespace Graffiti.Core
 		{
 			base.OnLoad(e);
 
-			ToolbarSet = "Simple";
-			Width = new Unit(600);
+			this.ToolbarSet = "Simple";
+			this.Width = new Unit(600);
 
-			if (!string.IsNullOrEmpty(ConfigurationProperty.Attributes["width"]))
-				Width = Unit.Parse(ConfigurationProperty.Attributes["width"]);
+			if (!string.IsNullOrEmpty(this.ConfigurationProperty.Attributes["width"]))
+				this.Width = Unit.Parse(this.ConfigurationProperty.Attributes["width"]);
 
-			if (!string.IsNullOrEmpty(ConfigurationProperty.Attributes["height"]))
-				Height = Unit.Parse(ConfigurationProperty.Attributes["height"]);
+			if (!string.IsNullOrEmpty(this.ConfigurationProperty.Attributes["height"]))
+				this.Height = Unit.Parse(this.ConfigurationProperty.Attributes["height"]);
 		}
 
 		#region IPropertyControl Members
 
-		public Property ConfigurationProperty { get; set; }
+		private Property _configurationProperty = null;
+		public Property ConfigurationProperty
+		{
+			get { return _configurationProperty; }
+			set { _configurationProperty = value; }
+		}
 
-		public ConfigurationDataBase ConfigurationData { get; set; }
+		private ConfigurationDataBase _configurationData = null;
+		public ConfigurationDataBase ConfigurationData
+		{
+			get { return _configurationData; }
+			set { _configurationData = value; }
+		}
 
 		public void SetConfigurationPropertyValue(object value)
 		{
-			Text = value == null ? string.Empty : value.ToString();
+			this.Text = value == null ? string.Empty : value.ToString();
 		}
 
 		public object GetConfigurationPropertyValue()
 		{
-			if (string.IsNullOrEmpty(Text))
+			if (string.IsNullOrEmpty(this.Text))
 				return string.Empty;
 			else
-				return Text;
+				return this.Text;
 		}
 
 		public event ConfigurationPropertyChanged ConfigurationValueChanged

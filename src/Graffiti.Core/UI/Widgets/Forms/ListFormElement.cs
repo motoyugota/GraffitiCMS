@@ -3,101 +3,110 @@ using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Text;
 
+
 namespace Graffiti.Core
 {
-	/// <summary>
-	///     Enables adding a dropdown list to a dynamic form.
-	/// </summary>
-	public class ListFormElement : FormElement
-	{
-		private Queue<ListItemFormElement> _items = new Queue<ListItemFormElement>();
+    /// <summary>
+    /// Enables adding a dropdown list to a dynamic form.
+    /// </summary>
+    public class ListFormElement : FormElement
+    {
+        public ListFormElement(string name, string desc, string tip)
+            : base(name, desc, tip)
+        {
 
-		public ListFormElement(string name, string desc, string tip)
-			: base(name, desc, tip)
-		{
-		}
+        }
 
-
-		public void Add(ListItemFormElement item)
-		{
-			_items.Enqueue(item);
-		}
-
-		public override void Write(StringBuilder sb, NameValueCollection nvc)
-		{
-			string checkedValue = nvc[Name];
-			if (checkedValue == null)
-			{
-				foreach (ListItemFormElement li in _items)
-				{
-					if (li.IsDefault)
-						checkedValue = li.Value;
-				}
-			}
+        private Queue<ListItemFormElement> _items = new Queue<ListItemFormElement>();
 
 
-			sb.Append("\n<h2>");
-			sb.Append(Description);
+        public void Add(ListItemFormElement item)
+        {
+            _items.Enqueue(item);
+        }
 
-			sb.AppendFormat(": <select id=\"{0}\" name=\"{0}\" style=\"width:150px;margin-left:5px;\">",
-			                Name);
+        public override void Write(StringBuilder sb, NameValueCollection nvc)
+        {
+            string checkedValue = nvc[Name];
+            if (checkedValue == null)
+            {
+                foreach (ListItemFormElement li in _items)
+                {
+                    if (li.IsDefault)
+                        checkedValue = li.Value;
+                }
+            }
 
 
-			foreach (ListItemFormElement li in _items)
-			{
-				sb.AppendFormat("<option value=\"{0}\" {2}>{1}</option>", li.Value,
-				                li.Text,
-				                checkedValue == li.Value ? "selected=\"selected\"" : null
-					);
-			}
 
-			sb.Append("</select>");
+            sb.Append("\n<h2>");
+            sb.Append(Description);
 
-			sb.Append(SafeToolTip(true));
-			sb.Append("</h2>");
-			sb.Append("\n");
-		}
-	}
+            sb.AppendFormat(": <select id=\"{0}\" name=\"{0}\" style=\"width:150px;margin-left:5px;\">",
+                            Name);
 
-	[Serializable]
-	public class ListItemFormElement
-	{
-		private bool _isDefault;
-		private string _text;
-		private string _value;
 
-		public ListItemFormElement()
-		{
-		}
 
-		public ListItemFormElement(string text, string val)
-			: this(text, val, false)
-		{
-		}
+            foreach (ListItemFormElement li in _items)
+            {
+                sb.AppendFormat("<option value=\"{0}\" {2}>{1}</option>", li.Value,
+                                li.Text,
+                                checkedValue == li.Value ? "selected=\"selected\"" : null
+                    );
+            }
 
-		public ListItemFormElement(string text, string val, bool isDefault)
-		{
-			_text = text;
-			_value = val;
-			_isDefault = isDefault;
-		}
+            sb.Append("</select>");
 
-		public string Value
-		{
-			get { return _value; }
-			set { _value = value; }
-		}
+            sb.Append(SafeToolTip(true));
+            sb.Append("</h2>");
+            sb.Append("\n");
+        }
+    }
 
-		public string Text
-		{
-			get { return _text; }
-			set { _text = value; }
-		}
+    [Serializable]
+    public class ListItemFormElement
+    {
 
-		public bool IsDefault
-		{
-			get { return _isDefault; }
-			set { _isDefault = value; }
-		}
-	}
+        public ListItemFormElement()
+        {
+        }
+
+        public ListItemFormElement(string text, string val)
+            : this(text, val, false)
+        {
+        }
+
+        public ListItemFormElement(string text, string val, bool isDefault)
+        {
+            _text = text;
+            _value = val;
+            _isDefault = isDefault;
+        }
+
+        private string _value;
+
+        public string Value
+        {
+            get { return _value; }
+            set { _value = value; }
+        }
+
+        private string _text;
+
+        public string Text
+        {
+            get { return _text; }
+            set { _text = value; }
+        }
+
+        private bool _isDefault;
+
+        public bool IsDefault
+        {
+            get { return _isDefault; }
+            set { _isDefault = value; }
+        }
+
+
+    }
 }

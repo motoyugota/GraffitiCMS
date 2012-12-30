@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Specialized;
-using System.Web;
+using System.Text;
 
 namespace Graffiti.Core
 {
@@ -8,9 +8,6 @@ namespace Graffiti.Core
 	[Serializable]
 	public class TagCloudWidget : Widget
 	{
-		public int _maxNumberOfTags = 25;
-		public int _minimiumNumberOfPosts = 5;
-
 		public override string Name
 		{
 			get
@@ -31,32 +28,32 @@ namespace Graffiti.Core
 
 				return base.Title;
 			}
-			set { base.Title = value; }
+			set
+			{
+
+				base.Title = value;
+			}
 		}
 
+		public int _maxNumberOfTags = 25;
 		public int MaxNumberOfTags
 		{
 			get { return _maxNumberOfTags; }
 			set { _maxNumberOfTags = value; }
 		}
 
+		public int _minimiumNumberOfPosts = 5;
 		public int MinimiumNumberOfPosts
 		{
 			get { return _minimiumNumberOfPosts; }
 			set { _minimiumNumberOfPosts = value; }
 		}
 
-		public override string FormName
-		{
-			get { return "Tag Cloud Configuration"; }
-		}
-
 		protected override FormElementCollection AddFormElements()
 		{
 			FormElementCollection fec = new FormElementCollection();
 			fec.Add(AddTitleElement());
-			ListFormElement lfe = new ListFormElement("minNumberOfPosts", "Minimum Number of Posts",
-			                                          "The minimum number of posts a tag must be found in.");
+			ListFormElement lfe = new ListFormElement("minNumberOfPosts", "Minimum Number of Posts", "The minimum number of posts a tag must be found in.");
 			lfe.Add(new ListItemFormElement("No Minimum", "-1"));
 			lfe.Add(new ListItemFormElement("1", "1", true));
 			lfe.Add(new ListItemFormElement("2", "2"));
@@ -65,8 +62,7 @@ namespace Graffiti.Core
 			lfe.Add(new ListItemFormElement("10", "10"));
 			fec.Add(lfe);
 
-			ListFormElement lfeMax = new ListFormElement("maxNumberOfTags", "Maximum number of Tags",
-			                                             "The maximum number of tags to display. If selected only the most popular tags will be returned.");
+			ListFormElement lfeMax = new ListFormElement("maxNumberOfTags", "Maximum number of Tags", "The maximum number of tags to display. If selected only the most popular tags will be returned.");
 			lfeMax.Add(new ListItemFormElement("No Maximum", "-1"));
 			lfeMax.Add(new ListItemFormElement("25", "25", true));
 			lfeMax.Add(new ListItemFormElement("50", "50"));
@@ -78,8 +74,7 @@ namespace Graffiti.Core
 
 		public override string RenderData()
 		{
-			return string.Format("<div class=\"tagCloud\">{0}</div>\n",
-			                     new Macros().TagCloud(MinimiumNumberOfPosts, MaxNumberOfTags));
+			return string.Format("<div class=\"tagCloud\">{0}</div>\n", new Macros().TagCloud(MinimiumNumberOfPosts, MaxNumberOfTags));
 		}
 
 		protected override NameValueCollection DataAsNameValueCollection()
@@ -91,7 +86,7 @@ namespace Graffiti.Core
 			return nvc;
 		}
 
-		public override StatusType SetValues(HttpContext context, NameValueCollection nvc)
+		public override StatusType SetValues(System.Web.HttpContext context, NameValueCollection nvc)
 		{
 			base.SetValues(context, nvc);
 
@@ -103,5 +98,11 @@ namespace Graffiti.Core
 
 			return StatusType.Success;
 		}
+
+		public override string FormName
+		{
+			get { return "Tag Cloud Configuration"; }
+		}
+
 	}
 }

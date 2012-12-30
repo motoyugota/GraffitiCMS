@@ -1,18 +1,15 @@
 using System;
 using System.Collections.Generic;
-using System.Web;
 using System.Web.UI.WebControls;
 using Graffiti.Core;
+using System.Web;
 
 public partial class graffiti_admin_roles_Default : AdminControlPanelPage
 {
 	protected string DecodeFromQS(string key)
 	{
-		return Request.QueryString[key] != null
-			       ? HttpUtility.HtmlDecode(HttpUtility.UrlDecode(Request.QueryString[key]))
-			       : null;
+		return Request.QueryString[key] != null ? HttpUtility.HtmlDecode(HttpUtility.UrlDecode(Request.QueryString[key])) : null;
 	}
-
 	protected void Page_Load(object sender, EventArgs e)
 	{
 		LiHyperLink.SetNameToCompare(Context, "UserManagement");
@@ -25,19 +22,19 @@ public partial class graffiti_admin_roles_Default : AdminControlPanelPage
 			SetupTogglePermissionsScript(read, edit, publish, edit, "edit");
 			SetupTogglePermissionsScript(read, edit, publish, publish, "publish");
 
-			SetupTogglePermissionsScript(readRolePermission, editRolePermission, publishRolePermission, readRolePermission,
-			                             "read");
-			SetupTogglePermissionsScript(readRolePermission, editRolePermission, publishRolePermission, editRolePermission,
-			                             "edit");
-			SetupTogglePermissionsScript(readRolePermission, editRolePermission, publishRolePermission, publishRolePermission,
-			                             "publish");
+			SetupTogglePermissionsScript(readRolePermission, editRolePermission, publishRolePermission, readRolePermission, "read");
+			SetupTogglePermissionsScript(readRolePermission, editRolePermission, publishRolePermission, editRolePermission, "edit");
+			SetupTogglePermissionsScript(readRolePermission, editRolePermission, publishRolePermission, publishRolePermission, "publish");
 
 			if (!String.IsNullOrEmpty(role))
 			{
-				RolePermissionsCollection rpc = RolePermissionManager.GetRolePermissions();
+				RolePermissionsCollection rpc = _rolePermissionService.GetRolePermissions();
 
 				RolePermissions rp = rpc.Find(
-					delegate(RolePermissions rper) { return rper.RoleName.ToLower() == role.ToLower(); });
+													 delegate(RolePermissions rper)
+													 {
+														 return rper.RoleName.ToLower() == role.ToLower();
+													 });
 
 				if (rp != null)
 				{
@@ -63,7 +60,7 @@ public partial class graffiti_admin_roles_Default : AdminControlPanelPage
 				litExistingRoleName.Text = encodedRoleName;
 				PageText.Text = "Update " + encodedRoleName;
 
-				CategoryList.DataSource = new CategoryController().GetAllCachedCategories();
+				CategoryList.DataSource = _categoryService.FetchAllCachedCategories();
 				CategoryList.DataBind();
 			}
 
@@ -75,11 +72,12 @@ public partial class graffiti_admin_roles_Default : AdminControlPanelPage
 		{
 			if (!Page.IsPostBack)
 			{
-				RolePermissionsCollection rps = RolePermissionManager.GetRolePermissions();
+				RolePermissionsCollection rps = _rolePermissionService.GetRolePermissions();
 
-				rps.Sort(
-					delegate(RolePermissions rp1, RolePermissions rp2)
-						{ return Comparer<string>.Default.Compare(rp1.RoleName, rp2.RoleName); });
+				rps.Sort(delegate(RolePermissions rp1, RolePermissions rp2)
+				{
+					return Comparer<string>.Default.Compare(rp1.RoleName, rp2.RoleName);
+				});
 
 				// move everyone to the top
 				RolePermissionsCollection rpss = new RolePermissionsCollection();
@@ -137,14 +135,14 @@ public partial class graffiti_admin_roles_Default : AdminControlPanelPage
 			SetupTogglePermissionsScript(read, edit, publish, edit, "edit");
 			SetupTogglePermissionsScript(read, edit, publish, publish, "publish");
 
-			RoleCategoryPermissionsCollection rpc = RolePermissionManager.GetRoleCategoryPermissions();
+			RoleCategoryPermissionsCollection rpc = _rolePermissionService.GetRoleCategoryPermissions();
 
 			RoleCategoryPermissions rp = rpc.Find(
-				delegate(RoleCategoryPermissions rcper)
-					{
-						return rcper.RoleName.ToLower() == roleName.ToLower() &&
-						       rcper.CategoryId == category.Id;
-					});
+												 delegate(RoleCategoryPermissions rcper)
+												 {
+													 return rcper.RoleName.ToLower() == roleName.ToLower() &&
+																rcper.CategoryId == category.Id;
+												 });
 
 			if (rp != null)
 			{
@@ -159,7 +157,7 @@ public partial class graffiti_admin_roles_Default : AdminControlPanelPage
 	{
 		string encodedRoleName = HttpUtility.HtmlEncode(txtRoleName.Text);
 
-		if (RolePermissionManager.IsDuplicate(txtRoleName.Text))
+		if (_rolePermissionService.IsDuplicate(txtRoleName.Text))
 		{
 			Message.Text = string.Format("The role <strong>{0}</strong> already exists.", encodedRoleName);
 			Message.Type = StatusType.Error;
@@ -168,24 +166,21 @@ public partial class graffiti_admin_roles_Default : AdminControlPanelPage
 
 		if (txtRoleName.Text == "gAdmin")
 		{
-			Message.Text = string.Format("The role <strong>{0}</strong> is a reserved Graffiti Role and cannot be used.",
-			                             encodedRoleName);
+			Message.Text = string.Format("The role <strong>{0}</strong> is a reserved Graffiti Role and cannot be used.", encodedRoleName);
 			Message.Type = StatusType.Error;
 			return;
 		}
 
 		GraffitiUsers.AddUpdateRole(txtRoleName.Text, read.Checked, edit.Checked, publish.Checked);
 
-		Response.Redirect(string.Format("~/graffiti-admin/user-management/roles/?role={0}&new=true",
-		                                HttpUtility.UrlEncode(encodedRoleName)));
+		Response.Redirect(string.Format("~/graffiti-admin/user-management/roles/?role={0}&new=true", HttpUtility.UrlEncode(encodedRoleName)));
 	}
 
 	protected void EditRoles_Save(object sender, EventArgs e)
 	{
 		string roleName = DecodeFromQS("role");
+		_rolePermissionService.ClearPermissionsForRole(roleName);
 		bool isCategoryPermissions = false;
-
-		RolePermissionManager.ClearPermissionsForRole(roleName);
 
 		foreach (RepeaterItem ri in CategoryList.Items)
 		{
@@ -206,16 +201,14 @@ public partial class graffiti_admin_roles_Default : AdminControlPanelPage
 
 		if (!isCategoryPermissions)
 		{
-			GraffitiUsers.AddUpdateRole(roleName, readRolePermission.Checked, editRolePermission.Checked,
-			                            publishRolePermission.Checked);
+			GraffitiUsers.AddUpdateRole(roleName, readRolePermission.Checked, editRolePermission.Checked, publishRolePermission.Checked);
 		}
 		else
 		{
 			GraffitiUsers.AddUpdateRole(roleName, false, false, false);
 		}
 
-		Response.Redirect(string.Format("~/graffiti-admin/user-management/roles/?roleSaved={0}",
-		                                HttpUtility.UrlEncode(HttpUtility.HtmlEncode(roleName))));
+		Response.Redirect(string.Format("~/graffiti-admin/user-management/roles/?roleSaved={0}", HttpUtility.UrlEncode(HttpUtility.HtmlEncode(roleName))));
 	}
 
 	protected bool CanDelete()
@@ -225,7 +218,7 @@ public partial class graffiti_admin_roles_Default : AdminControlPanelPage
 
 	protected string IsAltRow(int index)
 	{
-		if (index%2 == 0)
+		if (index % 2 == 0)
 			return string.Empty;
 		else
 			return " class=\"alt\"";
@@ -239,8 +232,7 @@ public partial class graffiti_admin_roles_Default : AdminControlPanelPage
 			return "style=\"display: none;\"";
 	}
 
-	private void SetupTogglePermissionsScript(CheckBox read, CheckBox edit, CheckBox publish, CheckBox applyTo,
-	                                          string command)
+	private void SetupTogglePermissionsScript(CheckBox read, CheckBox edit, CheckBox publish, CheckBox applyTo, string command)
 	{
 		string onclick = "togglePermissions('{0}','{1}','{2}','{3}');";
 
