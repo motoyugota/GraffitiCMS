@@ -1248,19 +1248,13 @@ namespace Graffiti.Core
 				//defaultEnocodedGravatar = HttpUtility.UrlEncode(defaultGravatar);
 			}
 
-			string identicon =
-				 string.Format("{0}?code={1}&size={2}", defaultGravatar, Docuverse.Identicon.IdenticonUtil.Code(ip), size);
-
-
 			if (string.IsNullOrEmpty(email))
 			{
-				return identicon;
+				return string.Format("{0}?code={1}&size={2}", defaultGravatar, Docuverse.Identicon.IdenticonUtil.Code(ip), size);
 			}
 
-			identicon = HttpUtility.UrlEncode(identicon);
-
 			string hash = System.Web.Security.FormsAuthentication.HashPasswordForStoringInConfigFile(email.Trim(), "MD5").Trim().ToLower();
-            return string.Format("http://www.gravatar.com/avatar/{0}?amp;r=g&amp;s={2}&amp;d={1}", hash, identicon, size);
+            return string.Format("http://www.gravatar.com/avatar/{0}?r=g&amp;s={1}&amp;d=identicon", hash, size);
 		}
 
 		#endregion
