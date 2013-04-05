@@ -52,7 +52,7 @@
 						NavigateUrl="~/graffiti-admin/user-management/" />
 					<Z:LiHyperLink runat="Server" Text="Reporting" ID="ReportingLink" Name="reporting"
 						NavigateUrl="~/graffiti-admin/reporting/" />
-					<li><a href="http://graffiticms.codeplex.com/documentation" title="Visit GraffitiCMS.CodePlex.com/documentation for help" target="_new" />Help</a></li>
+					<li><a href="http://graffiticms.codeplex.com/documentation" title="Visit GraffitiCMS.CodePlex.com/documentation for help" target="_new">Help</a></li>
 				</ul>
 				<div style="clear: both;">
 				</div>
