@@ -349,6 +349,8 @@
     <Content Include="api\comments\Default.aspx" />
     <Content Include="api\posts\Default.aspx" />
     <Content Include="__utility\js\graffiti.js" />
+    <Content Include="__utility\js\jquery-1.9.1.min.js" />
+    <Content Include="__utility\js\jquery-ui-1.10.2.custom.min.js" />
     <Content Include="__utility\spam\badwords.txt" />
     <Content Include="__utility\themetemplate.xml" />
   </ItemGroup>
@@ -748,8 +750,6 @@
     <None Include="__utility\forms\comment.view" />
     <None Include="__utility\forms\contact.view" />
     <Content Include="__utility\img\IdenticonHandler.ashx" />
-    <Content Include="__utility\js\jquery-1.4.2.min.js" />
-    <Content Include="__utility\js\jquery-ui-1.7.2.custom.min.js" />
     <None Include="__utility\forms\search.view" />
     <None Include="__utility\pages\category.view" />
     <None Include="__utility\pages\categoryrss.view" />
