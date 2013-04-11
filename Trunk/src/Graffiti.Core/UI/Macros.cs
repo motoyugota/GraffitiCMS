@@ -622,8 +622,8 @@ namespace Graffiti.Core
 					string.Format(
 						"\n<script type=\"text/javascript\" src=\"{0}\"></script>\n<script type=\"text/javascript\" src=\"{1}\" ></script>\n",
 						SiteSettings.Get().UseExternalJQuery
-							? "http://ajax.microsoft.com/ajax/jQuery/jquery-1.4.2.min.js"
-							: VirtualPathUtility.ToAbsolute("~/__utility/js/jquery-1.4.2.min.js"),
+							? "http://ajax.microsoft.com/ajax/jQuery/jquery-1.9.1.min.js"
+							: VirtualPathUtility.ToAbsolute("~/__utility/js/jquery-1.9.1.min.js"),
 						VirtualPathUtility.ToAbsolute("~/__utility/js/graffiti.js"));
 			}
 		}
