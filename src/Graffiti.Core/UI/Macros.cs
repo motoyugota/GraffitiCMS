@@ -1040,6 +1040,26 @@ namespace Graffiti.Core
 
 		#region Publc Helpers
 
+        /// <summary>
+        /// Encodes a block of HTML
+        /// </summary>
+        /// <param name="html"></param>
+        /// <returns></returns>
+        public string HTMLEncode(string html)
+        {
+            return HttpUtility.HtmlEncode(html);
+        }
+
+        /// <summary>
+        /// Decodes a block of HTML
+        /// </summary>
+        /// <param name="html"></param>
+        /// <returns></returns>
+        public string HTMLDecode(string html)
+        {
+            return HttpUtility.HtmlDecode(html);
+        }
+ 
 		/// <summary>
 		/// Truncates a block of HTML
 		/// </summary>
