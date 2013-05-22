@@ -1,4 +1,4 @@
-﻿.MenuHeader
+.MenuHeader
 {
 	margin: 0;
 	padding: 0;
@@ -87,6 +87,7 @@
 {
   width: 600px;
   font-size: 24px;
+  display: block;
 }
 
 .ModalFormBlock input.large
